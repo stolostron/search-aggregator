@@ -79,26 +79,27 @@ type SyncErrorResponse struct {
 }
 
 func GenerateHash(graph *rg.Graph, clusterName string) (totalResources int, hash string) {
-	query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' RETURN n._hash"
+	query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' RETURN n._hash" // TODO: I'll worry about strings later.
 	rs, _ := graph.Query(query)
 
 	allHashes := rs.Results[0:]
 
 	h := sha1.New()
-	h.Write([]byte(fmt.Sprintf("%x", allHashes))) // TODO: I'll worry about this later.
+	h.Write([]byte(fmt.Sprintf("%x", allHashes))) // TODO: I'll worry about strings later.
 	bs := h.Sum(nil)
 
-	fmt.Println("Total objects: ", len(allHashes))
-	fmt.Println(fmt.Sprintf("%s", allHashes)) // TODO: I'll worry about this later.
+	totalResources = len(allHashes) - 1 // TODO: remove header instead.
+	fmt.Println("Total objects: ", totalResources)
+	fmt.Println(fmt.Sprintf("%s", allHashes)) // TODO: I'll worry about strings later.
 	fmt.Printf("Current Hash: %x\n", bs)
-	return len(allHashes), fmt.Sprintf("%x", bs)
+	return totalResources, fmt.Sprintf("%x", bs)
 }
 
 // GetStatus responds with the global status.
 func GetStatus(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("GetStatus() - TODO: Will return all clusters with their last sync time and current hash.")
+	fmt.Println("GetStatus() - TODO: Respond with all clusters and their last sync time and current hash.")
 	var status = Status{
-		Message:       "TODO: Will return all clusters with their last sync time and current hash.",
+		Message:       "TODO: This will respond with all clusters and their last sync time and current hash.",
 		TotalClusters: 99, // TODO: Get total clusters from Redis
 	}
 	json.NewEncoder(w).Encode(status)
@@ -114,10 +115,10 @@ func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 	graph := rg.Graph{}.New("icp-search", conn)
 
-	reply, err := conn.Do("HGETALL", fmt.Sprintf("cluster:%s", clusterName)) // TODO: I'll worry about this later.
+	reply, err := conn.Do("HGETALL", fmt.Sprintf("cluster:%s", clusterName)) // TODO: I'll worry about strings later.
 	fmt.Println("Cluster status:", reply)
 	if err != nil {
-		fmt.Println("err", err)
+		fmt.Println("error", err)
 	}
 
 	totalResources, currentHash := GenerateHash(&graph, clusterName)
@@ -137,19 +138,24 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	clusterName := params["id"]
 	fmt.Println("SyncResources() for cluster:", clusterName)
 
+	conn, _ := redis.Dial("tcp", "0.0.0.0:6379")
+	defer conn.Close()
+	graph := rg.Graph{}.New("icp-search", conn)
+
 	var syncEvent SyncEvent
 	_ = json.NewDecoder(r.Body).Decode(&syncEvent)
+
+	if syncEvent.ClearAll == true {
+		query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' DELETE n"
+		graph.Query(query)
+		fmt.Println("!!! Deleted all previous resources for cluster:", clusterName)
+	}
 
 	addResources := syncEvent.AddResources
 	updateResources := syncEvent.UpdateResources
 	deleteResources := syncEvent.DeleteResources
 
-	conn, _ := redis.Dial("tcp", "0.0.0.0:6379")
-	defer conn.Close()
-	graph := rg.Graph{}.New("icp-search", conn)
-
-	fmt.Println("Adding resources: ", addResources)
-
+	fmt.Println("Adding resources...")
 	for _, resource := range addResources {
 		fmt.Println("Adding resource: ", resource)
 
@@ -174,12 +180,15 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	totalResources, currentHash := GenerateHash(&graph, clusterName)
 
 	// Setting lastUpdated and current hash for cluster
-	var clusterStatus = []interface{}{fmt.Sprintf("cluster:%s", clusterName)} // TODO: I'll worry about this later.
+	var clusterStatus = []interface{}{fmt.Sprintf("cluster:%s", clusterName)} // TODO: I'll worry about strings later.
 	clusterStatus = append(clusterStatus, "hash", currentHash)
 	clusterStatus = append(clusterStatus, "lastUpdated", updatedTimestamp)
 
 	_, err := conn.Do("HMSET", clusterStatus...)
-	fmt.Println("err", err)
+
+	if err != nil {
+		fmt.Println("error", err)
+	}
 
 	var response = SyncResponse{
 		Hash:             currentHash,
