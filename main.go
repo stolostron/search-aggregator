@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
@@ -63,17 +64,34 @@ type DeleteResourceEvent struct {
 
 // SyncResponse - Response to a SyncEvent
 type SyncResponse struct {
-	Hash           string
-	TotalAdded     int
-	TotalChanged   int
-	TotalDeleted   int
-	TotalResources int
-	Message        string
+	Hash             string
+	TotalAdded       int
+	TotalChanged     int
+	TotalDeleted     int
+	TotalResources   int
+	UpdatedTimestamp time.Time
+	Message          string
 }
 
 // SyncErrorResponse - Used to report errors during sync.
 type SyncErrorResponse struct {
 	Message string
+}
+
+func GenerateHash(graph *rg.Graph, clusterName string) (totalResources int, hash string) {
+	query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' RETURN n._hash"
+	rs, _ := graph.Query(query)
+
+	allHashes := rs.Results[0:]
+
+	h := sha1.New()
+	h.Write([]byte(fmt.Sprintf("%x", allHashes))) // TODO: I'll worry about this later.
+	bs := h.Sum(nil)
+
+	fmt.Println("Total objects: ", len(allHashes))
+	fmt.Println(fmt.Sprintf("%s", allHashes)) // TODO: I'll worry about this later.
+	fmt.Printf("Current Hash: %x\n", bs)
+	return len(allHashes), fmt.Sprintf("%x", bs)
 }
 
 // GetStatus responds with the global status.
@@ -94,26 +112,21 @@ func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
 
 	conn, _ := redis.Dial("tcp", "0.0.0.0:6379")
 	defer conn.Close()
-	graph := rg.Graph{}.New("mcm-search", conn)
+	graph := rg.Graph{}.New("icp-search", conn)
 
-	query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' RETURN n._resourceVersion" // TODO: Change resourceVersion to hash
-	rs, _ := graph.Query(query)
+	reply, err := conn.Do("HGETALL", fmt.Sprintf("cluster:%s", clusterName)) // TODO: I'll worry about this later.
+	fmt.Println("Cluster status:", reply)
+	if err != nil {
+		fmt.Println("err", err)
+	}
 
-	allHashes := rs.Results[0:]
-
-	h := sha1.New()
-	h.Write([]byte(fmt.Sprintf("%x", allHashes)))
-	bs := h.Sum(nil)
-
-	fmt.Println("Total objects: ", len(allHashes))
-	fmt.Println(fmt.Sprintf("%s", allHashes))
-	fmt.Printf("Current Hash: %x\n", bs)
+	totalResources, currentHash := GenerateHash(&graph, clusterName)
 
 	var response = ClusterStatus{
-		Hash:           fmt.Sprintf("%x", bs),
+		Hash:           currentHash,
 		Message:        "ClusterStatus",
-		LastUpdated:    "TODO: Save lastUpdated to management db and return value here.",
-		TotalResources: len(allHashes),
+		LastUpdated:    "TODO: Get lastUpdated timestamp from Redis.",
+		TotalResources: totalResources,
 	}
 	json.NewEncoder(w).Encode(response)
 }
@@ -131,17 +144,51 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	updateResources := syncEvent.UpdateResources
 	deleteResources := syncEvent.DeleteResources
 
+	conn, _ := redis.Dial("tcp", "0.0.0.0:6379")
+	defer conn.Close()
+	graph := rg.Graph{}.New("icp-search", conn)
+
 	fmt.Println("Adding resources: ", addResources)
-	fmt.Println("Updating resources: ", updateResources)
-	fmt.Println("Deleting resources: ", deleteResources)
+
+	for _, resource := range addResources {
+		fmt.Println("Adding resource: ", resource)
+
+		resource.Properties["kind"] = resource.Kind
+		resource.Properties["cluster"] = clusterName
+		resource.Properties["_uid"] = resource.UID
+		resource.Properties["_hash"] = resource.Hash
+		resource.Properties["_resourceVersion"] = resource.Hash // FIXME: Temporary, remove after migrating to use hash.
+
+		graph.AddNode(&rg.Node{
+			ID:         resource.UID,
+			Label:      resource.Kind,
+			Properties: resource.Properties,
+		})
+	}
+	graph.Flush()
+
+	fmt.Println("TODO update resources: ", updateResources)
+	fmt.Println("TODO Delete resources: ", deleteResources)
+
+	updatedTimestamp := time.Now()
+	totalResources, currentHash := GenerateHash(&graph, clusterName)
+
+	// Setting lastUpdated and current hash for cluster
+	var clusterStatus = []interface{}{fmt.Sprintf("cluster:%s", clusterName)} // TODO: I'll worry about this later.
+	clusterStatus = append(clusterStatus, "hash", currentHash)
+	clusterStatus = append(clusterStatus, "lastUpdated", updatedTimestamp)
+
+	_, err := conn.Do("HMSET", clusterStatus...)
+	fmt.Println("err", err)
 
 	var response = SyncResponse{
-		Hash:           "TODO: return newHash",
-		TotalAdded:     len(addResources),
-		TotalChanged:   len(updateResources),
-		TotalDeleted:   len(deleteResources),
-		TotalResources: 99, // TODO: Get from RedisGraph
-		Message:        "TODO: Synchronize resources with RedisGraph.",
+		Hash:             currentHash,
+		TotalAdded:       len(addResources),
+		TotalChanged:     0, //len(updateResources),
+		TotalDeleted:     0, //len(deleteResources),
+		TotalResources:   totalResources,
+		UpdatedTimestamp: updatedTimestamp,
+		Message:          "TODO: Synchronize resources with RedisGraph.",
 	}
 	json.NewEncoder(w).Encode(response)
 }
