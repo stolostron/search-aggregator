@@ -19,19 +19,25 @@ Works with the search-collector to synchronize multicloud resources in the redis
 
 ## Usage
 
-1. GET http://localhost:8000/cluster/[clustername]/status
+1. GET http://localhost:8000/status
+
+    **Response:**
+    - Total number of clusters.
+
+2. GET http://localhost:8000/cluster/[clustername]/status
 
     **Response:**
     - Timestamp of last update.
     - Total number of resources in the cluster.
     - The current hash for all resources in the cluster.
 
-2. POST http://localhost:8000/cluster/[clustername]/sync
+3. POST http://localhost:8000/cluster/[clustername]/sync
 
     **Sample body:**
     ```json
     {
       "hash": "hash-of-previous-state",
+      "clearAll": false,
       "addResources": [
         {
           "kind": "kind1",
