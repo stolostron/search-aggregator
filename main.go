@@ -82,17 +82,18 @@ func GenerateHash(graph *rg.Graph, clusterName string) (totalResources int, hash
 	query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' RETURN n._hash" // TODO: I'll worry about strings later.
 	rs, _ := graph.Query(query)
 
-	allHashes := rs.Results[0:]
+	allHashes := rs.Results[1:]
 
 	h := sha1.New()
 	h.Write([]byte(fmt.Sprintf("%x", allHashes))) // TODO: I'll worry about strings later.
 	bs := h.Sum(nil)
 
-	totalResources = len(allHashes) - 1 // TODO: remove header instead.
-	fmt.Println("Total objects: ", totalResources)
-	fmt.Println(fmt.Sprintf("%s", allHashes)) // TODO: I'll worry about strings later.
-	fmt.Printf("Current Hash: %x\n", bs)
-	return totalResources, fmt.Sprintf("%x", bs)
+	totalResources = len(allHashes)
+	hash = fmt.Sprintf("%x", bs)
+	fmt.Println("Total resources:", totalResources)
+	fmt.Println("All hashes:", fmt.Sprintf("%s", allHashes)) // TODO: I'll worry about strings later.
+	fmt.Println("Current hash:", hash)
+	return totalResources, hash
 }
 
 // GetStatus responds with the global status.
@@ -115,11 +116,13 @@ func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 	graph := rg.Graph{}.New("icp-search", conn)
 
-	reply, err := conn.Do("HGETALL", fmt.Sprintf("cluster:%s", clusterName)) // TODO: I'll worry about strings later.
-	fmt.Println("Cluster status:", reply)
+	clusterStatus, err := conn.Do("HGETALL", fmt.Sprintf("cluster:%s", clusterName)) // TODO: I'll worry about strings later.
 	if err != nil {
-		fmt.Println("error", err)
+		fmt.Println("Error getting status of cluster"+clusterName+" from Redis.", err)
 	}
+	var status = []interface{}{clusterStatus}
+	fmt.Println("Cluster status:", clusterStatus)
+	fmt.Println("    Status:", status[0])
 
 	totalResources, currentHash := GenerateHash(&graph, clusterName)
 
@@ -155,9 +158,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	updateResources := syncEvent.UpdateResources
 	deleteResources := syncEvent.DeleteResources
 
-	fmt.Println("Adding resources...")
 	for _, resource := range addResources {
 		fmt.Println("Adding resource: ", resource)
+
+		// TODO: Enforce required values (Kind, UID, Hash)
+		// TODO: Do I need to sanitize inputs?
 
 		resource.Properties["kind"] = resource.Kind
 		resource.Properties["cluster"] = clusterName
@@ -171,15 +176,17 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			Properties: resource.Properties,
 		})
 	}
-	graph.Flush()
+	_, error := graph.Flush()
+	if error != nil {
+		fmt.Println("Error adding nodes in RedisGraph.", error)
+	}
 
-	fmt.Println("TODO update resources: ", updateResources)
+	fmt.Println("TODO Update resources: ", updateResources)
 	fmt.Println("TODO Delete resources: ", deleteResources)
 
+	// Updating local status
 	updatedTimestamp := time.Now()
 	totalResources, currentHash := GenerateHash(&graph, clusterName)
-
-	// Setting lastUpdated and current hash for cluster
 	var clusterStatus = []interface{}{fmt.Sprintf("cluster:%s", clusterName)} // TODO: I'll worry about strings later.
 	clusterStatus = append(clusterStatus, "hash", currentHash)
 	clusterStatus = append(clusterStatus, "lastUpdated", updatedTimestamp)
@@ -197,7 +204,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		TotalDeleted:     0, //len(deleteResources),
 		TotalResources:   totalResources,
 		UpdatedTimestamp: updatedTimestamp,
-		Message:          "TODO: Synchronize resources with RedisGraph.",
+		Message:          "TODO: Maybe we don't need this message field.",
 	}
 	json.NewEncoder(w).Encode(response)
 }
