@@ -8,11 +8,11 @@ Works with the search-collector to synchronize multicloud resources in the redis
     ```
     docker run -p 6379:6379 -it --rm redislabs/redisgraph
     ```
-2. Install dependencies
+2. Install dependencies (temp, will move to make)
     ```
     go get
     ```
-3. Build and run
+3. Build and run (temp, will move to make)
     ```
     go build && ./search-aggregator
     ```
@@ -20,12 +20,14 @@ Works with the search-collector to synchronize multicloud resources in the redis
 ## Usage
 
 1. GET http://localhost:8000/cluster/[clustername]/status
+
     **Response:**
     - Timestamp of last update.
     - Total number of resources in the cluster.
     - The current hash for all resources in the cluster.
 
 2. POST http://localhost:8000/cluster/[clustername]/sync
+
     **Sample body:**
     ```json
     {
