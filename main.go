@@ -35,6 +35,7 @@ type SyncEvent struct {
 	AddResources    []AddResourceEvent
 	UpdateResources []UpdateResourceEvent
 	DeleteResources []DeleteResourceEvent
+	// TODO: AddEdges, DeleteEdges
 }
 
 // AddResourceEvent - Contains the information needed to add a new resource.
@@ -78,11 +79,12 @@ type SyncErrorResponse struct {
 	Message string
 }
 
-func GenerateHash(graph *rg.Graph, clusterName string) (totalResources int, hash string) {
-	query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' RETURN n._hash" // TODO: I'll worry about strings later.
+// ComputeHash computes a new hash using the hashes from all the current resources.
+func ComputeHash(graph *rg.Graph, clusterName string) (totalResources int, hash string) {
+	query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' RETURN n._hash ORDER BY n._hash ASC" // TODO: I'll worry about strings later.
 	rs, _ := graph.Query(query)
 
-	allHashes := rs.Results[1:]
+	allHashes := rs.Results[1:] // Start at index 1 because index 0 has the header.
 
 	h := sha1.New()
 	h.Write([]byte(fmt.Sprintf("%x", allHashes))) // TODO: I'll worry about strings later.
@@ -112,7 +114,7 @@ func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
 	clusterName := params["id"]
 	fmt.Println("GetClusterStatus() for cluster:", clusterName)
 
-	conn, _ := redis.Dial("tcp", "0.0.0.0:6379")
+	conn, _ := redis.Dial("tcp", "0.0.0.0:6379") //TODO: Make configurable
 	defer conn.Close()
 	graph := rg.Graph{}.New("icp-search", conn)
 
@@ -121,10 +123,10 @@ func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error getting status of cluster"+clusterName+" from Redis.", err)
 	}
 	var status = []interface{}{clusterStatus}
-	fmt.Println("Cluster status:", clusterStatus)
-	fmt.Println("    Status:", status[0])
+	// fmt.Println("Cluster status:", clusterStatus)
+	fmt.Println("Cluster status:", status[0])
 
-	totalResources, currentHash := GenerateHash(&graph, clusterName)
+	totalResources, currentHash := ComputeHash(&graph, clusterName)
 
 	var response = ClusterStatus{
 		Hash:           currentHash,
@@ -141,7 +143,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	clusterName := params["id"]
 	fmt.Println("SyncResources() for cluster:", clusterName)
 
-	conn, _ := redis.Dial("tcp", "0.0.0.0:6379")
+	conn, _ := redis.Dial("tcp", "0.0.0.0:6379") //TODO: Make configurable
 	defer conn.Close()
 	graph := rg.Graph{}.New("icp-search", conn)
 
@@ -158,6 +160,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	updateResources := syncEvent.UpdateResources
 	deleteResources := syncEvent.DeleteResources
 
+	// ADD resources
 	for _, resource := range addResources {
 		fmt.Println("Adding resource: ", resource)
 
@@ -181,12 +184,40 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error adding nodes in RedisGraph.", error)
 	}
 
-	fmt.Println("TODO Update resources: ", updateResources)
-	fmt.Println("TODO Delete resources: ", deleteResources)
+	// UPDATE resources
+	for _, resource := range updateResources {
+		fmt.Println("Updating resource: ", resource)
+		// FIXME: Properly update resource. Deleting and recreating is very lazy.
+		query := "MATCH (n) WHERE n._uid = '" + resource.UID + "' DELETE n"
 
-	// Updating local status
+		graph.Query(query)
+		resource.Properties["kind"] = resource.Kind
+		resource.Properties["cluster"] = clusterName
+		resource.Properties["_uid"] = resource.UID
+		resource.Properties["_hash"] = resource.Hash
+		resource.Properties["_resourceVersion"] = resource.Hash // FIXME: Temporary, remove after migrating to use hash.
+
+		graph.AddNode(&rg.Node{
+			ID:         resource.UID,
+			Label:      resource.Kind,
+			Properties: resource.Properties,
+		})
+	}
+	_, updateErr := graph.Flush()
+	if updateErr != nil {
+		fmt.Println("Error updating nodes in RedisGraph.", updateErr)
+	}
+
+	// DELETE resources
+	for _, resource := range deleteResources {
+		fmt.Println("Deleting resource: ", resource)
+		query := "MATCH (n) WHERE n._uid = '" + resource.UID + "' DELETE n"
+		graph.Query(query)
+	}
+
+	// Updating cluster status in cache.
 	updatedTimestamp := time.Now()
-	totalResources, currentHash := GenerateHash(&graph, clusterName)
+	totalResources, currentHash := ComputeHash(&graph, clusterName)
 	var clusterStatus = []interface{}{fmt.Sprintf("cluster:%s", clusterName)} // TODO: I'll worry about strings later.
 	clusterStatus = append(clusterStatus, "hash", currentHash)
 	clusterStatus = append(clusterStatus, "lastUpdated", updatedTimestamp)

@@ -33,6 +33,11 @@ Works with the search-collector to synchronize multicloud resources in the redis
 
 3. POST http://localhost:8000/cluster/[clustername]/sync
 
+    - `hash` - value of the current hash, used to validate the collector is in sync with the current RedisGraph cache.
+    - `clearAll` - delete all resources for the cluster before adding new resources.
+    - `addResources` - List of resources to be added.
+    - `updateResources` - List of resources to be updated.
+    - `deleteResources` - List of resources to be deleted.
     **Sample body:**
     ```json
     {
