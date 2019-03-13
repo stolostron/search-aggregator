@@ -39,6 +39,7 @@ Works with the search-collector to synchronize multicloud resources in the redis
     - `addResources` - List of resources to be added.
     - `updateResources` - List of resources to be updated.
     - `deleteResources` - List of resources to be deleted.
+
     **Sample body:**
     ```json
     {
