@@ -24,14 +24,15 @@ Works with the search-collector to synchronize multicloud resources in the redis
     **Response:**
     - Total number of clusters.
 
-2. GET http://localhost:8000/cluster/[clustername]/status
+2. GET http://localhost:8000/clusters/[clustername]/status
 
     **Response:**
     - Timestamp of last update.
     - Total number of resources in the cluster.
     - The current hash for all resources in the cluster.
+    - MaxQueueTime - used to tell collectors how often to send updates.
 
-3. POST http://localhost:8000/cluster/[clustername]/sync
+3. POST http://localhost:8000/clusters/[clustername]/sync
 
     - `hash` - value of the current hash, used to validate the collector is in sync with the current RedisGraph cache.
     - `clearAll` - delete all resources for the cluster before adding new resources.

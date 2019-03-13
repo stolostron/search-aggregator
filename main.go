@@ -166,12 +166,13 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: Enforce required values (Kind, UID, Hash)
 		// TODO: Do I need to sanitize inputs?
+		// TODO: Need special processing for labels and roles.
 
 		resource.Properties["kind"] = resource.Kind
 		resource.Properties["cluster"] = clusterName
 		resource.Properties["_uid"] = resource.UID
 		resource.Properties["_hash"] = resource.Hash
-		resource.Properties["_resourceVersion"] = resource.Hash // FIXME: Temporary, remove after migrating to use hash.
+		resource.Properties["_resourceVersion"] = resource.Hash // TODO: Temporary, remove after migrating to use `_hash`.
 
 		graph.AddNode(&rg.Node{
 			ID:         resource.UID,
