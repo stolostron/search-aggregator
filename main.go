@@ -166,16 +166,16 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: Enforce required values (Kind, UID, Hash)
 		// TODO: Do I need to sanitize inputs?
-		// TODO: Need special processing for labels and roles.
+		// TODO: Need special processing for lists (labels and roles).
 
 		resource.Properties["kind"] = resource.Kind
 		resource.Properties["cluster"] = clusterName
 		resource.Properties["_uid"] = resource.UID
 		resource.Properties["_hash"] = resource.Hash
-		resource.Properties["_resourceVersion"] = resource.Hash // TODO: Temporary, remove after migrating to use `_hash`.
+		resource.Properties["_rbac"] = "UNKNOWN" // TODO: This must be the namespace of the cluster.
 
 		graph.AddNode(&rg.Node{
-			ID:         resource.UID,
+			ID:         resource.UID, // FIXME: This is supported by RedisGraph but doesn't work in the redisgraph-go client.
 			Label:      resource.Kind,
 			Properties: resource.Properties,
 		})
@@ -183,6 +183,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	_, error := graph.Flush()
 	if error != nil {
 		fmt.Println("Error adding nodes in RedisGraph.", error)
+		// TODO: Error handling.  We should allow partial failures, but this will add complexity to the sync logic.
 	}
 
 	// UPDATE resources
@@ -196,10 +197,10 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		resource.Properties["cluster"] = clusterName
 		resource.Properties["_uid"] = resource.UID
 		resource.Properties["_hash"] = resource.Hash
-		resource.Properties["_resourceVersion"] = resource.Hash // FIXME: Temporary, remove after migrating to use hash.
+		resource.Properties["_rbac"] = "UNKNOWN" // TODO: This must be the namespace of the cluster.
 
 		graph.AddNode(&rg.Node{
-			ID:         resource.UID,
+			ID:         resource.UID, // FIXME: This doesn't work in the redisgraph-go client.
 			Label:      resource.Kind,
 			Properties: resource.Properties,
 		})
@@ -207,6 +208,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	_, updateErr := graph.Flush()
 	if updateErr != nil {
 		fmt.Println("Error updating nodes in RedisGraph.", updateErr)
+		// TODO: Error handling.  We should allow partial failures, but this will add complexity to the sync logic.
 	}
 
 	// DELETE resources
@@ -223,17 +225,18 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	clusterStatus = append(clusterStatus, "hash", currentHash)
 	clusterStatus = append(clusterStatus, "lastUpdated", updatedTimestamp)
 
-	_, err := conn.Do("HMSET", clusterStatus...)
+	_, deleteErr := conn.Do("HMSET", clusterStatus...)
 
 	if err != nil {
-		fmt.Println("error", err)
+		fmt.Println("Error deleting nodes in RedisGraph.", deleteErr)
+		// TODO: Error handling.  We should allow partial failures, but this will add complexity to the sync logic.
 	}
 
 	var response = SyncResponse{
 		Hash:             currentHash,
 		TotalAdded:       len(addResources),
-		TotalChanged:     0, //len(updateResources),
-		TotalDeleted:     0, //len(deleteResources),
+		TotalChanged:     len(updateResources),
+		TotalDeleted:     len(deleteResources),
 		TotalResources:   totalResources,
 		UpdatedTimestamp: updatedTimestamp,
 		Message:          "TODO: Maybe we don't need this message field.",
@@ -244,6 +247,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 // main function
 func main() {
 	router := mux.NewRouter()
+
+	// TODO: Add liveness and readiness probes.
+	// router.HandleFunc("/liveness", LivenessProbe).Methods("GET")
+	// router.HandleFunc("/readiness", ReadinessProbe).Methods("GET")
+
 	router.HandleFunc("/status", GetStatus).Methods("GET")
 	router.HandleFunc("/clusters/{id}/status", GetClusterStatus).Methods("GET")
 	router.HandleFunc("/clusters/{id}/sync", SyncResources).Methods("POST")
