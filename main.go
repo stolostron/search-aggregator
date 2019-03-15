@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha1"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -75,6 +76,10 @@ type SyncResponse struct {
 }
 
 // SyncErrorResponse - Used to report errors during sync.
+// TODO: Handle these errors.
+//	- Problem connecting to Redis
+//	- The received hash doesn't match the current hash.
+//	- Add, Update, or Delete operations returned an error.
 type SyncErrorResponse struct {
 	Message string
 }
@@ -100,6 +105,7 @@ func ComputeHash(graph *rg.Graph, clusterName string) (totalResources int, hash 
 
 // GetStatus responds with the global status.
 func GetStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Println("GetStatus() - TODO: Respond with all clusters and their last sync time and current hash.")
 	var status = Status{
 		Message:       "TODO: This will respond with all clusters and their last sync time and current hash.",
@@ -110,6 +116,7 @@ func GetStatus(w http.ResponseWriter, r *http.Request) {
 
 // GetClusterStatus responds with the cluster status.
 func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	clusterName := params["id"]
 	fmt.Println("GetClusterStatus() for cluster:", clusterName)
@@ -139,6 +146,7 @@ func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
 
 // SyncResources - Process Add, Update, and Delete events.
 func SyncResources(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	clusterName := params["id"]
 	fmt.Println("SyncResources() for cluster:", clusterName)
@@ -227,7 +235,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	_, deleteErr := conn.Do("HMSET", clusterStatus...)
 
-	if err != nil {
+	if deleteErr != nil {
 		fmt.Println("Error deleting nodes in RedisGraph.", deleteErr)
 		// TODO: Error handling.  We should allow partial failures, but this will add complexity to the sync logic.
 	}
@@ -252,9 +260,30 @@ func main() {
 	// router.HandleFunc("/liveness", LivenessProbe).Methods("GET")
 	// router.HandleFunc("/readiness", ReadinessProbe).Methods("GET")
 
-	router.HandleFunc("/status", GetStatus).Methods("GET")
-	router.HandleFunc("/clusters/{id}/status", GetClusterStatus).Methods("GET")
-	router.HandleFunc("/clusters/{id}/sync", SyncResources).Methods("POST")
+	router.HandleFunc("/aggregator/status", GetStatus).Methods("GET")
+	router.HandleFunc("/aggregator/clusters/{id}/status", GetClusterStatus).Methods("GET")
+	router.HandleFunc("/aggregator/clusters/{id}/sync", SyncResources).Methods("POST")
 
-	log.Fatal(http.ListenAndServe(":8000", router))
+	// Configure TLS
+	cfg := &tls.Config{
+		MinVersion:               tls.VersionTLS12,
+		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		PreferServerCipherSuites: true,
+		CipherSuites: []uint16{
+			// TODO: Update list with acceptable FIPS ciphers.
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+		},
+	}
+	srv := &http.Server{
+		Addr:         ":3010",
+		Handler:      router,
+		TLSConfig:    cfg,
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+	}
+
+	// log.Fatal(srv.ListenAndServeTLS(":3010", "./sslcert/search.crt", "./sslcert/search.key", router))
+	log.Fatal(srv.ListenAndServeTLS("./sslcert/search.crt", "./sslcert/search.key"))
 }
