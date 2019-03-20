@@ -13,8 +13,10 @@ LABEL org.label-schema.vendor="IBM" \
       org.label-schema.license="Licensed Materials - Property of IBM" \
       org.label-schema.schema-version="1.0"
 
-RUN apk --update --no-cache  add ca-certificates
+RUN apk --update --no-cache add ca-certificates
 
-COPY output/search-aggregator /
+ADD output/search-aggregator /bin
 
-CMD ["search-aggregator"]
+EXPOSE 3010
+
+ENTRYPOINT ["/bin/search-aggregator"]

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -80,9 +81,10 @@ type SyncResponse struct {
 //	- Problem connecting to Redis
 //	- The received hash doesn't match the current hash.
 //	- Add, Update, or Delete operations returned an error.
-type SyncErrorResponse struct {
-	Message string
-}
+
+// type SyncErrorResponse struct {
+// 	Message string
+// }
 
 // ComputeHash computes a new hash using the hashes from all the current resources.
 func ComputeHash(graph *rg.Graph, clusterName string) (totalResources int, hash string) {
@@ -92,7 +94,10 @@ func ComputeHash(graph *rg.Graph, clusterName string) (totalResources int, hash 
 	allHashes := rs.Results[1:] // Start at index 1 because index 0 has the header.
 
 	h := sha1.New()
-	h.Write([]byte(fmt.Sprintf("%x", allHashes))) // TODO: I'll worry about strings later.
+	_, err := h.Write([]byte(fmt.Sprintf("%x", allHashes))) // TODO: I'll worry about strings later.
+	if err != nil {
+		fmt.Println("Error generating hash.")
+	}
 	bs := h.Sum(nil)
 
 	totalResources = len(allHashes)
@@ -103,6 +108,31 @@ func ComputeHash(graph *rg.Graph, clusterName string) (totalResources int, hash 
 	return totalResources, hash
 }
 
+// livenessProbe
+func livenessProbe(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("livenessProbe()")
+	var status = Status{
+		Message: "OK",
+	}
+	err := json.NewEncoder(w).Encode(status)
+	if err != nil {
+		fmt.Println("Error responding to livenessProbe", err)
+	}
+}
+
+// readinessProbe
+func readinessProbe(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("readinessProbe() - TODO: Check RedisGraph is available.")
+	// TODO: Check RedisGraph is available.
+	var status = Status{
+		Message: "OK",
+	}
+	err := json.NewEncoder(w).Encode(status)
+	if err != nil {
+		fmt.Println("Error responding to readinessProbe", err)
+	}
+}
+
 // GetStatus responds with the global status.
 func GetStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -111,7 +141,10 @@ func GetStatus(w http.ResponseWriter, r *http.Request) {
 		Message:       "TODO: This will respond with all clusters and their last sync time and current hash.",
 		TotalClusters: 99, // TODO: Get total clusters from Redis
 	}
-	json.NewEncoder(w).Encode(status)
+	err := json.NewEncoder(w).Encode(status)
+	if err != nil {
+		fmt.Println("Error responding to GetStatus", err, status)
+	}
 }
 
 // GetClusterStatus responds with the cluster status.
@@ -141,7 +174,10 @@ func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
 		LastUpdated:    "TODO: Get lastUpdated timestamp from Redis.",
 		TotalResources: totalResources,
 	}
-	json.NewEncoder(w).Encode(response)
+	encodeError := json.NewEncoder(w).Encode(response)
+	if encodeError != nil {
+		fmt.Println("Error responding to GetClusterStatus:", encodeError, response)
+	}
 }
 
 // SyncResources - Process Add, Update, and Delete events.
@@ -156,11 +192,17 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	graph := rg.Graph{}.New("icp-search", conn)
 
 	var syncEvent SyncEvent
-	_ = json.NewDecoder(r.Body).Decode(&syncEvent)
+	err := json.NewDecoder(r.Body).Decode(&syncEvent)
+	if err != nil {
+		fmt.Println("Error decoding body of syncEvent:", err)
+	}
 
-	if syncEvent.ClearAll == true {
+	if syncEvent.ClearAll {
 		query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' DELETE n"
-		graph.Query(query)
+		_, err := graph.Query(query)
+		if err != nil {
+			fmt.Println("Error running RedisGraph delete query:", err, query)
+		}
 		fmt.Println("!!! Deleted all previous resources for cluster:", clusterName)
 	}
 
@@ -182,11 +224,14 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		resource.Properties["_hash"] = resource.Hash
 		resource.Properties["_rbac"] = "UNKNOWN" // TODO: This must be the namespace of the cluster.
 
-		graph.AddNode(&rg.Node{
+		err := graph.AddNode(&rg.Node{
 			ID:         resource.UID, // FIXME: This is supported by RedisGraph but doesn't work in the redisgraph-go client.
 			Label:      resource.Kind,
 			Properties: resource.Properties,
 		})
+		if err != nil {
+			fmt.Println("Error adding resource node:", err, resource)
+		}
 	}
 	_, error := graph.Flush()
 	if error != nil {
@@ -200,18 +245,24 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		// FIXME: Properly update resource. Deleting and recreating is very lazy.
 		query := "MATCH (n) WHERE n._uid = '" + resource.UID + "' DELETE n"
 
-		graph.Query(query)
+		_, err := graph.Query(query)
+		if err != nil {
+			fmt.Println("Error executing query:", err, query)
+		}
 		resource.Properties["kind"] = resource.Kind
 		resource.Properties["cluster"] = clusterName
 		resource.Properties["_uid"] = resource.UID
 		resource.Properties["_hash"] = resource.Hash
 		resource.Properties["_rbac"] = "UNKNOWN" // TODO: This must be the namespace of the cluster.
 
-		graph.AddNode(&rg.Node{
+		error := graph.AddNode(&rg.Node{
 			ID:         resource.UID, // FIXME: This doesn't work in the redisgraph-go client.
 			Label:      resource.Kind,
 			Properties: resource.Properties,
 		})
+		if error != nil {
+			fmt.Println("Error updating resource node:", error, resource)
+		}
 	}
 	_, updateErr := graph.Flush()
 	if updateErr != nil {
@@ -223,7 +274,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	for _, resource := range deleteResources {
 		fmt.Println("Deleting resource: ", resource)
 		query := "MATCH (n) WHERE n._uid = '" + resource.UID + "' DELETE n"
-		graph.Query(query)
+		_, deleteErr := graph.Query(query)
+		if deleteErr != nil {
+			fmt.Println("Error deleting nodes in RedisGraph.", deleteErr)
+			// TODO: Error handling.  We should allow partial failures, but this will add complexity to the sync logic.
+		}
 	}
 
 	// Updating cluster status in cache.
@@ -249,16 +304,17 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		UpdatedTimestamp: updatedTimestamp,
 		Message:          "TODO: Maybe we don't need this message field.",
 	}
-	json.NewEncoder(w).Encode(response)
+	encodeError := json.NewEncoder(w).Encode(response)
+	if encodeError != nil {
+		fmt.Println("Error responding to SyncEvent:", encodeError, response)
+	}
 }
 
-// main function
 func main() {
 	router := mux.NewRouter()
 
-	// TODO: Add liveness and readiness probes.
-	// router.HandleFunc("/liveness", LivenessProbe).Methods("GET")
-	// router.HandleFunc("/readiness", ReadinessProbe).Methods("GET")
+	router.HandleFunc("/liveness", livenessProbe).Methods("GET")
+	router.HandleFunc("/readiness", readinessProbe).Methods("GET")
 
 	router.HandleFunc("/aggregator/status", GetStatus).Methods("GET")
 	router.HandleFunc("/aggregator/clusters/{id}/status", GetClusterStatus).Methods("GET")
@@ -281,9 +337,15 @@ func main() {
 		Addr:         ":3010",
 		Handler:      router,
 		TLSConfig:    cfg,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
-	// log.Fatal(srv.ListenAndServeTLS(":3010", "./sslcert/search.crt", "./sslcert/search.key", router))
-	log.Fatal(srv.ListenAndServeTLS("./sslcert/search.crt", "./sslcert/search.key"))
+	fmt.Println("Starting search-aggregator")
+	fmt.Println("Listening on: https://localhost:3010") // TODO: Use hostname and port from env config.
+
+	if os.Getenv("DEVELOPMENT") == "true" {
+		log.Fatal(http.ListenAndServe(":3010", router))
+	} else {
+		log.Fatal(srv.ListenAndServeTLS("./sslcert/search.crt", "./sslcert/search.key"))
+	}
 }

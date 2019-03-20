@@ -9,7 +9,8 @@ deps:
 	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 
 search-aggregator:
-	go build -v -i -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
+	CGO_ENABLED=0 go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
+	strip $(BINDIR)/search-aggregator
 
 build: search-aggregator
 
@@ -26,5 +27,20 @@ clean:
 	go clean
 	rm -f cover*
 	rm -rf ./$(BINDIR)
+
+# To build image on Mac and Linux
+local-docker-search-aggregator:
+	CGO_ENABLED=0 GOOS=linux go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
+	strip $(BINDIR)/search-aggregator
+
+.PHONY: local
+local: check-env app-version local-docker-search-aggregator
+	docker build -t $(IMAGE_REPO)/$(IMAGE_NAME_ARCH):$(IMAGE_VERSION) \
+		--build-arg "VCS_REF=$(VCS_REF)" \
+		--build-arg "VCS_URL=$(GIT_REMOTE_URL)" \
+		--build-arg "IMAGE_NAME=$(IMAGE_NAME_ARCH)" \
+		--build-arg "IMAGE_DESCRIPTION=$(IMAGE_DESCRIPTION)" $(DOCKER_FLAG) .
+	docker tag $(IMAGE_REPO)/$(IMAGE_NAME_ARCH):$(IMAGE_VERSION) $(IMAGE_REPO)/$(IMAGE_NAME_ARCH):$(RELEASE_TAG)
+
 
 include Makefile.docker
