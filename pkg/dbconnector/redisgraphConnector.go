@@ -26,22 +26,33 @@ func Init() {
 }
 
 func connectRedisClient() {
-	redisHost := os.Getenv("redisHost")
+	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		redisHost = "localhost"
 	}
-	redisPort := os.Getenv("redisPort")
+	redisPort := os.Getenv("REDIS_PORT")
 	if redisPort == "" {
 		redisPort = "6379"
 	}
 	glog.Info("Initializing new Redis client with redisHost: ", redisHost, " redisPort: ", redisPort)
 
 	conn, _ = redis.Dial("tcp", redisHost+":"+redisPort)
+
+	// If we have a REDIS_PASSWORD, we'll try to authenticate the Redis client.
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	if redisPassword != "" {
+		glog.Info("Authenticating Redis client.")
+		if _, err := conn.Do("AUTH", redisPassword); err != nil {
+			glog.Error("Error authenticating Redis client.")
+		}
+	} else {
+		glog.Warning("REDIS_PASSWORD wasn't provided. Attempting to communicate without authentication.")
+	}
+
 	graph = rg.Graph{}.New("icp-search", conn)
 	client = &DbClient{
 		Conn:  conn,
 		Graph: graph,
-		// Insert: insert,
 	}
 }
 

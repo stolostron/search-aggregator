@@ -16,7 +16,7 @@ func computeHash(graph *rg.Graph, clusterName string) (totalResources int, hash 
 		glog.Error("Error querying current resources.", error)
 	}
 	if len(rs.Results) == 0 {
-		glog.Info("Cluster" + clusterName + "doesn't have any resources")
+		glog.Info("Cluster ", clusterName, " doesn't have any resources")
 		return 0, ""
 	}
 
