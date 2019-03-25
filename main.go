@@ -10,8 +10,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
+	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/clustermgmt"
 	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/handlers"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/health"
 )
 
 func main() {
@@ -25,10 +25,14 @@ func main() {
 	defer glog.Flush() // This should ensure that everything makes it out on to the console if the program crashes.
 
 	glog.Info("Starting search-aggregator")
+
+	// Watch clusters and sync status to Redis.
+	go clustermgmt.WatchClusters()
+
 	router := mux.NewRouter()
 
-	router.HandleFunc("/liveness", health.LivenessProbe).Methods("GET")
-	router.HandleFunc("/readiness", health.ReadinessProbe).Methods("GET")
+	router.HandleFunc("/liveness", handlers.LivenessProbe).Methods("GET")
+	router.HandleFunc("/readiness", handlers.ReadinessProbe).Methods("GET")
 
 	router.HandleFunc("/aggregator/status", handlers.GetStatus).Methods("GET")
 	router.HandleFunc("/aggregator/clusters/{id}/status", handlers.GetClusterStatus).Methods("GET")

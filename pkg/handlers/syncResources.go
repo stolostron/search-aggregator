@@ -2,13 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
-	rg "github.com/redislabs/redisgraph-go"
 	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
@@ -16,26 +15,10 @@ import (
 type SyncEvent struct {
 	Hash            string `json:"hash,omitempty"`
 	ClearAll        bool
-	AddResources    []AddResourceEvent
-	UpdateResources []UpdateResourceEvent
+	AddResources    []dbconnector.Resource
+	UpdateResources []dbconnector.Resource
 	DeleteResources []DeleteResourceEvent
 	// TODO: AddEdges, DeleteEdges
-}
-
-// AddResourceEvent - Contains the information needed to add a new resource.
-type AddResourceEvent struct {
-	Kind       string `json:"kind,omitempty"`
-	UID        string `json:"uid,omitempty"`
-	Hash       string `json:"hash,omitempty"`
-	Properties map[string]interface{}
-}
-
-// UpdateResourceEvent - Contains the information needed to update an existing resource.
-type UpdateResourceEvent struct {
-	Kind       string `json:"kind,omitempty"`
-	UID        string `json:"uid,omitempty"`
-	Hash       string `json:"hash,omitempty"`
-	Properties map[string]interface{}
 }
 
 // DeleteResourceEvent - Contains the information needed to delete an existing resource.
@@ -47,11 +30,23 @@ type DeleteResourceEvent struct {
 type SyncResponse struct {
 	Hash             string
 	TotalAdded       int
-	TotalChanged     int
+	TotalUpdated     int
 	TotalDeleted     int
 	TotalResources   int
 	UpdatedTimestamp time.Time
-	Message          string
+	Errors           []SyncError
+}
+
+// SyncError is used to respond whith errors.
+type SyncError struct {
+	ResourceUID string
+	Message     string
+}
+
+type stats struct {
+	resourcesAdded   int
+	resourcesUpdated int
+	resourcesDeleted int
 }
 
 // SyncResources - Process Add, Update, and Delete events.
@@ -70,111 +65,132 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if syncEvent.ClearAll {
-		query := "MATCH (n) WHERE n.cluster = '" + clusterName + "' DELETE n"
-		_, err := dbConn.Graph.Query(query)
+		err := dbconnector.DeleteCluster(clusterName)
 		if err != nil {
-			glog.Error("Error running RedisGraph delete query:", err, query)
+			glog.Error("Error deleting current resources for cluster.", err)
 		}
-		glog.Info("!!! Deleted all previous resources for cluster:", clusterName)
 	}
 
+	stats := stats{
+		resourcesAdded:   0,
+		resourcesUpdated: 0,
+		resourcesDeleted: 0,
+	}
 	addResources := syncEvent.AddResources
 	updateResources := syncEvent.UpdateResources
 	deleteResources := syncEvent.DeleteResources
 
+	var syncErrors = make([]SyncError, 0)
+
 	// ADD resources
-	for _, resource := range addResources {
-		glog.Info("Adding resource: ", resource)
+	glog.Info("Adding ", len(addResources), " resources.")
+	if len(addResources) > 0 {
+		var resourcesChunk = make([]interface{}, 0) // TEMPORARY: Used to log in case of errors.
+		for _, resource := range addResources {
+			resource.Cluster = clusterName
+			// glog.Info("Adding resource: ", resource)
 
-		// TODO: Enforce required values (Kind, UID, Hash)
-		// TODO: Do I need to sanitize inputs?
-		// TODO: Need special processing for lists (labels and roles).
+			// TEMPORARY: Removing PV because they are causing problems.
+			if strings.Contains(resource.Properties["kind"].(string), "PersistentVolume") {
+				glog.Warning("Skipping PersistentVolume resource [", resource.Properties["name"], "].")
+				continue
+			}
+			resourcesChunk = append(resourcesChunk, resource) // TEMPORARY: Used to log in case of errors.
 
-		resource.Properties["kind"] = resource.Kind
-		resource.Properties["cluster"] = clusterName
-		resource.Properties["_uid"] = resource.UID
-		resource.Properties["_hash"] = resource.Hash
-		resource.Properties["_rbac"] = "UNKNOWN" // TODO: This must be the namespace of the cluster.
+			insertError := dbconnector.Insert(&resource)
 
-		err := dbConn.Graph.AddNode(&rg.Node{
-			ID:         resource.UID, // FIXME: This is supported by RedisGraph but doesn't work in the redisgraph-go client.
-			Label:      resource.Kind,
-			Properties: resource.Properties,
-		})
-		if err != nil {
-			glog.Error("Error adding resource node:", err, resource)
+			if insertError != nil {
+				syncErrors = append(syncErrors, SyncError{
+					ResourceUID: resource.UID,
+					Message:     insertError.Error(),
+				})
+				continue
+			}
+			stats.resourcesAdded++
+
+			// TEMPORRY: Commiting small chunks because it's easier to log and identify errors.
+			if (stats.resourcesAdded+1)%25 == 0 {
+				err := dbconnector.Flush()
+				if err != nil {
+					glog.Error("Error while commiting resources:")
+					for _, res := range resourcesChunk {
+						glog.Error(" >>>", res)
+					}
+					panic("Error while commiting resources:")
+				}
+				resourcesChunk = make([]interface{}, 0)
+			}
 		}
-	}
-	_, error := dbConn.Graph.Flush()
-	if error != nil {
-		glog.Error("Error adding nodes in RedisGraph.", error)
-		// TODO: Error handling.  We should allow partial failures, but this will add complexity to the sync logic.
 	}
 
 	// UPDATE resources
-	for _, resource := range updateResources {
-		glog.Info("Updating resource: ", resource)
-		// FIXME: Properly update resource. Deleting and recreating is very lazy.
-		query := "MATCH (n) WHERE n._uid = '" + resource.UID + "' DELETE n"
+	if len(updateResources) > 0 {
+		for _, resource := range updateResources {
+			resource.Cluster = clusterName
+			glog.Info("Updating resource: ", resource)
 
-		_, err := dbConn.Graph.Query(query)
-		if err != nil {
-			glog.Error("Error executing query:", err, query)
-		}
-		resource.Properties["kind"] = resource.Kind
-		resource.Properties["cluster"] = clusterName
-		resource.Properties["_uid"] = resource.UID
-		resource.Properties["_hash"] = resource.Hash
-		resource.Properties["_rbac"] = "UNKNOWN" // TODO: This must be the namespace of the cluster.
+			updateError := dbconnector.Update(&resource)
 
-		error := dbConn.Graph.AddNode(&rg.Node{
-			ID:         resource.UID, // FIXME: This doesn't work in the redisgraph-go client.
-			Label:      resource.Kind,
-			Properties: resource.Properties,
-		})
-		if error != nil {
-			glog.Error("Error updating resource node:", error, resource)
+			if updateError != nil {
+				syncErrors = append(syncErrors, SyncError{
+					ResourceUID: resource.UID,
+					Message:     updateError.Error(),
+				})
+				continue
+			}
+			stats.resourcesUpdated++
 		}
-	}
-	_, updateErr := dbConn.Graph.Flush()
-	if updateErr != nil {
-		glog.Error("Error updating nodes in RedisGraph.", updateErr)
-		// TODO: Error handling.  We should allow partial failures, but this will add complexity to the sync logic.
 	}
 
 	// DELETE resources
-	for _, resource := range deleteResources {
-		glog.Info("Deleting resource: ", resource)
-		query := "MATCH (n) WHERE n._uid = '" + resource.UID + "' DELETE n"
-		_, deleteErr := dbConn.Graph.Query(query)
-		if deleteErr != nil {
-			glog.Error("Error deleting nodes in RedisGraph.", deleteErr)
-			// TODO: Error handling.  We should allow partial failures, but this will add complexity to the sync logic.
+	if len(deleteResources) > 0 {
+		for _, resource := range deleteResources {
+			glog.Info("Deleting resource: ", resource)
+
+			deleteError := dbconnector.Delete(resource.UID)
+			if deleteError != nil {
+				syncErrors = append(syncErrors, SyncError{
+					ResourceUID: resource.UID,
+					Message:     deleteError.Error(),
+				})
+				continue
+			}
+			stats.resourcesDeleted++
 		}
 	}
+
+	// Only flush if any resources were added, updated, or deleted, otherwise it will cause an error.
+	if stats.resourcesAdded > 0 || stats.resourcesUpdated > 0 || stats.resourcesDeleted > 0 {
+		error := dbconnector.Flush()
+		if error != nil {
+			syncErrors = append(syncErrors, SyncError{
+				ResourceUID: "UNKNOWN",
+				Message:     "Error commiting resources to RedisGraph.",
+			})
+		}
+	}
+
+	glog.Info("Done commiting changes, preparing response.")
 
 	// Updating cluster status in cache.
 	updatedTimestamp := time.Now()
 	totalResources, currentHash := computeHash(&dbConn.Graph, clusterName)
-	var clusterStatus = []interface{}{fmt.Sprintf("cluster:%s", clusterName)} // TODO: I'll worry about strings later.
-	clusterStatus = append(clusterStatus, "hash", currentHash)
-	clusterStatus = append(clusterStatus, "lastUpdated", updatedTimestamp)
-
-	_, deleteErr := dbConn.Conn.Do("HMSET", clusterStatus...)
-
-	if deleteErr != nil {
-		glog.Error("Error deleting nodes in RedisGraph.", deleteErr)
-		// TODO: Error handling.  We should allow partial failures, but this will add complexity to the sync logic.
+	status := dbconnector.ClusterStatus{
+		Hash:           currentHash,
+		LastUpdated:    updatedTimestamp.String(),
+		TotalResources: totalResources,
 	}
+
+	dbconnector.SaveClusterStatus(clusterName, status)
 
 	var response = SyncResponse{
 		Hash:             currentHash,
-		TotalAdded:       len(addResources),
-		TotalChanged:     len(updateResources),
-		TotalDeleted:     len(deleteResources),
+		TotalAdded:       stats.resourcesAdded,
+		TotalUpdated:     stats.resourcesUpdated,
+		TotalDeleted:     stats.resourcesDeleted,
 		TotalResources:   totalResources,
 		UpdatedTimestamp: updatedTimestamp,
-		Message:          "TODO: Maybe we don't need this message field.",
+		Errors:           syncErrors,
 	}
 	encodeError := json.NewEncoder(w).Encode(response)
 	if encodeError != nil {
