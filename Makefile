@@ -1,12 +1,13 @@
 BINDIR        ?= output
 
-.PHONY: deps default build lint test coverage clean
+.PHONY: deps default build lint test coverage clean search-aggregator
 
 default: search-aggregator
 
 deps:
-	go get -t -v ./...
 	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+	go get -u github.com/golang/dep/cmd/dep
+	dep ensure -v
 
 search-aggregator:
 	CGO_ENABLED=0 go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
