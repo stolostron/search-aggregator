@@ -58,11 +58,11 @@ func main() {
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
-	glog.Info("Listening on: https://localhost:3010") // TODO: Use hostname and port from env config.
-
 	if os.Getenv("DEVELOPMENT") == "true" {
+		glog.Warning("Listening on: http://localhost:3010") // TODO: Use hostname and port from env config.
 		log.Fatal(http.ListenAndServe(":3010", router))
 	} else {
+		glog.Info("Listening on: https://localhost:3010") // TODO: Use hostname and port from env config.
 		log.Fatal(srv.ListenAndServeTLS("./sslcert/search.crt", "./sslcert/search.key"))
 	}
 }

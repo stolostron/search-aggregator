@@ -89,6 +89,9 @@ func Insert(resource *Resource) error {
 		resource.Properties["_rbac"] = resource.Properties["namespace"]
 	}
 
+	// Using lowercase to stay compatible with previous release.
+	resource.Properties["kind"] = strings.ToLower(resource.Properties["kind"].(string))
+
 	err := graph.AddNode(&rg.Node{
 		ID:         resource.UID, // NOTE: This is supported by RedisGraph but doesn't work in the redisgraph-go client.
 		Label:      resource.Properties["kind"].(string),
