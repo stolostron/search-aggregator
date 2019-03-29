@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -14,7 +13,7 @@ import (
 // SyncEvent - Object sent by the collector with the resources to change.
 type SyncEvent struct {
 	Hash            string `json:"hash,omitempty"`
-	ClearAll        bool
+	ClearAll        bool   `json:"clearAll,omitempty"`
 	AddResources    []dbconnector.Resource
 	UpdateResources []dbconnector.Resource
 	DeleteResources []DeleteResourceEvent
@@ -85,17 +84,12 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// ADD resources
 	glog.Info("Adding ", len(addResources), " resources.")
 	if len(addResources) > 0 {
-		var resourcesChunk = make([]interface{}, 0) // TEMPORARY: Used to log in case of errors.
+		var resourcesChunk = make([]interface{}, 0)
 		for _, resource := range addResources {
 			resource.Cluster = clusterName
 			// glog.Info("Adding resource: ", resource)
 
-			// TEMPORARY: Removing PV because they are causing problems.
-			if strings.Contains(resource.Properties["kind"].(string), "PersistentVolume") {
-				glog.Warning("Skipping PersistentVolume resource [", resource.Properties["name"], "].")
-				continue
-			}
-			resourcesChunk = append(resourcesChunk, resource) // TEMPORARY: Used to log in case of errors.
+			resourcesChunk = append(resourcesChunk, resource)
 
 			insertError := dbconnector.Insert(&resource)
 
@@ -108,13 +102,14 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			}
 			stats.resourcesAdded++
 
-			// TEMPORRY: Commiting small chunks because it's easier to log and identify errors.
-			if (stats.resourcesAdded+1)%25 == 0 {
+			// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
+			// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
+			if (stats.resourcesAdded+1)%10 == 0 {
 				err := dbconnector.Flush()
 				if err != nil {
 					glog.Error("Error while commiting resources:")
-					for _, res := range resourcesChunk {
-						glog.Error(" >>>", res)
+					for i, res := range resourcesChunk {
+						glog.Error("Resource[", i, "]\n", res)
 					}
 					panic("Error while commiting resources:")
 				}

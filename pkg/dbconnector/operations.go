@@ -20,6 +20,10 @@ type Resource struct {
 
 // Flush writes changes to db and clears local client.
 func Flush() error {
+	if len(graph.Nodes) == 0 && len(graph.Edges) == 0 {
+		glog.Info("Flush() was called, but there's no new resources to commit.")
+		return nil
+	}
 	_, err := graph.Flush()
 	if err != nil {
 		glog.Error("Error commiting new resources to RedisGraph.", err)
@@ -63,12 +67,16 @@ func Insert(resource *Resource) error {
 				labelKey = strings.Replace(labelKey, "/", "_slash_", -1) // FIXME: Need a better way to do this.
 				labelKey = strings.Replace(labelKey, ".", "_dot_", -1)   // FIXME: Need a better way to do this.
 				labelKey = strings.Replace(labelKey, "=", "_eq_", -1)    // FIXME: Need a better way to do this.
-				resource.Properties["_label__"+labelKey] = labelValue
+				resource.Properties["__label-"+labelKey] = labelValue
 			}
 
-			// } else if reflect.TypeOf(value).Kind().String() == "slice" {
-			// 	glog.Warning("Removing property [" + key + "] because it's value is a slice and it's not supported.")
-			// 	delete(resource.Properties, key)
+		} else if reflect.TypeOf(value).Kind().String() == "slice" {
+			// Re-fromat because RedisGraph doesn't support slice/lists.
+			delete(resource.Properties, key)
+
+			for index, itemValue := range value.([]interface{}) {
+				resource.Properties[fmt.Sprintf("__%s-%x", key, index)] = itemValue.(string)
+			}
 
 		} else if reflect.TypeOf(value).Kind().String() != "string" &&
 			reflect.TypeOf(value).Kind().String() != "float64" {
@@ -76,6 +84,12 @@ func Insert(resource *Resource) error {
 			glog.Warning("Removing property [", key, "] because it's value kind[", reflect.TypeOf(value).Kind(), "] is not a string and it's not supported.")
 			delete(resource.Properties, key)
 		}
+	}
+
+	// FIXME: Temporarily removing PersistentVolume [capacity] because it's value causing problems.
+	if strings.Contains(resource.Properties["kind"].(string), "PersistentVolume") && resource.Properties["capacity"] != nil {
+		glog.Warning("Removing prop:[capacity] value:[", resource.Properties["capacity"], "] from PersistentVolume [", resource.Properties["name"], "] because it's value is causing problems.")
+		delete(resource.Properties, "capacity")
 	}
 
 	// Format the resource as a RedisGraph node.
