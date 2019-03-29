@@ -86,12 +86,6 @@ func Insert(resource *Resource) error {
 		}
 	}
 
-	// FIXME: Temporarily removing PersistentVolume [capacity] because it's value causing problems.
-	if strings.Contains(resource.Properties["kind"].(string), "PersistentVolume") && resource.Properties["capacity"] != nil {
-		glog.Warning("Removing prop:[capacity] value:[", resource.Properties["capacity"], "] from PersistentVolume [", resource.Properties["name"], "] because it's value is causing problems.")
-		delete(resource.Properties, "capacity")
-	}
-
 	// Format the resource as a RedisGraph node.
 	resource.Properties["cluster"] = resource.Cluster
 	resource.Properties["_uid"] = resource.UID
