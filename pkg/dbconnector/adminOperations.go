@@ -3,6 +3,7 @@ package dbconnector
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 
@@ -27,11 +28,18 @@ func SaveClusterStatus(clusterName string, status ClusterStatus) {
 	clusterStatus = append(clusterStatus, "maxQueryTime", status.MaxQueueTime)
 
 	glog.Info("Saving cluster status in redis. ", clusterStatus)
-	result, Err := conn.Do("HMSET", clusterStatus...)
-	if Err != nil {
-		glog.Error("Error saving status of cluster ["+clusterName+"] to Redis.", Err)
+	result, err := conn.Do("HMSET", clusterStatus...)
+	if err != nil {
+		glog.Error("Error saving status of cluster ["+clusterName+"] to Redis.", err)
 	}
-	glog.Info("Saved status of cluster ["+clusterName+"] to redis. ", result)
+
+	// Save the time of the last update. This is needed mostly for legacy reasons with the UI.
+	// This is less relevant with the new collector-aggregator architecture. Will remove in the future.
+	_, err2 := conn.Do("SET", "lastUpdatedTimestamp", time.Now().UnixNano()/int64(time.Millisecond))
+	if err2 != nil {
+		glog.Error("Error setting lastUpdatedTimestamp in Redis.", err)
+	}
+	glog.Info("Saved status of cluster ["+clusterName+"] to Redis. ", result)
 }
 
 // GetClusterStatus retrieves the status of a cluster.
