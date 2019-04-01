@@ -63,6 +63,6 @@ func main() {
 		log.Fatal(http.ListenAndServe(":3010", router))
 	} else {
 		glog.Info("Listening on: https://localhost:3010") // TODO: Use hostname and port from env config.
-		log.Fatal(srv.ListenAndServeTLS("./sslcert/search.crt", "./sslcert/search.key"))
+		log.Fatal(srv.ListenAndServeTLS("./sslcert/tls.crt", "./sslcert/tls.key"))
 	}
 }
