@@ -11,7 +11,6 @@ deps:
 
 search-aggregator:
 	CGO_ENABLED=0 go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
-	strip $(BINDIR)/search-aggregator
 
 build: search-aggregator
 
@@ -32,7 +31,6 @@ clean:
 # To build image on Mac and Linux
 local-docker-search-aggregator:
 	CGO_ENABLED=0 GOOS=linux go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
-	strip $(BINDIR)/search-aggregator
 
 .PHONY: local
 local: check-env app-version local-docker-search-aggregator
