@@ -90,12 +90,8 @@ func Insert(resource *Resource) error {
 	resource.Properties["cluster"] = resource.Cluster
 	resource.Properties["_uid"] = resource.UID
 
-	// FIXME: Need to revisit RBAC.
-	//  -> 1. Need to use namespace of cluster.
-	//  -> 2. Resources from hub cluster that doesn't have a namespace.
-	if resource.Properties["namespace"] != "" && resource.Properties["namespace"] != nil {
-		resource.Properties["_rbac"] = resource.Properties["namespace"]
-	}
+	// Add _rbac property. This will have the format "namespace_apigroup_kind"
+	resource.addRbacProperty()
 
 	// Using lowercase to stay compatible with previous release.
 	resource.Properties["kind"] = strings.ToLower(resource.Properties["kind"].(string))
