@@ -27,6 +27,7 @@ install:
 script:
   - echo "TODO no tests yet!"
   - make lint test build image
+  - make copyright-check
 
 # after_success:
 #   - make push
