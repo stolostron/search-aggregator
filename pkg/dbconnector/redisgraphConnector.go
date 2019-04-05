@@ -9,6 +9,7 @@ The source code for this program is not published or otherwise divested of its t
 package dbconnector
 
 import (
+	"errors"
 	"os"
 
 	"github.com/golang/glog"
@@ -30,10 +31,10 @@ var graph rg.Graph
 
 // Init creates new redis client.
 func Init() {
-	connectRedisClient()
+	_ = connectRedisClient()
 }
 
-func connectRedisClient() {
+func connectRedisClient() error {
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		redisHost = "localhost"
@@ -44,7 +45,11 @@ func connectRedisClient() {
 	}
 	glog.Info("Initializing new Redis client with redisHost: ", redisHost, " redisPort: ", redisPort)
 
-	conn, _ = redis.Dial("tcp", redisHost+":"+redisPort)
+	conn, err := redis.Dial("tcp", redisHost+":"+redisPort)
+	if err != nil {
+		glog.Error("Error connecting redis host.")
+		return err
+	}
 
 	// If we have a REDIS_PASSWORD, we'll try to authenticate the Redis client.
 	redisPassword := os.Getenv("REDIS_PASSWORD")
@@ -52,6 +57,7 @@ func connectRedisClient() {
 		glog.Info("Authenticating Redis client.")
 		if _, err := conn.Do("AUTH", redisPassword); err != nil {
 			glog.Error("Error authenticating Redis client.")
+			return err
 		}
 	} else {
 		glog.Warning("REDIS_PASSWORD wasn't provided. Attempting to communicate without authentication.")
@@ -62,41 +68,28 @@ func connectRedisClient() {
 		Conn:  conn,
 		Graph: graph,
 	}
+
+	return nil
 }
 
 // GetDatabaseClient returns the DB client.
-func GetDatabaseClient() *DbClient {
+func GetDatabaseClient() (*DbClient, error) {
+	// singleton get
 	if client == nil {
-		Init()
+		if err := connectRedisClient(); err != nil {
+			return nil, err
+		}
 	}
 
 	glog.Info("Validating that Redis connection is still alive.")
-	connOK, error := CheckDataConnection()
-
-	if !connOK || error != nil {
-		glog.Error("Redis connection problem.", error)
-	}
-
-	return client
-}
-
-// CheckDataConnection pings Redis to check if the connection is alive.
-func CheckDataConnection() (bool, error) {
-	if client == nil {
-		Init()
-	}
 	result, err := client.Conn.Do("PING")
-
-	if result == "PONG" {
-		return true, nil
+	if err != nil {
+		return nil, err
 	}
 
-	glog.Warning("Error pinging Redis, attempting to reconnect.", err)
-	connectRedisClient()
+	if result != "PONG" {
+		return nil, errors.New("Error validating redis connection")
+	}
 
-	// TODO: We should validate the state of Redis here.
-
-	result, err = client.Conn.Do("PING")
-
-	return result == "PONG", err
+	return client, nil
 }

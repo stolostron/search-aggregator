@@ -63,10 +63,13 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	clusterName := params["id"]
 	glog.Info("SyncResources() for cluster:", clusterName)
 
-	dbConn := dbconnector.GetDatabaseClient()
+	dbConn, err := dbconnector.GetDatabaseClient()
+	if err != nil {
+		glog.Error("Cannot get redis client:", err)
+	}
 
 	var syncEvent SyncEvent
-	err := json.NewDecoder(r.Body).Decode(&syncEvent)
+	err = json.NewDecoder(r.Body).Decode(&syncEvent)
 	if err != nil {
 		glog.Error("Error decoding body of syncEvent:", err)
 	}

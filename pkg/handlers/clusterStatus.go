@@ -25,7 +25,10 @@ func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
 	clusterName := params["id"]
 	glog.Info("GetClusterStatus() for cluster:", clusterName)
 
-	dbConn := dbconnector.GetDatabaseClient()
+	dbConn, err := dbconnector.GetDatabaseClient()
+	if err != nil {
+		glog.Error("Error getting redis client: ", err)
+	}
 
 	totalResources, currentHash := computeHash(&dbConn.Graph, clusterName)
 	clusterStatus, _ := dbconnector.GetClusterStatus(clusterName)

@@ -10,6 +10,7 @@ package clustermgmt
 
 import (
 	"github.com/golang/glog"
+	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -22,6 +23,11 @@ func WatchClusters() {
 	defer handleRoutineExit()
 
 	InitKubeConnector()
+
+	_, err := dbconnector.GetDatabaseClient()
+	if err != nil {
+		panic(err) // Will be caught by handleRoutineExit
+	}
 
 	stopper := make(chan struct{})
 	defer close(stopper)

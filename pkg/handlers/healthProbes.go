@@ -26,9 +26,9 @@ func LivenessProbe(w http.ResponseWriter, r *http.Request) {
 func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
 	glog.Info("readinessProbe - Checking Redis connection.")
 
-	connAlive, connError := dbconnector.CheckDataConnection()
+	_, connError := dbconnector.GetDatabaseClient()
 
-	if connError != nil || !connAlive {
+	if connError != nil {
 		// Respond with error.
 		glog.Warning("Unable to reach Redis.")
 		http.Error(w, "Unable to reach Redis.", 503)
