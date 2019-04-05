@@ -43,7 +43,7 @@ func Flush() error {
 func Insert(resource *Resource) error {
 	// Check required fields.
 	if resource.UID == "" || resource.Properties == nil || resource.Properties["kind"] == nil {
-		return fmt.Errorf("resource is missing 1 or more required field. Required fields are UID, Properties, and Properties[kind]")
+		return fmt.Errorf("resource is missing 1 or more required field. Required fields are UID, Properties, and Properties[kind].  Resource: %s", resource)
 	}
 
 	// Sanitize and re-format inputs.
