@@ -130,25 +130,28 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// UPDATE resources
-	if len(updateResources) > 0 {
-		for _, resource := range updateResources {
-			resource.Cluster = clusterName
-			glog.Info("Updating resource: ", resource)
-
-			updateError := dbconnector.Update(&resource)
-
-			if updateError != nil {
-				syncErrors = append(syncErrors, SyncError{
-					ResourceUID: resource.UID,
-					Message:     updateError.Error(),
-				})
-				continue
-			}
-			stats.resourcesUpdated++
+	glog.Info("Updating ", len(updateResources), " resources.")
+	updateErrs, queryErr := dbconnector.UpdateResources(updateResources)
+	// TODO this is pretty awkward error reporting back to the collector - we should really just do a 500 with an error message, or something.
+	// TODO update stats - need to adjust some stuff along with it, will do that later
+	if queryErr != nil {
+		for _, r := range updateResources {
+			syncErrors = append(syncErrors, SyncError{
+				ResourceUID: r.UID,
+				Message:     "Bulk Update Failed",
+			})
 		}
 	}
 
+	for uid, e := range updateErrs {
+		syncErrors = append(syncErrors, SyncError{
+			ResourceUID: uid,
+			Message:     e.Error(),
+		})
+	}
+
 	// DELETE resources
+	glog.Info("Deleting ", len(deleteResources), " resources.")
 	if len(deleteResources) > 0 {
 		for _, resource := range deleteResources {
 			glog.Info("Deleting resource: ", resource)
@@ -188,6 +191,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dbconnector.SaveClusterStatus(clusterName, status)
+
+	glog.Info("Sync Completed for Cluster ", clusterName, ": ", stats) //RM
 
 	var response = SyncResponse{
 		Hash:             currentHash,
