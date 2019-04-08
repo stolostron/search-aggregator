@@ -1,5 +1,5 @@
 # search-aggregator
-Works with the search-collector to synchronize multicloud resources in the redis cache
+Works with [search-collector](https://github.ibm.com/IBMPrivateCloud/search-collector) to synchronize kubernetes resources into [RedisGraph](https://oss.redislabs.com/redisgraph/), for use by the search UI. Runs on the hub cluster and receives from the collectors running on each remote cluster.
 
 
 ## Development
@@ -8,23 +8,23 @@ Works with the search-collector to synchronize multicloud resources in the redis
     ```
     docker run -p 6379:6379 -it --rm redislabs/redisgraph
     ```
-2. Install dependencies (temp, will move to make)
+2. Install dependencies
     ```
-    go get
+    make deps
     ```
-3. Build and run (temp, will move to make)
+3. Build and run
     ```
-    go build && ./search-aggregator
+    make build && ./search-aggregator
     ```
 
-## Usage
+## API Usage
 
-1. GET https://localhost:3010/aggregator/status
+1. **(currently unused)** GET https://localhost:3010/aggregator/status
 
     **Response:**
     - Total number of clusters.
 
-2. GET https://localhost:3010/aggregator/clusters/[clustername]/status
+2. **(currently unused)** GET https://localhost:3010/aggregator/clusters/[clustername]/status
 
     **Response:**
     - Timestamp of last update.
@@ -73,11 +73,7 @@ Works with the search-collector to synchronize multicloud resources in the redis
     }
     ```
 
-    **Success Response:**
-    - Hash - new hash
+    **Response:**
     - Total number of added, updated, and deleted resources.
-    - Total number of resources.
-
-    **Error Response:**
-    - Message -
-
+    - Total number of resources (used by the collector to check whether things went well).
+    - Errors: A list of errors, currently listed per errant resource.
