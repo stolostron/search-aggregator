@@ -35,25 +35,34 @@ func SaveClusterStatus(clusterName string, status ClusterStatus) {
 	clusterStatus = append(clusterStatus, "totalResources", status.TotalResources)
 	clusterStatus = append(clusterStatus, "maxQueryTime", status.MaxQueueTime)
 
-	glog.Info("Saving cluster status in redis. ", clusterStatus)
-	result, err := conn.Do("HMSET", clusterStatus...)
-	if err != nil {
-		glog.Error("Error saving status of cluster ["+clusterName+"] to Redis.", err)
-	}
+	dbClient, dbClientErr := GetDatabaseClient()
+	if dbClientErr != nil || dbClient.Conn == nil {
+		glog.Warning("Unable to save sync status for cluster [" + clusterName + "] because of Redis connection problem.")
+	} else {
+		glog.Info("Saving cluster sync status in redis. ", clusterStatus)
+		result, err := dbClient.Conn.Do("HMSET", clusterStatus...)
+		if err != nil {
+			glog.Error("Error saving status of cluster ["+clusterName+"] to Redis.", err)
+		}
 
-	// Save the time of the last update. This is needed mostly for legacy reasons with the UI.
-	// This is less relevant with the new collector-aggregator architecture. Will remove in the future.
-	_, err2 := conn.Do("SET", "lastUpdatedTimestamp", time.Now().UnixNano()/int64(time.Millisecond))
-	if err2 != nil {
-		glog.Error("Error setting lastUpdatedTimestamp in Redis.", err)
+		// Save the time of the last update. This is needed mostly for legacy reasons with the UI.
+		// This is less relevant with the new collector-aggregator architecture. Will remove in the future.
+		_, err2 := dbClient.Conn.Do("SET", "lastUpdatedTimestamp", time.Now().UnixNano()/int64(time.Millisecond))
+		if err2 != nil {
+			glog.Error("Error setting lastUpdatedTimestamp in Redis.", err)
+		}
+		glog.Info("Saved sync status for cluster ["+clusterName+"] to Redis. ", result)
 	}
-	glog.Info("Saved status of cluster ["+clusterName+"] to Redis. ", result)
 }
 
 // GetClusterStatus retrieves the status of a cluster.
 func GetClusterStatus(clusterName string) (status ClusterStatus, e error) {
-
-	clusterStatus, err := redis.StringMap(conn.Do("HGETALL", fmt.Sprintf("cluster:%s", clusterName)))
+	dbClient, dbClientErr := GetDatabaseClient()
+	if dbClientErr != nil || dbClient.Conn == nil {
+		glog.Warning("Unable to get status for cluster [" + clusterName + "] because of Redis connection problem.")
+		return ClusterStatus{}, fmt.Errorf("Unable to get status for cluster [%s] because of Redis connection problem", clusterName)
+	}
+	clusterStatus, err := redis.StringMap(dbClient.Conn.Do("HGETALL", fmt.Sprintf("cluster:%s", clusterName)))
 	if err != nil {
 		glog.Error("Error getting status of cluster "+clusterName+" from Redis.", err)
 		return status, err

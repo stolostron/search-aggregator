@@ -26,7 +26,6 @@ type DbClient struct {
 
 var client *DbClient
 
-var conn redis.Conn
 var graph rg.Graph
 
 // Init creates new redis client.
