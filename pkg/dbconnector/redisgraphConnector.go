@@ -51,7 +51,7 @@ func connectRedisClient() error {
 	redisSSHPort := os.Getenv("REDIS_SSH_PORT")
 	if redisSSHPort != "" {
 		glog.Info("Initializing new Redis SSH client with redisHost: ", redisHost, " redisSSHPort: ", redisSSHPort)
-		caCert, err := ioutil.ReadFile("./sslcert/redis.crt")
+		caCert, err := ioutil.ReadFile("./rediscert/redis.crt")
 		if err != nil {
 			glog.Error("Error loading TLS certificate. Redis Certificate must be mounted at ./sslcert/redis.crt")
 			glog.Error(err)
