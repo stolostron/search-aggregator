@@ -10,19 +10,35 @@ package clustermgmt
 
 import (
 	"github.com/golang/glog"
+	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
 	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
 	defer handleRoutineExit()
 
-	InitKubeConnector()
+	var clientConfig *rest.Config
+	var clientConfigError error
+
+	if config.Cfg.KubeConfig != "" {
+		glog.Infof("Creating k8s client using path: %s", config.Cfg.KubeConfig)
+		clientConfig, clientConfigError = clientcmd.BuildConfigFromFlags("", config.Cfg.KubeConfig)
+	} else {
+		glog.Info("Creating k8s client using InClusterlientConfig()")
+		clientConfig, clientConfigError = rest.InClusterConfig()
+	}
+
+	if clientConfigError != nil {
+		glog.Fatal("Error Constructing Client From Config: ", clientConfigError)
+	}
 
 	_, err := dbconnector.GetDatabaseClient()
 	if err != nil {
@@ -37,7 +53,7 @@ func WatchClusters() {
 	go syncRoutine(syncChannel)
 
 	// Initialize the dynamic client, used for CRUD operations on nondeafult k8s resources
-	dynamicClientset, err := dynamic.NewForConfig(config)
+	dynamicClientset, err := dynamic.NewForConfig(clientConfig)
 	if err != nil {
 		glog.Fatal("Cannot Construct Dynamic Client From Config: ", err)
 	}

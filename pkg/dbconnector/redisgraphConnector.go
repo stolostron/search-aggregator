@@ -13,9 +13,9 @@ import (
 	"crypto/x509"
 	"errors"
 	"io/ioutil"
-	"os"
 
 	"github.com/golang/glog"
+	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
 
 	"github.com/gomodule/redigo/redis"
 	rg "github.com/redislabs/redisgraph-go"
@@ -39,18 +39,9 @@ func Init() {
 func connectRedisClient() error {
 	var redisconn redis.Conn
 	var rediserr error
-	redisHost := os.Getenv("REDIS_HOST")
-	if redisHost == "" {
-		redisHost = "localhost"
-	}
-	redisPort := os.Getenv("REDIS_PORT")
-	if redisPort == "" {
-		redisPort = "6379"
-	}
 
-	redisSSHPort := os.Getenv("REDIS_SSH_PORT")
-	if redisSSHPort != "" {
-		glog.Info("Initializing new Redis SSH client with redisHost: ", redisHost, " redisSSHPort: ", redisSSHPort)
+	if config.Cfg.RedisSSHPort != "" {
+		glog.Info("Initializing new Redis SSH client with redisHost: ", config.Cfg.RedisHost, " redisSSHPort: ", config.Cfg.RedisSSHPort)
 		caCert, err := ioutil.ReadFile("./rediscert/redis.crt")
 		if err != nil {
 			glog.Error("Error loading TLS certificate. Redis Certificate must be mounted at ./sslcert/redis.crt")
@@ -71,7 +62,7 @@ func connectRedisClient() error {
 			},
 			RootCAs: caCertPool,
 		}
-		redisconn, rediserr = redis.Dial("tcp", redisHost+":"+redisSSHPort,
+		redisconn, rediserr = redis.Dial("tcp", config.Cfg.RedisHost+":"+config.Cfg.RedisSSHPort,
 			redis.DialTLSConfig(tlsconf),
 			redis.DialUseTLS(true))
 		if rediserr != nil {
@@ -80,9 +71,9 @@ func connectRedisClient() error {
 		}
 
 	} else {
-		glog.Info("Initializing new Redis client with redisHost: ", redisHost, " redisPort: ", redisPort)
+		glog.Info("Initializing new Redis client with redisHost: ", config.Cfg.RedisHost, " redisPort: ", config.Cfg.RedisPort)
 
-		redisconn, rediserr = redis.Dial("tcp", redisHost+":"+redisPort)
+		redisconn, rediserr = redis.Dial("tcp", config.Cfg.RedisHost+":"+config.Cfg.RedisPort)
 		if rediserr != nil {
 			glog.Error("Error connecting redis host.")
 			return rediserr
@@ -90,10 +81,9 @@ func connectRedisClient() error {
 
 	}
 	// If we have a REDIS_PASSWORD, we'll try to authenticate the Redis client.
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-	if redisPassword != "" {
+	if config.Cfg.RedisPassword != "" {
 		glog.Info("Authenticating Redis client.")
-		if _, rediserr := redisconn.Do("AUTH", redisPassword); rediserr != nil {
+		if _, rediserr := redisconn.Do("AUTH", config.Cfg.RedisPassword); rediserr != nil {
 			glog.Error("Error authenticating Redis client.")
 			return rediserr
 		}

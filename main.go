@@ -10,28 +10,17 @@ package main
 
 import (
 	"crypto/tls"
-	"flag"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/clustermgmt"
+	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
 	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/handlers"
 )
 
 func main() {
-	// parse flags
-	flag.Parse()
-	err := flag.Lookup("logtostderr").Value.Set("true") // Glog is weird in that by default it logs to a file. Change it so that by default it all goes to stderr. (no option for stdout).
-	if err != nil {
-		fmt.Println("Error configuring logger with logtostderr=true flag: ", err) // Using fmt.Println() so we can see this error in the console.
-		glog.Error("Error configuring logger with logtostderr=true flag: ", err)
-	}
-	defer glog.Flush() // This should ensure that everything makes it out on to the console if the program crashes.
-
 	glog.Info("Starting search-aggregator")
 
 	// Watch clusters and sync status to Redis.
@@ -60,17 +49,12 @@ func main() {
 		},
 	}
 	srv := &http.Server{
-		Addr:         ":3010",
+		Addr:         config.Cfg.AggregatorAddress,
 		Handler:      router,
 		TLSConfig:    cfg,
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
-	if os.Getenv("DEVELOPMENT") == "true" {
-		glog.Warning("Listening on: http://localhost:3010") // TODO: Use hostname and port from env config.
-		log.Fatal(http.ListenAndServe(":3010", router))
-	} else {
-		glog.Info("Listening on: https://localhost:3010") // TODO: Use hostname and port from env config.
-		log.Fatal(srv.ListenAndServeTLS("./sslcert/tls.crt", "./sslcert/tls.key"))
-	}
+	glog.Info("Listening on: ", config.Cfg.AggregatorAddress)
+	log.Fatal(srv.ListenAndServeTLS("./sslcert/tls.crt", "./sslcert/tls.key"))
 }
