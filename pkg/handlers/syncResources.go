@@ -15,15 +15,17 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
+
+const CHUNK_SIZE = 20
 
 // SyncEvent - Object sent by the collector with the resources to change.
 type SyncEvent struct {
 	Hash            string `json:"hash,omitempty"`
 	ClearAll        bool   `json:"clearAll,omitempty"`
-	AddResources    []dbconnector.Resource
-	UpdateResources []dbconnector.Resource
+	AddResources    []db.Resource
+	UpdateResources []db.Resource
 	DeleteResources []DeleteResourceEvent
 	// TODO: AddEdges, DeleteEdges
 }
@@ -61,23 +63,25 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	clusterName := params["id"]
-	glog.Info("SyncResources() for cluster:", clusterName)
-
-	dbConn, err := dbconnector.GetDatabaseClient()
-	if err != nil {
-		glog.Error("Cannot get redis client:", err)
-	}
+	glog.Info("SyncResources() for cluster: ", clusterName)
 
 	var syncEvent SyncEvent
-	err = json.NewDecoder(r.Body).Decode(&syncEvent)
+	err := json.NewDecoder(r.Body).Decode(&syncEvent)
 	if err != nil {
-		glog.Error("Error decoding body of syncEvent:", err)
+		glog.Error("Error decoding body of syncEvent: ", err)
 	}
 
+	// This usually indicates that something has gone wrong, basically that the collector detected we are out of sync and wants us to start over.
 	if syncEvent.ClearAll {
-		err := dbconnector.DeleteCluster(clusterName)
+		glog.Infof("Clearing previous data for cluster %s", clusterName)
+		_, encodingErr, err := db.DeleteCluster(clusterName)
 		if err != nil {
-			glog.Error("Error deleting current resources for cluster.", err)
+			glog.Error("Error deleting current resources for cluster: ", err)
+			// TODO return 500
+		}
+		if encodingErr != nil {
+			glog.Error("Invalid Cluster Name: ", clusterName)
+			// TODO return 400
 		}
 	}
 
@@ -86,113 +90,117 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		resourcesUpdated: 0,
 		resourcesDeleted: 0,
 	}
-	addResources := syncEvent.AddResources
-	updateResources := syncEvent.UpdateResources
-	deleteResources := syncEvent.DeleteResources
 
 	var syncErrors = make([]SyncError, 0)
 
 	// ADD resources
-	glog.Info("Adding ", len(addResources), " resources.")
-	if len(addResources) > 0 {
-		var resourcesChunk = make([]interface{}, 0)
-		for _, resource := range addResources {
-			resource.Cluster = clusterName
-			// glog.Info("Adding resource: ", resource)
+	glog.Info("Adding ", len(syncEvent.AddResources), " resources.")
+	chunk := make([]*db.Resource, 0, CHUNK_SIZE)
+	for i := range syncEvent.AddResources {
 
-			resourcesChunk = append(resourcesChunk, resource)
+		syncEvent.AddResources[i].Properties["cluster"] = clusterName
 
-			insertError := dbconnector.Insert(&resource)
+		chunk = append(chunk, &syncEvent.AddResources[i])
 
-			if insertError != nil {
+		// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
+		// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
+		if (i != 0 && (i+1)%CHUNK_SIZE == 0) || i == len(syncEvent.AddResources)-1 {
+			_, encodingErrors, err := db.Insert(chunk)
+			if err != nil {
+				glog.Errorf("Error inserting resources for cluster %s: %s", clusterName, err)
+				// TODO Return 400 if it was because of the request and a 500 if it was because we can't talk to redis
+			} else {
+				glog.Infof("Successfully inserted %d resources", len(chunk))
+				stats.resourcesAdded += len(chunk)
+			}
+
+			// Any encoding errors need to be returned to the collector so we put them in this list.
+			for uid, encodingErr := range encodingErrors {
 				syncErrors = append(syncErrors, SyncError{
-					ResourceUID: resource.UID,
-					Message:     insertError.Error(),
+					ResourceUID: uid,
+					Message:     encodingErr.Error(),
 				})
-				continue
 			}
-			stats.resourcesAdded++
-
-			// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
-			// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
-			if (stats.resourcesAdded+1)%10 == 0 {
-				err := dbconnector.Flush()
-				if err != nil {
-					glog.Error("Error while commiting resources:")
-					for i, res := range resourcesChunk {
-						glog.Error("Resource[", i, "]\n", res)
-					}
-					panic("Error while commiting resources:")
-				}
-				resourcesChunk = make([]interface{}, 0)
-			}
+			chunk = make([]*db.Resource, 0, CHUNK_SIZE)
 		}
 	}
 
 	// UPDATE resources
-	glog.Info("Updating ", len(updateResources), " resources.")
-	updateErrs, queryErr := dbconnector.UpdateResources(updateResources)
-	// TODO this is pretty awkward error reporting back to the collector - we should really just do a 500 with an error message, or something.
-	// TODO update stats - need to adjust some stuff along with it, will do that later
-	if queryErr != nil {
-		for _, r := range updateResources {
-			syncErrors = append(syncErrors, SyncError{
-				ResourceUID: r.UID,
-				Message:     "Bulk Update Failed",
-			})
-		}
-	}
+	glog.Info("Updating ", len(syncEvent.UpdateResources), " resources.")
+	// Don't need to reset chunk here as it was taken care of by either the last thing that was Added, or the actual declaration of the chunk slice (if Add didn't have anything to run).
+	for i := range syncEvent.UpdateResources {
+		syncEvent.UpdateResources[i].Properties["cluster"] = clusterName
 
-	for uid, e := range updateErrs {
-		syncErrors = append(syncErrors, SyncError{
-			ResourceUID: uid,
-			Message:     e.Error(),
-		})
+		chunk = append(chunk, &syncEvent.UpdateResources[i])
+
+		// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
+		// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
+		if (i != 0 && (i+1)%CHUNK_SIZE == 0) || i == len(syncEvent.UpdateResources)-1 {
+
+			_, encodingErrors, err := db.Update(chunk)
+			if err != nil {
+				glog.Errorf("Error updating resources for cluster %s: %s", clusterName, err)
+				// TODO Return 400 if it was because of the request and a 500 if it was because we can't talk to redis
+			} else {
+				stats.resourcesUpdated += len(chunk)
+			}
+
+			// Any encoding errors need to be returned to the collector so we put them in this list.
+			for uid, encodingErr := range encodingErrors {
+				syncErrors = append(syncErrors, SyncError{
+					ResourceUID: uid,
+					Message:     encodingErr.Error(),
+				})
+			}
+			chunk = make([]*db.Resource, 0, CHUNK_SIZE)
+		}
 	}
 
 	// DELETE resources
-	glog.Info("Deleting ", len(deleteResources), " resources.")
-	if len(deleteResources) > 0 {
-		for _, resource := range deleteResources {
-			glog.Info("Deleting resource: ", resource)
+	// This is a bit different because syncEvent.DeleteResources is a different type to the other two, see the declaration above.
+	glog.Info("Deleting ", len(syncEvent.DeleteResources), " resources.")
+	deleteChunk := make([]string, 0, CHUNK_SIZE) // Different chunk for deletions because it's just the UIDs
+	// Don't need to reset chunk here as it was taken care of by either the last thing that was Added, or the actual declaration of the chunk slice (if Add didn't have anything to run).
+	for i, deleteEvent := range syncEvent.DeleteResources {
+		deleteChunk = append(deleteChunk, deleteEvent.UID)
 
-			deleteError := dbconnector.Delete(resource.UID)
-			if deleteError != nil {
-				syncErrors = append(syncErrors, SyncError{
-					ResourceUID: resource.UID,
-					Message:     deleteError.Error(),
-				})
-				continue
+		// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
+		// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
+		if (i != 0 && (i+1)%CHUNK_SIZE == 0) || i == len(syncEvent.DeleteResources)-1 {
+
+			_, err := db.Delete(deleteChunk)
+			if err != nil {
+				glog.Errorf("Error deleting resources for cluster %s: %s", clusterName, err)
+				// TODO Return 400 if it was because of the request and a 500 if it was because we can't talk to redis
+			} else {
+				stats.resourcesUpdated += len(deleteChunk)
 			}
-			stats.resourcesDeleted++
+
+			deleteChunk = make([]string, CHUNK_SIZE) // Reset chunk
 		}
 	}
 
-	// Only flush if any resources were added, updated, or deleted, otherwise it will cause an error.
-	if stats.resourcesAdded > 0 || stats.resourcesUpdated > 0 || stats.resourcesDeleted > 0 {
-		error := dbconnector.Flush()
-		if error != nil {
-			syncErrors = append(syncErrors, SyncError{
-				ResourceUID: "UNKNOWN",
-				Message:     "Error commiting resources to RedisGraph.",
-			})
-		}
-	}
-
-	glog.Info("Done commiting changes, preparing response.")
+	glog.Infof("Done commiting changes for cluster %s, preparing response", clusterName)
 
 	// Updating cluster status in cache.
 	updatedTimestamp := time.Now()
-	totalResources, currentHash := computeHash(&dbConn.Graph, clusterName)
-	status := dbconnector.ClusterStatus{
+	totalResources, currentHash := computeHash(clusterName) // This goes out to the DB through a work order, so it can take a second
+	status := db.ClusterStatus{
 		Hash:           currentHash,
 		LastUpdated:    updatedTimestamp.String(),
 		TotalResources: totalResources,
 	}
 
-	dbconnector.SaveClusterStatus(clusterName, status)
+	_, clusterNameErr, err := db.SaveClusterStatus(clusterName, status)
+	if clusterNameErr != nil {
+		glog.Errorf("Could not save cluster status because of invalid cluster name: %s", clusterName)
+	}
+	if err != nil {
+		glog.Errorf("Failed to save cluster status for cluster %s: %s", clusterName, err)
+		// TODO return 500
+	}
 
-	glog.Info("Sync Completed for Cluster ", clusterName, ": ", stats) //RM
+	glog.Info("Sync Completed for Cluster ", clusterName, ": ", stats)
 
 	var response = SyncResponse{
 		Hash:             currentHash,

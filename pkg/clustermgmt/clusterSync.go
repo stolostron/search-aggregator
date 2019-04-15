@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -32,7 +32,6 @@ var syncChannel chan *clusterResourceEvent
 
 func syncRoutine(input chan *clusterResourceEvent) {
 	glog.Info("Starting cluster sync routine.")
-	dbconnector.Init()
 
 	for {
 		evt := <-input // Read from the clusterEvt channel
@@ -48,20 +47,19 @@ func syncRoutine(input chan *clusterResourceEvent) {
 			// FIXME: Labels is causing problems because of the type:  map[string]string  vs. map[string]interface{}
 			// props["label"] = evt.Resource.GetLabels()
 
-			resource := dbconnector.Resource{
+			resource := db.Resource{
 				Kind:       "Cluster",
 				UID:        string(evt.Resource.GetUID()),
 				Properties: props,
 			}
 
 			glog.Info("Inserting Cluster resource in RedisGraph. ", resource)
-			err := dbconnector.Insert(&resource)
+			_, encodingErr, err := db.Insert([]*db.Resource{&resource})
+			if encodingErr != nil {
+				glog.Error("Error encoding cluster object to insert: ", encodingErr)
+			}
 			if err != nil {
 				glog.Error("Error inserting cluster object in database. ", err)
-			}
-			errFlush := dbconnector.Flush()
-			if errFlush != nil {
-				glog.Error("Error flushing records in RedisGraph. ", errFlush)
 			}
 		}
 		if evt.EventType == "Add" && evt.Resource.GetKind() == "ClusterStatus" {

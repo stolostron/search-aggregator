@@ -11,11 +11,12 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/golang/glog"
+	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
-
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
 // GetClusterStatus responds with the cluster status.
@@ -25,16 +26,31 @@ func GetClusterStatus(w http.ResponseWriter, r *http.Request) {
 	clusterName := params["id"]
 	glog.Info("GetClusterStatus() for cluster:", clusterName)
 
-	dbConn, err := dbconnector.GetDatabaseClient()
+	totalResources, currentHash := computeHash(clusterName)
+	resp, clusterNameErr, err := db.GetClusterStatus(clusterName)
+	if clusterNameErr != nil {
+		glog.Errorf("Invalid Cluster Name %s: %s", clusterName, clusterNameErr)
+		// TODO return 400
+	}
 	if err != nil {
-		glog.Error("Error getting redis client: ", err)
+		glog.Errorf("Error getting cluster status for cluster %s: %s", clusterName, err)
+		// TODO return 500
 	}
 
-	totalResources, currentHash := computeHash(&dbConn.Graph, clusterName)
-	clusterStatus, _ := dbconnector.GetClusterStatus(clusterName)
+	// TODO this has a couple things in it that are redundant with what comes out of computeHash - unsure what should be done here but left the old behavior for now
+	status, stringMapErr := redis.StringMap(resp, err)
+	if stringMapErr != nil {
+		glog.Errorf("Error getting cluster status for cluster %s: %s", clusterName, stringMapErr)
+	}
 
-	clusterStatus.TotalResources = totalResources
-	clusterStatus.Hash = currentHash
+	maxQueryTime, _ := strconv.ParseInt(status["maxQueryTime"], 10, 32)
+
+	clusterStatus := db.ClusterStatus{
+		Hash:           currentHash,
+		LastUpdated:    status["lastUpdated"],
+		TotalResources: int(totalResources),
+		MaxQueueTime:   int(maxQueryTime),
+	}
 
 	encodeError := json.NewEncoder(w).Encode(clusterStatus)
 	if encodeError != nil {

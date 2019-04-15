@@ -19,6 +19,10 @@ import (
 func (r *Resource) addRbacProperty() {
 	rbac := []string{"null", "null", "null"}
 
+	if r.Properties == nil { // init props if it was nil
+		r.Properties = make(map[string]interface{})
+	}
+
 	// Get the namespace.
 	// For resources in the hub cluster we use their namespace.
 	// When a resource is on a remote cluster we will use the namespace mapped to that cluster.
