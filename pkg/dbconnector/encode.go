@@ -105,6 +105,8 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 				}
 			}
 	*/
+	case int64:
+		res[key] = typedVal
 	case float64: // As of 4/15/2019 we don't have any numerical properties that aren't ints.
 		res[key] = int64(typedVal)
 	case bool: // as of 4/2/2019 redisgraph does not support bools so we convert to string.
