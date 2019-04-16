@@ -92,11 +92,8 @@ func insertQuery(resources []*Resource) (string, map[string]error) {
 //FIXME this function is screwed way up for now while waiting on a bugfix
 func Update(resources []*Resource) (rg.QueryResult, map[string]error, error) {
 	query, encodingErrors := updateQuery(resources) // Encoding errors are recoverable, but we still report them
-	glog.Error("Updates temporarily disabled because of a suspected redisgraph bug. Printing update query but not executing it.")
-	glog.Warning(query)
-	//resp, err := Query(query)
-	//return resp, encodingErrors, err
-	return rg.QueryResult{}, encodingErrors, nil
+	resp, err := Query(query)
+	return resp, encodingErrors, err
 }
 
 // Given a set of resources, returns Query string for replacing the existing versions of them in redisgraph with the given ones.
@@ -130,7 +127,7 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 		}
 	}
 
-	queryString := fmt.Sprintf("%s%s", "MATCH "+strings.Join(matchStrings, ", "), "SET "+strings.Join(setStrings, ", "))
+	queryString := fmt.Sprintf("%s%s", "MATCH "+strings.Join(matchStrings, ", "), " SET "+strings.Join(setStrings, ", "))
 
 	return queryString, encodingErrors
 }
