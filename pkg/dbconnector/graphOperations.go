@@ -60,7 +60,6 @@ func insertQuery(resources []*Resource) (string, map[string]error) {
 
 	resourceStrings := []string{} // Build the query string piece by piece.
 	for _, resource := range resources {
-		glog.Warning("Appending: ", resource.UID) // RM
 		resource.addRbacProperty()
 		encodedProps, err := resource.encodeProperties()
 		if err != nil {

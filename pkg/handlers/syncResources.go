@@ -113,7 +113,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 				glog.Errorf("Error inserting resources for cluster %s: %s", clusterName, err)
 				// TODO Return 400 if it was because of the request and a 500 if it was because we can't talk to redis
 			} else {
-				glog.Infof("Successfully inserted %d resources", len(chunk))
+				// glog.Infof("Successfully inserted %d resources", len(chunk))
 				stats.resourcesAdded += len(chunk)
 			}
 

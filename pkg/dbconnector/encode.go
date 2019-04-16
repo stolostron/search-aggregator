@@ -13,8 +13,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-
-	"github.com/golang/glog"
 )
 
 // Tells whether the given clusterName is valid, i.e. has no illegal characters and isn't empty
@@ -38,7 +36,7 @@ func (r Resource) encodeProperties() (map[string]interface{}, error) {
 		}
 		partial, err := encodeProperty(k, v)
 		if err != nil { // if anything went wrong just log a warning and skip it
-			glog.Error("Skipping property ", k, " on resource ", r.UID, ": ", err)
+			// glog.Warning("Skipping property ", k, " on resource ", r.UID, ": ", err)
 			continue
 		}
 
