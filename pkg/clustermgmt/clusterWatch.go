@@ -9,131 +9,164 @@ The source code for this program is not published or otherwise divested of its t
 package clustermgmt
 
 import (
+	"time"
+
 	"github.com/golang/glog"
+	mcm "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/apis/mcm/v1alpha1"
+	mcmClientset "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/client/clientset_generated/clientset"
+	informers "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/client/informers_generated/externalversions"
 	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/dynamic/dynamicinformer"
+	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
+	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
+	clientset "k8s.io/cluster-registry/pkg/client/clientset/versioned"
 )
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
-	defer handleRoutineExit()
-
 	var clientConfig *rest.Config
-	var clientConfigError error
+	var err error
 
 	if config.Cfg.KubeConfig != "" {
 		glog.Infof("Creating k8s client using path: %s", config.Cfg.KubeConfig)
-		clientConfig, clientConfigError = clientcmd.BuildConfigFromFlags("", config.Cfg.KubeConfig)
+		clientConfig, err = clientcmd.BuildConfigFromFlags("", config.Cfg.KubeConfig)
 	} else {
-		glog.Info("Creating k8s client using InClusterlientConfig()")
-		clientConfig, clientConfigError = rest.InClusterConfig()
+		glog.Info("Creating k8s client using InClusterConfig()")
+		clientConfig, err = rest.InClusterConfig()
 	}
 
-	if clientConfigError != nil {
-		glog.Fatal("Error Constructing Client From Config: ", clientConfigError)
+	if err != nil {
+		glog.Fatal("Error Constructing Client From Config: ", err)
 	}
 
 	stopper := make(chan struct{})
 	defer close(stopper)
 
-	// Create a channel to process Cluster and Clusterstatus events.
-	syncChannel = make(chan *clusterResourceEvent)
-	go syncRoutine(syncChannel)
-
-	// Initialize the dynamic client, used for CRUD operations on nondeafult k8s resources
-	dynamicClientset, err := dynamic.NewForConfig(clientConfig)
+	// Initialize the cluster client, used for Cluster resource
+	clusterClient, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
-		glog.Fatal("Cannot Construct Dynamic Client From Config: ", err)
-	}
-	// Create informer factories
-	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
-
-	// Watch Cluster resources
-	clusterResource := schema.GroupVersionResource{
-		Group:    "clusterregistry.k8s.io",
-		Resource: "clusters",
-		Version:  "v1alpha1",
+		glog.Fatal("Cannot Construct Cluster Client From Config: ", err)
 	}
 
-	clusterInformer := dynamicFactory.ForResource(clusterResource).Informer()
-	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			resource := obj.(*unstructured.Unstructured)
-			event := clusterResourceEvent{
-				EventType: "Add",
-				Resource:  *resource,
-			}
-			syncChannel <- &event
-		},
-		UpdateFunc: func(prev interface{}, next interface{}) {
-			resource := next.(*unstructured.Unstructured)
-			event := clusterResourceEvent{
-				EventType: "Update",
-				Resource:  *resource,
-			}
-			syncChannel <- &event
-		},
-		DeleteFunc: func(obj interface{}) {
-			resource := obj.(*unstructured.Unstructured)
-			event := clusterResourceEvent{
-				EventType: "Delete",
-				Resource:  *resource,
-			}
-			syncChannel <- &event
-		},
-	})
-	go clusterInformer.Run(stopper)
-
-	// Watch clusterstatus resources.
-	clusterStatusResource := schema.GroupVersionResource{
-		Group:    "mcm.ibm.com",
-		Resource: "clusterstatuses",
-		Version:  "v1alpha1",
+	// Initialize the mcm client, used for ClusterStatus resource
+	mcmClient, err := mcmClientset.NewForConfig(clientConfig)
+	if err != nil {
+		glog.Fatal("Cannot Construct MCM Client From Config: ", err)
 	}
+	clusterStatusFactory := informers.NewSharedInformerFactory(mcmClient, 0)
+	clusterStatusInformer := clusterStatusFactory.Mcm().V1alpha1().ClusterStatuses().Informer()
 
-	clusterStatusInformer := dynamicFactory.ForResource(clusterStatusResource).Informer()
 	clusterStatusInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			resource := obj.(*unstructured.Unstructured)
-			event := clusterResourceEvent{
-				EventType: "Add",
-				Resource:  *resource,
+			clusterStatus, ok := obj.(*mcm.ClusterStatus)
+			if !ok {
+				glog.Error("Failed to assert ClusterStatus informer obj to mcm.ClusterStatus")
+				return
 			}
-			syncChannel <- &event
+
+			cluster, err := clusterClient.ClusterregistryV1alpha1().
+				Clusters(clusterStatus.GetNamespace()).
+				Get(clusterStatus.GetName(), metav1.GetOptions{})
+			if err != nil {
+				glog.Error("Failed to fetch cluster resource: ", err)
+			}
+
+			resource := transformCluster(clusterStatus, cluster)
+
+			glog.Info("Inserting Cluster resource in RedisGraph. ", resource)
+
+			_, _, err = db.Insert([]*db.Resource{&resource})
+			if err != nil {
+				glog.Error("Error adding Cluster kind with error: ", err)
+			}
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
-			resource := next.(*unstructured.Unstructured)
-			event := clusterResourceEvent{
-				EventType: "Update",
-				Resource:  *resource,
+			clusterStatus, ok := next.(*mcm.ClusterStatus)
+			if !ok {
+				glog.Error("Failed to assert ClusterStatus informer obj to mcm.ClusterStatus")
+				return
 			}
-			syncChannel <- &event
+
+			cluster, err := clusterClient.ClusterregistryV1alpha1().
+				Clusters(clusterStatus.GetNamespace()).
+				Get(clusterStatus.GetName(), metav1.GetOptions{})
+			if err != nil {
+				glog.Error("Failed to fetch cluster resource: ", err)
+			}
+
+			resource := transformCluster(clusterStatus, cluster)
+
+			glog.Info("Updating Cluster resource in RedisGraph. ", resource)
+			_, _, err = db.Update([]*db.Resource{&resource})
+			if err != nil {
+				glog.Error("Error updating Cluster kind with errors: ", err)
+			}
 		},
 		DeleteFunc: func(obj interface{}) {
-			resource := obj.(*unstructured.Unstructured)
-			event := clusterResourceEvent{
-				EventType: "Delete",
-				Resource:  *resource,
+			clusterStatus, ok := obj.(*mcm.ClusterStatus)
+			if !ok {
+				glog.Error("Failed to assert ClusterStatus informer obj to mcm.ClusterStatus")
+				return
 			}
-			syncChannel <- &event
+
+			glog.Info("Deleting Cluster resource in RedisGraph.")
+			uid := string(clusterStatus.GetUID())
+			_, err = db.Delete([]string{uid})
+			if err != nil {
+				glog.Error("Error deleting Cluster kind with error: ", err)
+			}
 		},
 	})
 
 	clusterStatusInformer.Run(stopper)
 }
 
-// Handles a panic from inside WatchClusters routine.
-// If the panic was due to an error, starts another WatchClusters routine.
-func handleRoutineExit() {
-	if r := recover(); r != nil { // Case where we got here from a panic
-		glog.Errorf("Error in WatchClusters routine: %v\n", r)
+func transformCluster(clusterStatus *mcm.ClusterStatus, cluster *clusterregistry.Cluster) db.Resource {
+	props := make(map[string]interface{})
 
-		go WatchClusters()
+	props["name"] = clusterStatus.GetName()
+	props["kind"] = "ClusterStatus"
+	props["selfLink"] = clusterStatus.GetSelfLink()
+	props["created"] = clusterStatus.GetCreationTimestamp().UTC().Format(time.RFC3339)
+
+	if clusterStatus.GetLabels() != nil {
+		props["label"] = clusterStatus.GetLabels()
+	}
+	if clusterStatus.GetNamespace() != "" {
+		props["namespace"] = clusterStatus.GetNamespace()
+	}
+
+	// we are pulling the status from the cluster object and cluster info from the clusterStatus object :(
+	if cluster != nil && len(cluster.Status.Conditions) > 0 && cluster.Status.Conditions[0].Type != "" {
+		props["status"] = string(cluster.Status.Conditions[0].Type)
+	} else {
+		props["status"] = "offline"
+	}
+
+	props["consoleURL"] = clusterStatus.Spec.ConsoleURL
+	props["cpu"], _ = clusterStatus.Spec.Capacity.Cpu().AsInt64()
+	props["memory"] = clusterStatus.Spec.Capacity.Memory().String()
+	props["klusterletVersion"] = clusterStatus.Spec.KlusterletVersion
+	props["kubernetesVersion"] = clusterStatus.Spec.Version
+
+	props["nodes"] = int64(0)
+	nodes, ok := clusterStatus.Spec.Capacity["nodes"]
+	if ok {
+		props["nodes"], _ = nodes.AsInt64()
+	}
+
+	props["storage"] = ""
+	storage, ok := clusterStatus.Spec.Capacity["storage"]
+	if ok {
+		props["storage"] = storage.String()
+	}
+
+	return db.Resource{
+		Kind:       "Cluster",
+		UID:        string(clusterStatus.GetUID()),
+		Properties: props,
 	}
 }

@@ -187,6 +187,25 @@
   version = "v1.0.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:f8fde39735a0ecffc58b1d52c3325fdabc010ccfc5ba88d09b07ae9df33843e2"
+  name = "github.ibm.com/IBMPrivateCloud/hcm-api"
+  packages = [
+    "pkg/apis/mcm",
+    "pkg/apis/mcm/v1alpha1",
+    "pkg/client/clientset_generated/clientset",
+    "pkg/client/clientset_generated/clientset/scheme",
+    "pkg/client/clientset_generated/clientset/typed/mcm/v1alpha1",
+    "pkg/client/informers_generated/externalversions",
+    "pkg/client/informers_generated/externalversions/internalinterfaces",
+    "pkg/client/informers_generated/externalversions/mcm",
+    "pkg/client/informers_generated/externalversions/mcm/v1alpha1",
+    "pkg/client/listers_generated/mcm/v1alpha1",
+  ]
+  pruneopts = "UT"
+  revision = "e8218aa0105916a9999e9c478a6e26802fa97462"
+
+[[projects]]
   digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
@@ -328,8 +347,19 @@
     "storage/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "89a74a8d264df0e993299876a8cde88379b940ee"
-  version = "kubernetes-1.13.0"
+  revision = "05914d821849570fba9eacfb29466f2d8d3cd229"
+  version = "kubernetes-1.13.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:778ecb26c1e295662ec8d7cea93d6600ee55a2ffc12e09470c7057ba1d5f2c02"
+  name = "k8s.io/apiextensions-apiserver"
+  packages = [
+    "pkg/apis/apiextensions",
+    "pkg/apis/apiextensions/v1beta1",
+  ]
+  pruneopts = "UT"
+  revision = "7f7d2b94eca3a7a1c49840e119a8bc03c3afb1e3"
 
 [[projects]]
   digest = "1:846bcc1ec56accfcb542fa8834d3013b64e7930eb6e9789a7be1bb6448567265"
@@ -377,124 +407,14 @@
   ]
   pruneopts = "UT"
   revision = "2b1284ed4c93a43499e781493253e2ac5959c4fd"
-  version = "kubernetes-1.13.0"
+  version = "kubernetes-1.13.1"
 
 [[projects]]
-  digest = "1:5112615fc46b20a5da6d0c728bf3527d1ae99c6e80a222f0f6487bbb0c756c5d"
+  digest = "1:893dc9aba7e49e02ecf3c6d0113a85ac7eddd12de52e50fa1e8b16b70f5a17f8"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
-    "dynamic",
-    "dynamic/dynamicinformer",
-    "dynamic/dynamiclister",
-    "informers",
-    "informers/admissionregistration",
-    "informers/admissionregistration/v1alpha1",
-    "informers/admissionregistration/v1beta1",
-    "informers/apps",
-    "informers/apps/v1",
-    "informers/apps/v1beta1",
-    "informers/apps/v1beta2",
-    "informers/auditregistration",
-    "informers/auditregistration/v1alpha1",
-    "informers/autoscaling",
-    "informers/autoscaling/v1",
-    "informers/autoscaling/v2beta1",
-    "informers/autoscaling/v2beta2",
-    "informers/batch",
-    "informers/batch/v1",
-    "informers/batch/v1beta1",
-    "informers/batch/v2alpha1",
-    "informers/certificates",
-    "informers/certificates/v1beta1",
-    "informers/coordination",
-    "informers/coordination/v1beta1",
-    "informers/core",
-    "informers/core/v1",
-    "informers/events",
-    "informers/events/v1beta1",
-    "informers/extensions",
-    "informers/extensions/v1beta1",
-    "informers/internalinterfaces",
-    "informers/networking",
-    "informers/networking/v1",
-    "informers/policy",
-    "informers/policy/v1beta1",
-    "informers/rbac",
-    "informers/rbac/v1",
-    "informers/rbac/v1alpha1",
-    "informers/rbac/v1beta1",
-    "informers/scheduling",
-    "informers/scheduling/v1alpha1",
-    "informers/scheduling/v1beta1",
-    "informers/settings",
-    "informers/settings/v1alpha1",
-    "informers/storage",
-    "informers/storage/v1",
-    "informers/storage/v1alpha1",
-    "informers/storage/v1beta1",
-    "kubernetes",
     "kubernetes/scheme",
-    "kubernetes/typed/admissionregistration/v1alpha1",
-    "kubernetes/typed/admissionregistration/v1beta1",
-    "kubernetes/typed/apps/v1",
-    "kubernetes/typed/apps/v1beta1",
-    "kubernetes/typed/apps/v1beta2",
-    "kubernetes/typed/auditregistration/v1alpha1",
-    "kubernetes/typed/authentication/v1",
-    "kubernetes/typed/authentication/v1beta1",
-    "kubernetes/typed/authorization/v1",
-    "kubernetes/typed/authorization/v1beta1",
-    "kubernetes/typed/autoscaling/v1",
-    "kubernetes/typed/autoscaling/v2beta1",
-    "kubernetes/typed/autoscaling/v2beta2",
-    "kubernetes/typed/batch/v1",
-    "kubernetes/typed/batch/v1beta1",
-    "kubernetes/typed/batch/v2alpha1",
-    "kubernetes/typed/certificates/v1beta1",
-    "kubernetes/typed/coordination/v1beta1",
-    "kubernetes/typed/core/v1",
-    "kubernetes/typed/events/v1beta1",
-    "kubernetes/typed/extensions/v1beta1",
-    "kubernetes/typed/networking/v1",
-    "kubernetes/typed/policy/v1beta1",
-    "kubernetes/typed/rbac/v1",
-    "kubernetes/typed/rbac/v1alpha1",
-    "kubernetes/typed/rbac/v1beta1",
-    "kubernetes/typed/scheduling/v1alpha1",
-    "kubernetes/typed/scheduling/v1beta1",
-    "kubernetes/typed/settings/v1alpha1",
-    "kubernetes/typed/storage/v1",
-    "kubernetes/typed/storage/v1alpha1",
-    "kubernetes/typed/storage/v1beta1",
-    "listers/admissionregistration/v1alpha1",
-    "listers/admissionregistration/v1beta1",
-    "listers/apps/v1",
-    "listers/apps/v1beta1",
-    "listers/apps/v1beta2",
-    "listers/auditregistration/v1alpha1",
-    "listers/autoscaling/v1",
-    "listers/autoscaling/v2beta1",
-    "listers/autoscaling/v2beta2",
-    "listers/batch/v1",
-    "listers/batch/v1beta1",
-    "listers/batch/v2alpha1",
-    "listers/certificates/v1beta1",
-    "listers/coordination/v1beta1",
-    "listers/core/v1",
-    "listers/events/v1beta1",
-    "listers/extensions/v1beta1",
-    "listers/networking/v1",
-    "listers/policy/v1beta1",
-    "listers/rbac/v1",
-    "listers/rbac/v1alpha1",
-    "listers/rbac/v1beta1",
-    "listers/scheduling/v1alpha1",
-    "listers/scheduling/v1beta1",
-    "listers/settings/v1alpha1",
-    "listers/storage/v1",
-    "listers/storage/v1alpha1",
-    "listers/storage/v1beta1",
     "pkg/apis/clientauthentication",
     "pkg/apis/clientauthentication/v1alpha1",
     "pkg/apis/clientauthentication/v1beta1",
@@ -510,7 +430,6 @@
     "tools/clientcmd/api/v1",
     "tools/metrics",
     "tools/pager",
-    "tools/reference",
     "transport",
     "util/buffer",
     "util/cert",
@@ -521,8 +440,21 @@
     "util/retry",
   ]
   pruneopts = "UT"
-  revision = "e64494209f554a6723674bd494d69445fb76a1d4"
-  version = "v10.0.0"
+  revision = "8d9ed539ba3134352c586810e749e58df4e94e4f"
+  version = "kubernetes-1.13.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:d4880df0ecff9a2858b18fcf8fc10733ee77358b2cadb13c3774ffa5ad6237bb"
+  name = "k8s.io/cluster-registry"
+  packages = [
+    "pkg/apis/clusterregistry/v1alpha1",
+    "pkg/client/clientset/versioned",
+    "pkg/client/clientset/versioned/scheme",
+    "pkg/client/clientset/versioned/typed/clusterregistry/v1alpha1",
+  ]
+  pruneopts = "UT"
+  revision = "eb099a00440591a03ff5e38a2ef943098090721d"
 
 [[projects]]
   digest = "1:e2999bf1bb6eddc2a6aa03fe5e6629120a53088926520ca3b4765f77d7ff7eab"
@@ -547,13 +479,15 @@
     "github.com/gomodule/redigo/redis",
     "github.com/gorilla/mux",
     "github.com/redislabs/redisgraph-go",
-    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured",
-    "k8s.io/apimachinery/pkg/runtime/schema",
-    "k8s.io/client-go/dynamic",
-    "k8s.io/client-go/dynamic/dynamicinformer",
+    "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/apis/mcm/v1alpha1",
+    "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/client/clientset_generated/clientset",
+    "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/client/informers_generated/externalversions",
+    "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/cache",
     "k8s.io/client-go/tools/clientcmd",
+    "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1",
+    "k8s.io/cluster-registry/pkg/client/clientset/versioned",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
