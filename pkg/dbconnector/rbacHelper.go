@@ -38,11 +38,19 @@ func (r *Resource) addRbacProperty() {
 				glog.Warning("Property 'namespace' must be a string or nil.  Got invalid value from resource: ", r)
 			}
 		}
+	} else {
+		switch t := r.Properties["_clusterNamespace"].(type) {
+		case string:
+			if t != "" {
+				rbac[0] = t
+			}
+		default:
+			// rbac[0] is already initialized to the string "null".
+			if t != nil {
+				glog.Warning("Property '_clusterNamespace' must be a string or nil.  Got invalid value from resource: ", r)
+			}
+		}
 	}
-	// TODO
-	// else {
-	// glog.Error("TODO: Need to use the namespace mapped to the remote cluster.")
-	// }
 
 	// Get the apigroup.
 	switch t := r.Properties["apigroup"].(type) {
