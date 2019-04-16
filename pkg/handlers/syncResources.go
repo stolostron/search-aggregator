@@ -97,10 +97,13 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	glog.Info("Adding ", len(syncEvent.AddResources), " resources.")
 	chunk := make([]*db.Resource, 0, CHUNK_SIZE)
 	for i := range syncEvent.AddResources {
+		if syncEvent.AddResources[i].Properties != nil {
+			syncEvent.AddResources[i].Properties["cluster"] = clusterName
 
-		syncEvent.AddResources[i].Properties["cluster"] = clusterName
-
-		chunk = append(chunk, &syncEvent.AddResources[i])
+			chunk = append(chunk, &syncEvent.AddResources[i])
+		} else { // This really shouldn't happen, it's suspected this happens because of a collector bug. Adding this for now while we figure that out.{
+			glog.Warningf("Skipping resource with UID %s on cluster %s because of nil properties", syncEvent.AddResources[i].UID, clusterName)
+		}
 
 		// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
 		// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
@@ -129,9 +132,14 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	glog.Info("Updating ", len(syncEvent.UpdateResources), " resources.")
 	// Don't need to reset chunk here as it was taken care of by either the last thing that was Added, or the actual declaration of the chunk slice (if Add didn't have anything to run).
 	for i := range syncEvent.UpdateResources {
-		syncEvent.UpdateResources[i].Properties["cluster"] = clusterName
 
-		chunk = append(chunk, &syncEvent.UpdateResources[i])
+		if syncEvent.UpdateResources[i].Properties != nil {
+			syncEvent.UpdateResources[i].Properties["cluster"] = clusterName
+
+			chunk = append(chunk, &syncEvent.UpdateResources[i])
+		} else { // This really shouldn't happen, it's suspected this happens because of a collector bug. Adding this for now while we figure that out.{
+			glog.Warningf("Skipping resource with UID %s on cluster %s because of nil properties", syncEvent.UpdateResources[i].UID, clusterName)
+		}
 
 		// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
 		// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
