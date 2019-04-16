@@ -64,7 +64,11 @@ func init() {
 
 func setDefault(field *string, env, defaultVal string) {
 	if val := os.Getenv(env); val != "" {
-		glog.Infof("Using %s from environment: %s", env, val)
+		if env == "REDIS_PASSWORD" {
+			glog.Infof("Using %s from environment", env)
+		} else {
+			glog.Infof("Using %s from environment: %s", env, val)
+		}
 		*field = val
 	} else if *field == "" && defaultVal != "" {
 		glog.Infof("%s not set, using default value: %s", env, defaultVal)
