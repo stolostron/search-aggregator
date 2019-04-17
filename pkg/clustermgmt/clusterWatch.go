@@ -128,7 +128,7 @@ func transformCluster(clusterStatus *mcm.ClusterStatus, cluster *clusterregistry
 	props := make(map[string]interface{})
 
 	props["name"] = clusterStatus.GetName()
-	props["kind"] = "ClusterStatus"
+	props["kind"] = "Cluster"
 	props["selfLink"] = clusterStatus.GetSelfLink()
 	props["created"] = clusterStatus.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
