@@ -118,6 +118,15 @@ func WatchClusters() {
 			if err != nil {
 				glog.Error("Error deleting Cluster kind with error: ", err)
 			}
+
+			// When a cluster (ClusterStatus) gets deleted, we must remove all resources for that cluster from RedisGraph.
+			_, badNameErr, err := db.DeleteCluster(clusterStatus.GetName())
+			if badNameErr != nil {
+				glog.Error("Invalid Cluster Name: ", clusterStatus.GetName())
+			}
+			if err != nil {
+				glog.Error("Error deleting current resources for cluster: ", err)
+			}
 		},
 	})
 
