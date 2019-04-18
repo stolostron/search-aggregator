@@ -108,22 +108,32 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
 		// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
 		if (i != 0 && (i+1)%CHUNK_SIZE == 0) || i == len(syncEvent.AddResources)-1 {
-			_, encodingErrors, err := db.Insert(chunk)
+			badResources := 0
+			_, _, err := db.Insert(chunk)
 			if err != nil {
 				glog.Errorf("Error inserting resources for cluster %s: %s", clusterName, err)
+				// It's important that we know which resource actually had the problem - the approach here is to just try each member of the chunk individually. Can add more complex "binary chunking" later, but want to change how the DB package works slightly before that.
+				glog.Error("Retrying chunk components individually")
+				oneResourceSlice := make([]*db.Resource, 1) // This is to avoid a bunch of allocations of new slices - don't use it other than just to set oneResourceSlice[0] and pass to the db.
+				for _, chunkMember := range chunk {
+					oneResourceSlice[0] = chunkMember
+					_, _, retryErr := db.Insert(oneResourceSlice)
+					if retryErr != nil {
+						glog.Errorf("Resource %s cannot be inserted: %s", chunkMember.UID, retryErr)
+						syncErrors = append(syncErrors, SyncError{
+							ResourceUID: chunkMember.UID,
+							Message:     retryErr.Error(),
+						})
+						badResources++
+					}
+				}
+
 				// TODO Return 400 if it was because of the request and a 500 if it was because we can't talk to redis
 			} else {
 				// glog.Infof("Successfully inserted %d resources", len(chunk))
-				stats.resourcesAdded += len(chunk)
+				stats.resourcesAdded += len(chunk) - badResources
 			}
 
-			// Any encoding errors need to be returned to the collector so we put them in this list.
-			for uid, encodingErr := range encodingErrors {
-				syncErrors = append(syncErrors, SyncError{
-					ResourceUID: uid,
-					Message:     encodingErr.Error(),
-				})
-			}
 			chunk = make([]*db.Resource, 0, CHUNK_SIZE)
 		}
 	}
@@ -144,22 +154,31 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
 		// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
 		if (i != 0 && (i+1)%CHUNK_SIZE == 0) || i == len(syncEvent.UpdateResources)-1 {
+			badResources := 0
 
-			_, encodingErrors, err := db.Update(chunk)
+			_, _, err := db.Update(chunk)
 			if err != nil {
 				glog.Errorf("Error updating resources for cluster %s: %s", clusterName, err)
+				// It's important that we know which resource actually had the problem - the approach here is to just try each member of the chunk individually. Can add more complex "binary chunking" later, but want to change how the DB package works slightly before that.
+				glog.Error("Retrying chunk components individually")
+				oneResourceSlice := make([]*db.Resource, 1) // This is to avoid a bunch of allocations of new slices - don't use it other than just to set oneResourceSlice[0] and pass to the db.
+				for _, chunkMember := range chunk {
+					oneResourceSlice[0] = chunkMember
+					_, _, retryErr := db.Update(oneResourceSlice)
+					if retryErr != nil {
+						glog.Errorf("Resource %s cannot be updated: %s", chunkMember.UID, retryErr)
+						syncErrors = append(syncErrors, SyncError{
+							ResourceUID: chunkMember.UID,
+							Message:     retryErr.Error(),
+						})
+						badResources++
+					}
+				}
 				// TODO Return 400 if it was because of the request and a 500 if it was because we can't talk to redis
 			} else {
-				stats.resourcesUpdated += len(chunk)
+				stats.resourcesUpdated += len(chunk) - badResources
 			}
 
-			// Any encoding errors need to be returned to the collector so we put them in this list.
-			for uid, encodingErr := range encodingErrors {
-				syncErrors = append(syncErrors, SyncError{
-					ResourceUID: uid,
-					Message:     encodingErr.Error(),
-				})
-			}
 			chunk = make([]*db.Resource, 0, CHUNK_SIZE)
 		}
 	}
@@ -175,13 +194,28 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		// Commiting small chunks isn't the best for performance, but it's easier to debug problems and it
 		// helps to prevent total failure in case we get a bad record. Will increase as we solidify our logic.
 		if (i != 0 && (i+1)%CHUNK_SIZE == 0) || i == len(syncEvent.DeleteResources)-1 {
-
+			badResources := 0
 			_, err := db.Delete(deleteChunk)
 			if err != nil {
 				glog.Errorf("Error deleting resources for cluster %s: %s", clusterName, err)
+				// It's important that we know which resource actually had the problem - the approach here is to just try each member of the chunk individually. Can add more complex "binary chunking" later, but want to change how the DB package works slightly before that.
+				glog.Error("Retrying chunk components individually")
+				oneResourceSlice := make([]string, 1) // This is to avoid a bunch of allocations of new slices - don't use it other than just to set oneResourceSlice[0] and pass to the db.
+				for _, chunkMember := range deleteChunk {
+					oneResourceSlice[0] = chunkMember
+					_, retryErr := db.Delete(oneResourceSlice)
+					if retryErr != nil {
+						glog.Errorf("Resource %s cannot be deleted: %s", chunkMember, retryErr)
+						syncErrors = append(syncErrors, SyncError{
+							ResourceUID: chunkMember,
+							Message:     retryErr.Error(),
+						})
+						badResources++
+					}
+				}
 				// TODO Return 400 if it was because of the request and a 500 if it was because we can't talk to redis
 			} else {
-				stats.resourcesUpdated += len(deleteChunk)
+				stats.resourcesDeleted += len(deleteChunk) - badResources
 			}
 
 			deleteChunk = make([]string, CHUNK_SIZE) // Reset chunk
