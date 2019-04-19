@@ -188,7 +188,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f8fde39735a0ecffc58b1d52c3325fdabc010ccfc5ba88d09b07ae9df33843e2"
+  digest = "1:dfa4278f4f158aeca2c5529a7dc65e4ab094b0e4074fe364a35b70d6cee671c1"
   name = "github.ibm.com/IBMPrivateCloud/hcm-api"
   packages = [
     "pkg/apis/mcm",
@@ -196,11 +196,6 @@
     "pkg/client/clientset_generated/clientset",
     "pkg/client/clientset_generated/clientset/scheme",
     "pkg/client/clientset_generated/clientset/typed/mcm/v1alpha1",
-    "pkg/client/informers_generated/externalversions",
-    "pkg/client/informers_generated/externalversions/internalinterfaces",
-    "pkg/client/informers_generated/externalversions/mcm",
-    "pkg/client/informers_generated/externalversions/mcm/v1alpha1",
-    "pkg/client/listers_generated/mcm/v1alpha1",
   ]
   pruneopts = "UT"
   revision = "e8218aa0105916a9999e9c478a6e26802fa97462"
@@ -445,13 +440,18 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d4880df0ecff9a2858b18fcf8fc10733ee77358b2cadb13c3774ffa5ad6237bb"
+  digest = "1:f27630ada2d69bb6e5a8d0a94052921200c445ab0ef0198adff4ada89697a025"
   name = "k8s.io/cluster-registry"
   packages = [
     "pkg/apis/clusterregistry/v1alpha1",
     "pkg/client/clientset/versioned",
     "pkg/client/clientset/versioned/scheme",
     "pkg/client/clientset/versioned/typed/clusterregistry/v1alpha1",
+    "pkg/client/informers/externalversions",
+    "pkg/client/informers/externalversions/clusterregistry",
+    "pkg/client/informers/externalversions/clusterregistry/v1alpha1",
+    "pkg/client/informers/externalversions/internalinterfaces",
+    "pkg/client/listers/clusterregistry/v1alpha1",
   ]
   pruneopts = "UT"
   revision = "eb099a00440591a03ff5e38a2ef943098090721d"
@@ -481,13 +481,13 @@
     "github.com/redislabs/redisgraph-go",
     "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/apis/mcm/v1alpha1",
     "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/client/clientset_generated/clientset",
-    "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/client/informers_generated/externalversions",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/cache",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1",
     "k8s.io/cluster-registry/pkg/client/clientset/versioned",
+    "k8s.io/cluster-registry/pkg/client/informers/externalversions",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
