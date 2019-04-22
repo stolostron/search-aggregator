@@ -28,7 +28,7 @@ func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
 
 	conn, connError := db.Pool.Dial() // Go straight to the pool's Dial because we don't actually want to play by the pool's rules here - just want a connection unrelated to all the other ones
 
-	if connError != nil {
+	if connError != nil || conn == nil {
 		// Respond with error.
 		glog.Warning("Unable to reach Redis.")
 		http.Error(w, "Unable to reach Redis.", 503)
@@ -36,5 +36,8 @@ func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
 		// Respond with success.
 		fmt.Fprint(w, "OK")
 	}
-	conn.Close()
+
+	if conn != nil {
+		conn.Close()
+	}
 }
