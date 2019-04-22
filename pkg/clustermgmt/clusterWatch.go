@@ -147,7 +147,6 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 
 	props["name"] = cluster.GetName()
 	props["kind"] = "Cluster"
-	props["cluster"] = "local-cluster" // Needed for rbac
 	props["selfLink"] = cluster.GetSelfLink()
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
