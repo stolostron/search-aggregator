@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/golang/glog"
 )
@@ -21,6 +22,7 @@ const (
 	DEFAULT_AGGREGATOR_ADDRESS = ":3010"
 	DEFAULT_REDIS_HOST         = "localhost"
 	DEFAULT_REDIS_PORT         = "6379"
+	DEFAULT_REDISCOVER_RATE_MS = 600000 // 10 min
 )
 
 // Define a config type to hold our config properties.
@@ -31,6 +33,7 @@ type Config struct {
 	RedisSSHPort      string // ssh port for redis
 	RedisPassword     string // password for redis
 	KubeConfig        string // Local kubeconfig path
+	RediscoverRateMS  int    // time in MS we should check on cluster resource type
 }
 
 var Cfg = Config{}
@@ -53,6 +56,7 @@ func init() {
 	setDefault(&Cfg.RedisPort, "REDIS_PORT", DEFAULT_REDIS_PORT)
 	setDefault(&Cfg.RedisSSHPort, "REDIS_SSH_PORT", "")
 	setDefault(&Cfg.RedisPassword, "REDIS_PASSWORD", "")
+	setDefaultInt(&Cfg.RediscoverRateMS, "REDISCOVER_RATE_MS", DEFAULT_REDISCOVER_RATE_MS)
 
 	defaultKubePath := filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	if _, err := os.Stat(defaultKubePath); os.IsNotExist(err) {
@@ -72,6 +76,21 @@ func setDefault(field *string, env, defaultVal string) {
 		*field = val
 	} else if *field == "" && defaultVal != "" {
 		glog.Infof("%s not set, using default value: %s", env, defaultVal)
+		*field = defaultVal
+	}
+}
+
+// TODO: Combine with function above.
+func setDefaultInt(field *int, env string, defaultVal int) {
+	if val := os.Getenv(env); val != "" {
+		glog.Infof("Using %s from environment: %s", env, val)
+		var err error
+		*field, err = strconv.Atoi(val)
+		if err != nil {
+			glog.Error("Error parsing env [", env, "].  Expected an integer.  Original error: ", err)
+		}
+	} else if *field == 0 && defaultVal != 0 {
+		glog.Infof("No %s from file or environment, using default value: %d", env, defaultVal)
 		*field = defaultVal
 	}
 }

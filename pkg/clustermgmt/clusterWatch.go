@@ -30,6 +30,8 @@ import (
 func WatchClusters() {
 	var clientConfig *rest.Config
 	var err error
+	var stopper chan struct{}
+	informerRunning := false
 
 	if config.Cfg.KubeConfig != "" {
 		glog.Infof("Creating k8s client using path: %s", config.Cfg.KubeConfig)
@@ -42,9 +44,6 @@ func WatchClusters() {
 	if err != nil {
 		glog.Fatal("Error Constructing Client From Config: ", err)
 	}
-
-	stopper := make(chan struct{})
-	defer close(stopper)
 
 	// Initialize the mcm client, used for ClusterStatus resource
 	mcmClient, err := mcmClientset.NewForConfig(clientConfig)
@@ -92,7 +91,27 @@ func WatchClusters() {
 		},
 	})
 
-	clusterInformer.Run(stopper)
+	// periodically check if the cluster resource exists and start/stop the informer accordingly
+	for {
+		_, err := clusterClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
+		// we fail to fetch for some reason other than not found
+		if err != nil && !isClusterMissing(err) {
+			glog.Error("Cannot fetch resource list for clusterregistry.k8s.io/v1alpha1: ", err)
+		} else {
+			if isClusterMissing(err) && informerRunning {
+				glog.Info("Stopping cluster informer routine because clusterregistry resource not found")
+				stopper <- struct{}{}
+				informerRunning = false
+			} else if !isClusterMissing(err) && !informerRunning {
+				glog.Info("Starting cluster informer routine for cluster watch")
+				stopper = make(chan struct{})
+				informerRunning = true
+				go clusterInformer.Run(stopper)
+			}
+		}
+
+		time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
+	}
 }
 
 func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
@@ -139,7 +158,17 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 
 // Test for specific redis graph update error
 func isGraphMissing(err error) bool {
+	if err == nil {
+		return false
+	}
 	return strings.Contains(err.Error(), "key doesn't contains a graph object")
+}
+
+func isClusterMissing(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "could not find the requested resource")
 }
 
 func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus) db.Resource {
