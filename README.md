@@ -73,7 +73,33 @@ Works with [search-collector](https://github.ibm.com/IBMPrivateCloud/search-coll
     }
     ```
 
-    **Response:**
-    - Total number of added, updated, and deleted resources.
-    - Total number of resources (used by the collector to check whether things went well).
-    - Errors: A list of errors, currently listed per errant resource.
+    **Sample Response:**
+    ```json
+    {
+        "Hash": "hash-of-current-state",
+        "TotalAdded": 1,
+        "TotalUpdated": 2,
+        "TotalDeleted": 3,
+        "TotalResources": 4,
+        "UpdatedTimestamp": 12345678,
+        "AddErrors": [
+            {
+                "ResourceUID": "111aaa",
+                "Message": "Failed to insert because ..."
+            }
+        ],
+        "UpdateErrors": [
+            {
+                "ResourceUID": "222bbb",
+                "Message": "Failed to update because ..."
+            }
+        ],
+        "DeleteErrors": [
+            {
+                "ResourceUID": "333ccc",
+                "Message": "Failed to delete because ..."
+            }
+        ],
+    }
+    ```
+
