@@ -93,7 +93,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			if db.IsBadConnection(err) {
 				respond(http.StatusServiceUnavailable)
 				return
-			} else {
+			} else if !db.IsGraphMissing(err) {
 				respond(http.StatusBadRequest)
 				return
 			}

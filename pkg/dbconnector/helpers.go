@@ -40,3 +40,11 @@ func IsBadConnection(e error) bool {
 	}
 	return strings.HasSuffix(e.Error(), "connection refused") || strings.HasSuffix(e.Error(), "EOF")
 }
+
+// Test for specific redis graph update error
+func IsGraphMissing(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "key doesn't contains a graph object")
+}

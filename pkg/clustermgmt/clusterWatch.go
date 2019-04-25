@@ -133,7 +133,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	_, _, err = db.Update([]*db.Resource{&resource})
 	if err != nil {
 		// If the key is missing from redis we should try to insert it again
-		if isGraphMissing(err) {
+		if db.IsGraphMissing(err) {
 			glog.Info("Cluster graph object does not exist, creating new object")
 			_, _, err = db.Insert([]*db.Resource{&resource})
 			if err != nil {
@@ -154,14 +154,6 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 			glog.Error("Error deleting current resources for cluster: ", err)
 		}
 	}
-}
-
-// Test for specific redis graph update error
-func isGraphMissing(err error) bool {
-	if err == nil {
-		return false
-	}
-	return strings.Contains(err.Error(), "key doesn't contains a graph object")
 }
 
 func isClusterMissing(err error) bool {
