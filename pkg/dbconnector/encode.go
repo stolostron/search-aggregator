@@ -80,14 +80,17 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 			}
 		}
 	case []interface{}:
-		elementStrings := []string{}
+		elementStrings := make([]string, 0, len(typedVal))
 		for _, e := range typedVal {
 			elementString := fmt.Sprintf("%v", e)
 			if strings.Contains(elementString, "'") { // skip any with bad chars
 				continue
 			}
+			elementStrings = append(elementStrings, elementString)
 		}
+
 		res[key] = strings.Join(elementStrings, ", ") // e.g. val1, val2, val3
+
 	/*
 		// TODO maps will be supported in a later release - they require some special logic around updating, since the property keys aren't predefined.
 		case map[string]interface{}:
