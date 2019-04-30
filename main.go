@@ -12,6 +12,7 @@ import (
 	"crypto/tls"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -22,6 +23,9 @@ import (
 
 func main() {
 	glog.Info("Starting search-aggregator")
+	if commit, ok := os.LookupEnv("VCS_REF"); ok {
+		glog.Info("Built from git commit: ", commit)
+	}
 
 	// Watch clusters and sync status to Redis.
 	go clustermgmt.WatchClusters()
