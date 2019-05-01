@@ -124,7 +124,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	clusterStatus, err := mcmClient.McmV1alpha1().
 		ClusterStatuses(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
 	if err != nil {
-		glog.Error("Failed to fetch cluster resource: ", err)
+		glog.Error("Failed to fetch cluster status: ", err)
 	}
 
 	resource := transformCluster(cluster, clusterStatus)

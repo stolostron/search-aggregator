@@ -54,5 +54,5 @@ func IsGraphMissing(err error) bool {
 }
 
 func IsEmptySet(res rg.QueryResult) bool {
-	return len(res.Results) == 0
+	return len(res.Statistics) == 0
 }
