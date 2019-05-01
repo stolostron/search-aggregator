@@ -8,7 +8,11 @@ The source code for this program is not published or otherwise divested of its t
 
 package dbconnector
 
-import "strings"
+import (
+	"strings"
+
+	rg "github.com/redislabs/redisgraph-go"
+)
 
 // Merges maps, putting values of b over top of values from a. In practice this doesn't matter because the error maps are keyed by UID and don't share any keys.
 // If both are nil, returns nil.
@@ -47,4 +51,8 @@ func IsGraphMissing(err error) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), "key doesn't contains a graph object")
+}
+
+func IsEmptySet(res rg.QueryResult) bool {
+	return len(res.Results) == 0
 }

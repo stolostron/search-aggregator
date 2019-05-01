@@ -26,7 +26,7 @@ func (r *Resource) addRbacProperty() {
 	// Get the namespace.
 	// For resources in the hub cluster we use their namespace.
 	// When a resource is on a remote cluster we will use the namespace mapped to that cluster.
-	if r.Properties["cluster"] == "local-cluster" || r.Properties["kind"] == "cluster" {
+	if r.Properties["cluster"] == "local-cluster" || r.Properties["kind"] == "Cluster" {
 		switch t := r.Properties["namespace"].(type) {
 		case string:
 			if t != "" {

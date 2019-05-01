@@ -130,22 +130,22 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	resource := transformCluster(cluster, clusterStatus)
 
 	glog.Info("Updating Cluster resource in RedisGraph. ", resource)
-	_, _, err = db.Update([]*db.Resource{&resource})
-	if err != nil {
-		// If the key is missing from redis we should try to insert it again
-		if db.IsGraphMissing(err) {
-			glog.Info("Cluster graph object does not exist, creating new object")
-			_, _, err = db.Insert([]*db.Resource{&resource})
-			if err != nil {
-				glog.Error("Error adding Cluster kind with error: ", err)
-			}
-		} else {
-			glog.Error("Error updating Cluster kind with errors: ", err)
+	res, _, err := db.Update([]*db.Resource{&resource})
+	if db.IsGraphMissing(err) || db.IsEmptySet(res) {
+		glog.Info("Cluster graph/key object does not exist, inserting new object")
+		_, _, err = db.Insert([]*db.Resource{&resource})
+		if err != nil {
+			glog.Error("Error adding Cluster kind with error: ", err)
+			return
 		}
+	} else if err != nil { // generic error not known above
+		glog.Error("Error updating Cluster kind with errors: ", err)
+		return
 	}
 
 	// If a cluster is offline we should remove the cluster objects
 	if resource.Properties["status"] == "offline" {
+		glog.Infof("Cluster %s appears to be offline, removing cluster resources from redis", cluster.GetName())
 		_, badNameErr, err := db.DeleteCluster(cluster.GetName())
 		if badNameErr != nil {
 			glog.Error("Invalid Cluster Name: ", cluster.GetName())
@@ -168,6 +168,7 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 
 	props["name"] = cluster.GetName()
 	props["kind"] = "Cluster"
+	props["apigroup"] = "clusterregistry.k8s.io"
 	props["selfLink"] = cluster.GetSelfLink()
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
