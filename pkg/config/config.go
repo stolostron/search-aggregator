@@ -22,7 +22,7 @@ const (
 	DEFAULT_AGGREGATOR_ADDRESS = ":3010"
 	DEFAULT_REDIS_HOST         = "localhost"
 	DEFAULT_REDIS_PORT         = "6379"
-	DEFAULT_REDISCOVER_RATE_MS = 600000 // 10 min
+	DEFAULT_REDISCOVER_RATE_MS = 60000 // 1 min
 )
 
 // Define a config type to hold our config properties.
