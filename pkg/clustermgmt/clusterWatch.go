@@ -207,8 +207,9 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 	}
 
 	return db.Resource{
-		Kind:       "Cluster",
-		UID:        string(cluster.GetUID()),
-		Properties: props,
+		Kind:           "Cluster",
+		UID:            string(cluster.GetUID()),
+		Properties:     props,
+		ResourceString: "clusters",
 	}
 }

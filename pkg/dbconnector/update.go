@@ -94,6 +94,7 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 	matchStrings := []string{} // Build the MATCH portion
 	setStrings := []string{}   // Build the SET portion. Declare this at the same time so that we can do this in one pass.
 	for i, resource := range resources {
+		resource.addRbacProperty()
 		matchStrings = append(matchStrings, fmt.Sprintf("(n%d:%s {_uid: '%s'})", i, resource.Properties["kind"], resource.UID)) // e.g. (n0:Pod {_uid: 'abc123'})
 		encodedProps, err := resource.encodeProperties()
 		if err != nil {

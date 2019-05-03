@@ -66,16 +66,10 @@ func (r *Resource) addRbacProperty() {
 	}
 
 	// Get the kind.
-	// TODO: Use r.Kind  (Currently this is empty, must initialize before I can use it here.)
-	switch t := r.Properties["kind"].(type) {
-	case string:
-		if t != "" {
-			rbac[2] = t
-		}
-	default:
-		// rbac[2] is already initialized to the string "null".
-		glog.Warning("Property 'kind' must be a string. Got invalid value from resource: ", r)
+	if r.ResourceString == "" {
+		glog.Warning("Received a resource with an empty ResourceString.  Resource: ", r)
 	}
+	rbac[2] = r.ResourceString
 
 	r.Properties["_rbac"] = strings.Join(rbac, "_")
 }

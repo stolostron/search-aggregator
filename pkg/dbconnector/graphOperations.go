@@ -18,10 +18,11 @@ const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 
 // Resource - Describes a resource
 type Resource struct {
-	Kind       string `json:"kind,omitempty"`
-	UID        string `json:"uid,omitempty"`
-	Hash       string `json:"hash,omitempty"`
-	Properties map[string]interface{}
+	Kind           string `json:"kind,omitempty"`
+	UID            string `json:"uid,omitempty"`
+	Hash           string `json:"hash,omitempty"`
+	ResourceString string `json:"resourceString,omitempty"`
+	Properties     map[string]interface{}
 }
 
 // Represents the results of a chunked db operation
