@@ -53,6 +53,9 @@ func IsGraphMissing(err error) bool {
 	return strings.Contains(err.Error(), "key doesn't contains a graph object")
 }
 
-func IsEmptySet(res rg.QueryResult) bool {
-	return len(res.Statistics) == 0
+func IsPropertySet(res rg.QueryResult) bool {
+	if len(res.Statistics) >= 1 {
+		return strings.Contains(res.Statistics[0], "Properties set")
+	}
+	return false
 }

@@ -131,7 +131,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 
 	glog.Info("Updating Cluster resource in RedisGraph. ", resource)
 	res, _, err := db.Update([]*db.Resource{&resource})
-	if db.IsGraphMissing(err) || db.IsEmptySet(res) {
+	if db.IsGraphMissing(err) || !db.IsPropertySet(res) {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
 		_, _, err = db.Insert([]*db.Resource{&resource})
 		if err != nil {
