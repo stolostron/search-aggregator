@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -53,10 +54,13 @@ func main() {
 		},
 	}
 	srv := &http.Server{
-		Addr:         config.Cfg.AggregatorAddress,
-		Handler:      router,
-		TLSConfig:    cfg,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
+		Addr:              config.Cfg.AggregatorAddress,
+		Handler:           router,
+		TLSConfig:         cfg,
+		ReadHeaderTimeout: time.Duration(config.Cfg.HTTPTimeout) * time.Millisecond,
+		ReadTimeout:       time.Duration(config.Cfg.HTTPTimeout) * time.Millisecond,
+		WriteTimeout:      time.Duration(config.Cfg.HTTPTimeout) * time.Millisecond,
+		TLSNextProto:      make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	glog.Info("Listening on: ", config.Cfg.AggregatorAddress)

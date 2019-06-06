@@ -23,6 +23,7 @@ const (
 	DEFAULT_REDIS_HOST         = "localhost"
 	DEFAULT_REDIS_PORT         = "6379"
 	DEFAULT_REDISCOVER_RATE_MS = 60000 // 1 min
+	DEFAULT_HTTP_TIMEOUT       = 10000 // 10 secs
 )
 
 // Define a config type to hold our config properties.
@@ -34,6 +35,7 @@ type Config struct {
 	RedisPassword     string // password for redis
 	KubeConfig        string // Local kubeconfig path
 	RediscoverRateMS  int    // time in MS we should check on cluster resource type
+	HTTPTimeout       int    // timeout when the http server should drop connections
 }
 
 var Cfg = Config{}
@@ -57,6 +59,7 @@ func init() {
 	setDefault(&Cfg.RedisSSHPort, "REDIS_SSH_PORT", "")
 	setDefault(&Cfg.RedisPassword, "REDIS_PASSWORD", "")
 	setDefaultInt(&Cfg.RediscoverRateMS, "REDISCOVER_RATE_MS", DEFAULT_REDISCOVER_RATE_MS)
+	setDefaultInt(&Cfg.HTTPTimeout, "HTTP_TIMEOUT", DEFAULT_HTTP_TIMEOUT)
 
 	defaultKubePath := filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	if _, err := os.Stat(defaultKubePath); os.IsNotExist(err) {
