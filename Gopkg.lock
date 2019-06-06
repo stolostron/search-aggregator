@@ -171,6 +171,14 @@
   version = "v2.0.1"
 
 [[projects]]
+  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  pruneopts = "UT"
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:cb253bc08709af634170e03228a845a0f69af8d972166c17385787d8b668653d"
   name = "github.com/redislabs/redisgraph-go"
@@ -185,6 +193,14 @@
   pruneopts = "UT"
   revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
   version = "v1.0.1"
+
+[[projects]]
+  digest = "1:25f2747b063c0a656195ef85413cef8c9f2bbe128deab7d39563a6ca1e536070"
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  pruneopts = "UT"
+  revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
+  version = "v1.1.4"
 
 [[projects]]
   branch = "master"
@@ -479,6 +495,7 @@
     "github.com/gomodule/redigo/redis",
     "github.com/gorilla/mux",
     "github.com/redislabs/redisgraph-go",
+    "github.com/stretchr/testify/assert",
     "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/apis/mcm/v1alpha1",
     "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/client/clientset_generated/clientset",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

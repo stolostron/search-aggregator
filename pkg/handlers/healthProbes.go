@@ -18,26 +18,23 @@ import (
 
 // LivenessProbe is used to check if this service is alive.
 func LivenessProbe(w http.ResponseWriter, r *http.Request) {
-	glog.Info("livenessProbe")
+	glog.V(2).Info("livenessProbe")
 	fmt.Fprint(w, "OK")
 }
 
 // ReadinessProbe checks if Redis is available.
 func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
-	glog.Info("readinessProbe - Checking Redis connection.")
+	glog.V(2).Info("readinessProbe - Checking Redis connection.")
 
-	conn, connError := db.Pool.Dial() // Go straight to the pool's Dial because we don't actually want to play by the pool's rules here - just want a connection unrelated to all the other ones
-
-	if connError != nil || conn == nil {
+	conn, err := db.Pool.Dial() // Go straight to the pool's Dial because we don't actually want to play by the pool's rules here - just want a connection unrelated to all the other ones
+	if err != nil {
 		// Respond with error.
 		glog.Warning("Unable to reach Redis.")
 		http.Error(w, "Unable to reach Redis.", 503)
-	} else {
-		// Respond with success.
-		fmt.Fprint(w, "OK")
+		return
 	}
 
-	if conn != nil {
-		conn.Close()
-	}
+	defer conn.Close()
+	// Respond with success
+	fmt.Fprint(w, "OK")
 }

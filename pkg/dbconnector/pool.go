@@ -46,8 +46,8 @@ func getRedisConnection() (redis.Conn, error) {
 		glog.Info("Initializing new Redis SSH client with redisHost: ", config.Cfg.RedisHost, " redisSSHPort: ", config.Cfg.RedisSSHPort)
 		caCert, err := ioutil.ReadFile("./rediscert/redis.crt")
 		if err != nil {
-			glog.Error("Error loading TLS certificate. Redis Certificate must be mounted at ./sslcert/redis.crt")
-			glog.Error(err)
+			glog.Error("Error loading TLS certificate. Redis Certificate must be mounted at ./sslcert/redis.crt: ", err)
+			return nil, err
 		}
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
@@ -86,9 +86,10 @@ func getRedisConnection() (redis.Conn, error) {
 	// If a password is provided, then use it to authenticate the Redis connection.
 	if config.Cfg.RedisPassword != "" {
 		glog.Info("Authenticating Redis client using password from REDIS_PASSWORD.")
-		if _, redisErr := redisConn.Do("AUTH", config.Cfg.RedisPassword); redisErr != nil {
-			glog.Error("Error authenticating Redis client. Original error: ", redisErr)
-			return redisConn, redisErr
+		if _, err := redisConn.Do("AUTH", config.Cfg.RedisPassword); err != nil {
+			glog.Error("Error authenticating Redis client. Original error: ", err)
+			redisConn.Close()
+			return nil, err
 		}
 	} else {
 		glog.Warning("REDIS_PASSWORD wasn't provided. Attempting to communicate without authentication.")

@@ -129,7 +129,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 
 	resource := transformCluster(cluster, clusterStatus)
 
-	glog.Info("Updating Cluster resource in RedisGraph. ", resource)
+	glog.V(2).Info("Updating Cluster resource in RedisGraph. ", resource)
 	res, _, err := db.Update([]*db.Resource{&resource})
 	if db.IsGraphMissing(err) || !db.IsPropertySet(res) {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
@@ -173,10 +173,10 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
 	if cluster.GetLabels() != nil {
-		props["label"] = clusterStatus.GetLabels()
+		props["label"] = cluster.GetLabels()
 	}
 	if cluster.GetNamespace() != "" {
-		props["namespace"] = clusterStatus.GetNamespace()
+		props["namespace"] = cluster.GetNamespace()
 	}
 
 	// we are pulling the status from the cluster object and cluster info from the clusterStatus object :(

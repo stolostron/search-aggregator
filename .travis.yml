@@ -14,6 +14,7 @@ services:
 branches:
   only:
     - master
+    - development
     - /^[0-9]+\..*$/
     - /^v[0-9]+\..*$/
     - /^release-[0-9]+\..*$/
@@ -27,7 +28,6 @@ install:
   - make deps
 
 script:
-  - echo "TODO no tests yet!"
   - make lint test build image
   - make copyright-check
 
@@ -35,6 +35,9 @@ deploy:
   skip_cleanup: true
   provider: script
   script: make docker-login release
+  on:
+    all_branches: true
+    condition: $TRAVIS_BRANCH != development
 
 after_deploy:
   - |

@@ -57,7 +57,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	clusterName := params["id"]
-	glog.Info("SyncResources() for cluster: ", clusterName)
+	glog.V(2).Info("SyncResources() for cluster: ", clusterName)
 
 	response := SyncResponse{}
 
@@ -177,7 +177,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	glog.Infof("Done commiting changes for cluster %s, preparing response", clusterName)
+	glog.V(2).Infof("Done commiting changes for cluster %s, preparing response", clusterName)
 
 	// Updating cluster status in cache.
 	response.UpdatedTimestamp = time.Now()
