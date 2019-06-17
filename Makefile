@@ -17,6 +17,7 @@ ifeq ($(ARCH), x86_64)
 	IMAGE_NAME_ARCH = $(IMAGE_NAME)-amd64
 else
 	IMAGE_NAME_ARCH = $(IMAGE_NAME)-$(ARCH)
+	DOCKER_FILE     = Dockerfile.$(ARCH)
 endif
 
 # Variables for Red Hat required labels
