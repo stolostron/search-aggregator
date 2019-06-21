@@ -28,6 +28,7 @@ const (
 )
 
 // Initializes the pool using functions in this file.
+// Also initializes the Store interface.
 func init() {
 
 	Pool = &redis.Pool{
@@ -37,6 +38,8 @@ func init() {
 		TestOnBorrow: testRedisConnection,
 		Wait:         true,
 	}
+
+	Store = RedisGraphStore{}
 
 }
 

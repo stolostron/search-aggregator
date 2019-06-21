@@ -81,7 +81,7 @@ func ChunkedInsert(resources []*Resource) ChunkedOperationResult {
 // Returns the result, any errors when encoding, and any error from the query itself.
 func Insert(resources []*Resource) (rg.QueryResult, map[string]error, error) {
 	query, encodingErrors := insertQuery(resources) // Encoding errors are recoverable, but we still report them
-	resp, err := Query(query)
+	resp, err := Store.Query(query)
 	return resp, encodingErrors, err
 }
 

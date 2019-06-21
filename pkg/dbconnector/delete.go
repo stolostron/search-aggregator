@@ -75,7 +75,7 @@ func ChunkedDelete(resources []string) ChunkedOperationResult {
 // No encoding errors possible with this operation.
 func Delete(uids []string) (rg.QueryResult, error) {
 	query := deleteQuery(uids)
-	resp, err := Query(query)
+	resp, err := Store.Query(query)
 	return resp, err
 }
 

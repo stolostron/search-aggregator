@@ -76,7 +76,7 @@ func ChunkedUpdate(resources []*Resource) ChunkedOperationResult {
 // Returns the result, any errors when encoding, and any error from the query itself.
 func Update(resources []*Resource) (rg.QueryResult, map[string]error, error) {
 	query, encodingErrors := updateQuery(resources) // Encoding errors are recoverable, but we still report them
-	resp, err := Query(query)
+	resp, err := Store.Query(query)
 	return resp, encodingErrors, err
 }
 

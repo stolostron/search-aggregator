@@ -32,9 +32,19 @@ type ChunkedOperationResult struct {
 	SuccessfulResources int              // Number that were successfully completed
 }
 
+var Store DBStore
+
+// Interface for the DB dependency. Used for mocking rg.
+type DBStore interface {
+	Query(q string) (rg.QueryResult, error)
+}
+
+//Real redis gragh, will hold a connection to RedisGraph
+type RedisGraphStore struct{} // No properties. It just has the method
+
 // Executes the given query against redisgraph.
 // Called by the other functions in this file
-func Query(q string) (rg.QueryResult, error) {
+func (RedisGraphStore) Query(q string) (rg.QueryResult, error) {
 	// Get connection from the pool
 	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
 	defer conn.Close()
@@ -53,7 +63,7 @@ func DeleteCluster(clusterName string) (rg.QueryResult, error, error) {
 	if badClusterNameErr != nil {
 		return rg.QueryResult{}, badClusterNameErr, nil
 	}
-	resp, err := Query(query)
+	resp, err := Store.Query(query)
 	return resp, badClusterNameErr, err
 }
 
@@ -71,7 +81,7 @@ func Hashes(clusterName string) (rg.QueryResult, error, error) {
 	if badClusterNameErr != nil {
 		return rg.QueryResult{}, badClusterNameErr, nil
 	}
-	resp, err := Query(query)
+	resp, err := Store.Query(query)
 	return resp, badClusterNameErr, err
 }
 
