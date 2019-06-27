@@ -6,6 +6,7 @@ go:
 os:
   - linux
   - linux-ppc64le
+  - linux-s390
 services:
   - docker
 
