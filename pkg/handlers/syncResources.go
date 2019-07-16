@@ -10,6 +10,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -20,12 +21,15 @@ import (
 
 // SyncEvent - Object sent by the collector with the resources to change.
 type SyncEvent struct {
-	Hash            string `json:"hash,omitempty"`
-	ClearAll        bool   `json:"clearAll,omitempty"`
+	Hash     string `json:"hash,omitempty"`
+	ClearAll bool   `json:"clearAll,omitempty"`
+
 	AddResources    []*db.Resource
 	UpdateResources []*db.Resource
 	DeleteResources []DeleteResourceEvent
-	// TODO: AddEdges, DeleteEdges
+
+	AddEdges    []db.Edge
+	DeleteEdges []db.Edge
 }
 
 // DeleteResourceEvent - Contains the information needed to delete an existing resource.
@@ -35,15 +39,19 @@ type DeleteResourceEvent struct {
 
 // SyncResponse - Response to a SyncEvent
 type SyncResponse struct {
-	Hash             string
-	TotalAdded       int
-	TotalUpdated     int
-	TotalDeleted     int
-	TotalResources   int
-	UpdatedTimestamp time.Time
-	AddErrors        []SyncError
-	UpdateErrors     []SyncError
-	DeleteErrors     []SyncError
+	Hash              string
+	TotalAdded        int
+	TotalUpdated      int
+	TotalDeleted      int
+	TotalResources    int
+	TotalEdgesAdded   int
+	TotalEdgesDeleted int
+	UpdatedTimestamp  time.Time
+	AddErrors         []SyncError
+	UpdateErrors      []SyncError
+	DeleteErrors      []SyncError
+	AddEdgeErrors     []SyncError
+	DeleteEdgeErrors  []SyncError
 }
 
 // SyncError is used to respond whith errors.
@@ -64,10 +72,21 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// Function that sends the current response and the given status code.
 	// If you want to bail out early, make sure to call return right after.
 	respond := func(status int) {
+		statusMessage := fmt.Sprintf(
+			"Responding to cluster %s with status %d, stats: {Added: %d, Updated: %d, Deleted: %d, Edges Added: %d, Edges Deleted: %d, Total Resources: %d}",
+			clusterName,
+			status,
+			response.TotalAdded,
+			response.TotalUpdated,
+			response.TotalDeleted,
+			response.TotalEdgesAdded,
+			response.TotalEdgesDeleted,
+			response.TotalResources,
+		)
 		if status == http.StatusOK {
-			glog.Infof("Responding to cluster %s with status %d, stats: {Added: %d, Updated: %d, Deleted: %d, Total: %d}", clusterName, status, response.TotalAdded, response.TotalUpdated, response.TotalDeleted, response.TotalResources)
+			glog.Infof(statusMessage)
 		} else {
-			glog.Errorf("Responding to cluster %s with status %d, stats: {Added: %d, Updated: %d, Deleted: %d, Total: %d}", clusterName, status, response.TotalAdded, response.TotalUpdated, response.TotalDeleted, response.TotalResources)
+			glog.Errorf(statusMessage)
 		}
 		w.WriteHeader(status)
 		encodeError := json.NewEncoder(w).Encode(response)
@@ -118,13 +137,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		respond(http.StatusServiceUnavailable)
 		return
 	} else if insertResponse.ResourceErrors != nil {
-		for uid, e := range insertResponse.ResourceErrors {
-			glog.Errorf("Resource %s cannot be inserted: %s", uid, e)
-			response.AddErrors = append(response.AddErrors, SyncError{
-				ResourceUID: uid,
-				Message:     e.Error(),
-			})
-		}
+		response.AddErrors = processSyncErrors(insertResponse.ResourceErrors, "inserted")
 		respond(http.StatusBadRequest)
 		return
 	}
@@ -141,13 +154,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		respond(http.StatusServiceUnavailable)
 		return
 	} else if updateResponse.ResourceErrors != nil {
-		for uid, e := range updateResponse.ResourceErrors {
-			glog.Errorf("Resource %s cannot be updated: %s", uid, e)
-			response.UpdateErrors = append(response.UpdateErrors, SyncError{
-				ResourceUID: uid,
-				Message:     e.Error(),
-			})
-		}
+		response.UpdateErrors = processSyncErrors(updateResponse.ResourceErrors, "updated")
 		respond(http.StatusBadRequest)
 		return
 	}
@@ -166,18 +173,36 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		respond(http.StatusServiceUnavailable)
 		return
 	} else if deleteResponse.ResourceErrors != nil {
-		for uid, e := range deleteResponse.ResourceErrors {
-			glog.Errorf("Resource %s cannot be deleted: %s", uid, e)
-			response.DeleteErrors = append(response.DeleteErrors, SyncError{
-				ResourceUID: uid,
-				Message:     e.Error(),
-			})
-		}
+		response.DeleteErrors = processSyncErrors(deleteResponse.ResourceErrors, "deleted")
 		respond(http.StatusBadRequest)
 		return
 	}
 
-	glog.V(2).Infof("Done commiting changes for cluster %s, preparing response", clusterName)
+	// Insert Edges
+	insertEdgeResponse := db.ChunkedInsertEdge(syncEvent.AddEdges)
+	response.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
+	if insertEdgeResponse.ConnectionError != nil {
+		respond(http.StatusServiceUnavailable)
+		return
+	} else if insertEdgeResponse.ResourceErrors != nil {
+		response.AddEdgeErrors = processSyncErrors(insertEdgeResponse.ResourceErrors, "inserted by edge")
+		respond(http.StatusBadRequest)
+		return
+	}
+
+	// Delete Edges
+	deleteEdgeResponse := db.ChunkedDeleteEdge(syncEvent.DeleteEdges)
+	response.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
+	if deleteEdgeResponse.ConnectionError != nil {
+		respond(http.StatusServiceUnavailable)
+		return
+	} else if deleteEdgeResponse.ResourceErrors != nil {
+		response.DeleteEdgeErrors = processSyncErrors(deleteEdgeResponse.ResourceErrors, "removed by edge")
+		respond(http.StatusBadRequest)
+		return
+	}
+
+	glog.V(2).Infof("Done updating resources for cluster %s, preparing response", clusterName)
 
 	// Updating cluster status in cache.
 	response.UpdatedTimestamp = time.Now()
@@ -207,4 +232,18 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respond(http.StatusOK)
+}
+
+// internal function to inline the errors
+func processSyncErrors(re map[string]error, verb string) []SyncError {
+	ret := []SyncError{}
+	for uid, e := range re {
+		glog.Errorf("Resource %s cannot be %s: %s", uid, verb, e)
+		ret = append(ret, SyncError{
+			ResourceUID: uid,
+			Message:     e.Error(),
+		})
+	}
+
+	return ret
 }

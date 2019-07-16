@@ -16,13 +16,22 @@ import (
 
 const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 
-// Resource - Describes a resource
+// Resource - Describes a resource (node)
 type Resource struct {
 	Kind           string `json:"kind,omitempty"`
 	UID            string `json:"uid,omitempty"`
 	Hash           string `json:"hash,omitempty"`
 	ResourceString string `json:"resourceString,omitempty"`
 	Properties     map[string]interface{}
+}
+
+// Edge Type Constants
+type EdgeType string
+
+// Describes a relationship between resources
+type Edge struct {
+	SourceUID, DestUID string
+	EdgeType           EdgeType
 }
 
 // Represents the results of a chunked db operation
@@ -39,7 +48,7 @@ type DBStore interface {
 	Query(q string) (rg.QueryResult, error)
 }
 
-//Real redis gragh, will hold a connection to RedisGraph
+//Real redis graph, will hold a connection to RedisGraph
 type RedisGraphStore struct{} // No properties. It just has the method
 
 // Executes the given query against redisgraph.
