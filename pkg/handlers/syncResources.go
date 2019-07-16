@@ -54,7 +54,7 @@ type SyncResponse struct {
 	DeleteEdgeErrors  []SyncError
 }
 
-// SyncError is used to respond whith errors.
+// SyncError is used to respond with errors.
 type SyncError struct {
 	ResourceUID string
 	Message     string // Often comes out of a golang error using .Error()
@@ -103,10 +103,17 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = db.ValidateClusterName(clusterName)
+	if err != nil {
+		glog.Error("Invalid Cluster Name: ", clusterName)
+		respond(http.StatusBadRequest)
+		return
+	}
+
 	// This usually indicates that something has gone wrong, basically that the collector detected we are out of sync and wants us to start over.
 	if syncEvent.ClearAll {
 		glog.Infof("Clearing previous data for cluster %s", clusterName)
-		_, encodingErr, err := db.DeleteCluster(clusterName)
+		_, err := db.DeleteCluster(clusterName)
 		if err != nil {
 			glog.Error("Error deleting current resources for cluster: ", err)
 			if db.IsBadConnection(err) {
@@ -116,11 +123,6 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 				respond(http.StatusBadRequest)
 				return
 			}
-		}
-		if encodingErr != nil {
-			glog.Error("Invalid Cluster Name: ", clusterName)
-			respond(http.StatusBadRequest)
-			return
 		}
 	}
 
@@ -213,13 +215,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		TotalResources: response.TotalResources,
 	}
 
-	_, clusterNameErr, err := db.SaveClusterStatus(clusterName, status)
-	if clusterNameErr != nil {
-		glog.Errorf("Could not save cluster status because of invalid cluster name: %s", clusterName)
-		respond(http.StatusBadRequest)
-		return
-	}
-
+	_, err = db.SaveClusterStatus(clusterName, status)
 	if err != nil {
 		glog.Errorf("Failed to save cluster status for cluster %s: %s", clusterName, err)
 		if db.IsBadConnection(err) {

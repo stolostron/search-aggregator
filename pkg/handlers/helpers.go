@@ -17,11 +17,7 @@ import (
 
 // computeHash computes a new hash using the hashes from all the current resources, and returns that and the total number of resources.
 func computeHash(clusterName string) (totalResources int, hash string) {
-
-	resp, clusterNameErr, err := db.Hashes(clusterName)
-	if clusterNameErr != nil {
-		glog.Errorf("Cannot encode clusterName %s: %s", clusterName, clusterNameErr)
-	}
+	resp, err := db.Hashes(clusterName)
 	if err != nil {
 		glog.Errorf("Error fetching hashes for cluster %s: %s", clusterName, err)
 	}

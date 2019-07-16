@@ -13,16 +13,16 @@ import (
 	assert "github.com/stretchr/testify/assert"
 )
 
-func TestProcessClusterUpsert(t *testing.T) {
-	error1 := validateClusterName("test")
+func TestValidateClusterName(t *testing.T) {
+	error1 := ValidateClusterName("test")
 	assert.Equal(t, error1, nil, "test")
-	error2 := validateClusterName("te'st")
+	error2 := ValidateClusterName("te'st")
 	assert.Error(t, error2)
-	error3 := validateClusterName("te/st")
+	error3 := ValidateClusterName("te/st")
 	assert.Error(t, error3)
-	error4 := validateClusterName("te.st")
+	error4 := ValidateClusterName("te.st")
 	assert.Error(t, error4)
-	error5 := validateClusterName("=test")
+	error5 := ValidateClusterName("=test")
 	assert.Error(t, error5)
 
 }

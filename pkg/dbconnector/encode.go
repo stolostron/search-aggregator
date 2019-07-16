@@ -16,7 +16,7 @@ import (
 )
 
 // Tells whether the given clusterName is valid, i.e. has no illegal characters and isn't empty
-func validateClusterName(clusterName string) error {
+func ValidateClusterName(clusterName string) error {
 	if len(clusterName) == 0 {
 		return errors.New("Order contains blank ClusterName")
 	}

@@ -35,9 +35,6 @@ func main() {
 
 	router.HandleFunc("/liveness", handlers.LivenessProbe).Methods("GET")
 	router.HandleFunc("/readiness", handlers.ReadinessProbe).Methods("GET")
-
-	router.HandleFunc("/aggregator/status", handlers.GetStatus).Methods("GET")
-	router.HandleFunc("/aggregator/clusters/{id}/status", handlers.GetClusterStatus).Methods("GET")
 	router.HandleFunc("/aggregator/clusters/{id}/sync", handlers.SyncResources).Methods("POST")
 
 	// Configure TLS

@@ -66,39 +66,22 @@ func (RedisGraphStore) Query(q string) (rg.QueryResult, error) {
 }
 
 // Deletes all resources for given cluster
-// First error is the error from encoding (only one possible), second is from the query.
-func DeleteCluster(clusterName string) (rg.QueryResult, error, error) {
-	query, badClusterNameErr := deleteClusterQuery(clusterName)
-	if badClusterNameErr != nil {
-		return rg.QueryResult{}, badClusterNameErr, nil
-	}
-	resp, err := Store.Query(query)
-	return resp, badClusterNameErr, err
-}
-
-// Returns query to delete all graph data for a given cluster.
-func deleteClusterQuery(clusterName string) (string, error) {
-	err := validateClusterName(clusterName)
+func DeleteCluster(clusterName string) (rg.QueryResult, error) {
+	err := ValidateClusterName(clusterName)
 	if err != nil {
-		return "", err
+		return rg.QueryResult{}, err
 	}
-	return fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' DELETE n", clusterName), nil
-}
-
-func Hashes(clusterName string) (rg.QueryResult, error, error) {
-	query, badClusterNameErr := hashesQuery(clusterName)
-	if badClusterNameErr != nil {
-		return rg.QueryResult{}, badClusterNameErr, nil
-	}
+	query := fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' DELETE n", clusterName)
 	resp, err := Store.Query(query)
-	return resp, badClusterNameErr, err
+	return resp, err
 }
 
-// Returns query to get hashes for given cluster's resources in redisgraph.
-func hashesQuery(clusterName string) (string, error) {
-	err := validateClusterName(clusterName)
+func Hashes(clusterName string) (rg.QueryResult, error) {
+	err := ValidateClusterName(clusterName)
 	if err != nil {
-		return "", err
+		return rg.QueryResult{}, err
 	}
-	return fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' RETURN n._hash ORDER BY n._hash ASC", clusterName), nil
+	query := fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' RETURN n._hash ORDER BY n._hash ASC", clusterName)
+	resp, err := Store.Query(query)
+	return resp, err
 }

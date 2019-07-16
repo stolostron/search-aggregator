@@ -81,10 +81,7 @@ func WatchClusters() {
 			}
 
 			// When a cluster (ClusterStatus) gets deleted, we must remove all resources for that cluster from RedisGraph.
-			_, badNameErr, err := db.DeleteCluster(cluster.GetName())
-			if badNameErr != nil {
-				glog.Error("Invalid Cluster Name: ", cluster.GetName())
-			}
+			_, err := db.DeleteCluster(cluster.GetName())
 			if err != nil {
 				glog.Error("Error deleting current resources for cluster: ", err)
 			}
@@ -146,10 +143,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	// If a cluster is offline we should remove the cluster objects
 	if resource.Properties["status"] == "offline" {
 		glog.Infof("Cluster %s appears to be offline, removing cluster resources from redis", cluster.GetName())
-		_, badNameErr, err := db.DeleteCluster(cluster.GetName())
-		if badNameErr != nil {
-			glog.Error("Invalid Cluster Name: ", cluster.GetName())
-		}
+		_, err := db.DeleteCluster(cluster.GetName())
 		if err != nil {
 			glog.Error("Error deleting current resources for cluster: ", err)
 		}
