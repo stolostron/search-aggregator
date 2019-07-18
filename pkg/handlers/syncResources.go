@@ -20,8 +20,7 @@ import (
 
 // SyncEvent - Object sent by the collector with the resources to change.
 type SyncEvent struct {
-	Hash     string `json:"hash,omitempty"`
-	ClearAll bool   `json:"clearAll,omitempty"`
+	ClearAll bool `json:"clearAll,omitempty"`
 
 	AddResources    []*db.Resource
 	UpdateResources []*db.Resource
@@ -38,7 +37,6 @@ type DeleteResourceEvent struct {
 
 // SyncResponse - Response to a SyncEvent
 type SyncResponse struct {
-	Hash              string
 	TotalAdded        int
 	TotalUpdated      int
 	TotalDeleted      int

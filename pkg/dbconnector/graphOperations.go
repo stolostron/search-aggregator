@@ -20,7 +20,6 @@ const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 type Resource struct {
 	Kind           string `json:"kind,omitempty"`
 	UID            string `json:"uid,omitempty"`
-	Hash           string `json:"hash,omitempty"`
 	ResourceString string `json:"resourceString,omitempty"`
 	Properties     map[string]interface{}
 }

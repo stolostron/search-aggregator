@@ -36,12 +36,11 @@ Works with [search-collector](https://github.ibm.com/IBMPrivateCloud/search-coll
     **Response:**
     - Timestamp of last update.
     - Total number of resources in the cluster.
-    - The current hash for all resources in the cluster.
+    - Total number of intra edges in the cluster
     - MaxQueueTime - used to tell collectors how often to send updates.
 
 3. POST https://localhost:3010/aggregator/clusters/[clustername]/sync
 
-    - `hash` - value of the current hash, used to validate the collector is in sync with the current RedisGraph cache.
     - `clearAll` - delete all resources for the cluster before adding new resources.
     - `addResources` - List of resources to be added.
     - `updateResources` - List of resources to be updated.
@@ -50,13 +49,11 @@ Works with [search-collector](https://github.ibm.com/IBMPrivateCloud/search-coll
     **Sample body:**
     ```json
     {
-      "hash": "hash-of-previous-state",
       "clearAll": false,
       "addResources": [
         {
           "kind": "kind1",
           "uid": "uid-of-new-resource",
-          "hash": "hash-of-new-resource",
           "properties": {
             "name": "name1"
           }
@@ -66,7 +63,6 @@ Works with [search-collector](https://github.ibm.com/IBMPrivateCloud/search-coll
         {
           "kind": "kind2",
           "uid": "uid-of-existing-resource",
-          "hash": "hash-of-updated-resource",
           "properties": {
             "name": "name2"
           }
@@ -83,7 +79,6 @@ Works with [search-collector](https://github.ibm.com/IBMPrivateCloud/search-coll
     **Sample Response:**
     ```json
     {
-        "Hash": "hash-of-current-state",
         "TotalAdded": 1,
         "TotalUpdated": 2,
         "TotalDeleted": 3,

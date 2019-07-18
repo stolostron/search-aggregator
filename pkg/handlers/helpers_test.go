@@ -19,8 +19,8 @@ type MockCache struct {
 }
 
 func (mc MockCache) Query(input string) (rg.QueryResult, error) {
-	dbhash := [][]string{{"Header"}, {"100"}, {"test3"}}
-	return rg.QueryResult{Results: dbhash}, nil
+	res := [][]string{{"Header"}, {"100"}}
+	return rg.QueryResult{Results: res}, nil
 }
 
 func TestNodeCount(t *testing.T) {
