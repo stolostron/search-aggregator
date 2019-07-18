@@ -8,36 +8,54 @@ The source code for this program is not published or otherwise divested of its t
 package handlers
 
 import (
-	"crypto/sha1"
-	"fmt"
+	"strconv"
 
 	"github.com/golang/glog"
 	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
-// computeHash computes a new hash using the hashes from all the current resources, and returns that and the total number of resources.
-func computeHash(clusterName string) (totalResources int, hash string) {
-	resp, err := db.Hashes(clusterName)
+// returns the total number of nodes on cluster
+func computeNodeCount(clusterName string) int {
+	resp, err := db.TotalNodes(clusterName)
 	if err != nil {
-		glog.Errorf("Error fetching hashes for cluster %s: %s", clusterName, err)
+		glog.Errorf("Error node count for cluster %s: %s", clusterName, err)
 	}
 
 	if len(resp.Results) <= 1 { // Just 1 would be just the header
-		glog.Info("Cluster ", clusterName, " doesn't have any resources")
-		return 0, ""
+		glog.Info("Cluster ", clusterName, " doesn't have any nodes")
+		return 0
 	}
 
-	allHashes := resp.Results[1:] // Start at index 1 because index 0 has the header.
+	// headers are at the top of table - count is in second row
+	countString := resp.Results[1][0]
+	count, err := strconv.Atoi(countString)
 
-	h := sha1.New()
-	_, err = h.Write([]byte(fmt.Sprintf("%x", allHashes))) // TODO: I'll worry about strings later.
 	if err != nil {
-		glog.Error("Error generating hash.")
+		glog.Errorf("Could not parse node count string for cluster %s: %s", clusterName, countString)
 	}
-	bs := h.Sum(nil)
 
-	totalResources = len(allHashes)
-	hash = fmt.Sprintf("%x", bs)
+	return count
+}
 
-	return // Returns named returns in header
+// computeIntraEdges counts the nubmer of intra edges returned form db
+func computeIntraEdges(clusterName string) int {
+	resp, err := db.TotalIntraEdges(clusterName)
+	if err != nil {
+		glog.Errorf("Error fetching edge count for cluster %s: %s", clusterName, err)
+	}
+
+	if len(resp.Results) <= 1 { // Just 1 would be just the header
+		glog.Info("Cluster ", clusterName, " doesn't have any edges")
+		return 0
+	}
+
+	// headers are at the top of table - count is in second row
+	countString := resp.Results[1][0]
+	count, err := strconv.Atoi(countString)
+
+	if err != nil {
+		glog.Errorf("Could not parse edge count string for cluster %s: %s", clusterName, countString)
+	}
+
+	return count
 }

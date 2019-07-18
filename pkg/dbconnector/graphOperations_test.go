@@ -28,24 +28,6 @@ func (mc MockCache) Query(input string) (rg.QueryResult, error) {
 	return rg.QueryResult{}, errors.New("Incorrect Query formed")
 }
 
-func TestHashes(t *testing.T) {
-
-	mc := MockCache{}                                                                                    // Construct mock cache using type defined above
-	mc.goodQuery = "MATCH (n) WHERE n.cluster = 'good-cluster-name' RETURN n._hash ORDER BY n._hash ASC" // Dictate what the next input to mocked Query
-	Store = mc
-	resp, err := Hashes("good-cluster-name")
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
-}
-func TestHashesBadClusterName(t *testing.T) {
-
-	mc := MockCache{}                                                                                    // Construct mock cache using type defined above
-	mc.goodQuery = "MATCH (n) WHERE n.cluster = 'good-cluster-name' RETURN n._hash ORDER BY n._hash ASC" // Dictate what the next input to mocked Query
-	Store = mc
-	_, err := Hashes("bad-cluster=name")
-	assert.Error(t, err)
-}
-
 func TestDeleteCluster(t *testing.T) {
 
 	mc := MockCache{}                                                         // Construct mock cache using type defined above

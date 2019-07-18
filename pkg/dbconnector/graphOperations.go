@@ -76,12 +76,23 @@ func DeleteCluster(clusterName string) (rg.QueryResult, error) {
 	return resp, err
 }
 
-func Hashes(clusterName string) (rg.QueryResult, error) {
+func TotalNodes(clusterName string) (rg.QueryResult, error) {
 	err := ValidateClusterName(clusterName)
 	if err != nil {
 		return rg.QueryResult{}, err
 	}
-	query := fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' RETURN n._hash ORDER BY n._hash ASC", clusterName)
+	query := fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' RETURN count(n)", clusterName)
+	resp, err := Store.Query(query)
+	return resp, err
+}
+
+// Returns a result set with all INTRA edges within the clusterName
+func TotalIntraEdges(clusterName string) (rg.QueryResult, error) {
+	err := ValidateClusterName(clusterName)
+	if err != nil {
+		return rg.QueryResult{}, err
+	}
+	query := fmt.Sprintf("MATCH (s)-[e]->(d) WHERE s.cluster=d.cluster AND s.cluster='%s' RETURN count(e)", clusterName)
 	resp, err := Store.Query(query)
 	return resp, err
 }

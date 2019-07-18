@@ -19,14 +19,13 @@ type MockCache struct {
 }
 
 func (mc MockCache) Query(input string) (rg.QueryResult, error) {
-	dbhash := [][]string{{"test1"}, {"test2"}, {"test3"}}
+	dbhash := [][]string{{"Header"}, {"100"}, {"test3"}}
 	return rg.QueryResult{Results: dbhash}, nil
 }
 
-func TestComputeHash(t *testing.T) {
+func TestNodeCount(t *testing.T) {
 	fakeCache := MockCache{}
 	db.Store = fakeCache
-	total, hash := computeHash("anyinput")
-	assert.Equal(t, 2, total)
-	assert.Equal(t, "04bd4dbfb6ccfaa3f5853777ef04acc873bcb877", hash)
+	count := computeNodeCount("anyinput")
+	assert.Equal(t, 100, count)
 }

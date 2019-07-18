@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -46,7 +45,7 @@ type SyncResponse struct {
 	TotalResources    int
 	TotalEdgesAdded   int
 	TotalEdgesDeleted int
-	UpdatedTimestamp  time.Time
+	TotalEdges        int
 	AddErrors         []SyncError
 	UpdateErrors      []SyncError
 	DeleteErrors      []SyncError
@@ -205,28 +204,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	glog.V(2).Infof("Done updating resources for cluster %s, preparing response", clusterName)
-
-	// Updating cluster status in cache.
-	response.UpdatedTimestamp = time.Now()
-	response.TotalResources, response.Hash = computeHash(clusterName) // This goes out to the DB through a work order, so it can take a second
-	status := db.ClusterStatus{
-		Hash:           response.Hash,
-		LastUpdated:    response.UpdatedTimestamp.String(),
-		TotalResources: response.TotalResources,
-	}
-
-	_, err = db.SaveClusterStatus(clusterName, status)
-	if err != nil {
-		glog.Errorf("Failed to save cluster status for cluster %s: %s", clusterName, err)
-		if db.IsBadConnection(err) {
-			respond(http.StatusServiceUnavailable)
-			return
-		} else {
-			respond(http.StatusBadRequest)
-			return
-		}
-	}
-
+	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB through a work order, so it can take a second
+	response.TotalEdges = computeIntraEdges(clusterName)
 	respond(http.StatusOK)
 }
 
