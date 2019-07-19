@@ -24,6 +24,7 @@ const (
 	DEFAULT_REDIS_PORT         = "6379"
 	DEFAULT_REDISCOVER_RATE_MS = 60000 // 1 min
 	DEFAULT_HTTP_TIMEOUT       = 10000 // 10 secs
+	AGGREGATOR_API_VERSION     = "4.1.0"
 )
 
 // Define a config type to hold our config properties.

@@ -15,6 +15,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
+	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
 	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
@@ -49,6 +50,7 @@ type SyncResponse struct {
 	DeleteErrors      []SyncError
 	AddEdgeErrors     []SyncError
 	DeleteEdgeErrors  []SyncError
+	version           string
 }
 
 // SyncError is used to respond with errors.
@@ -64,7 +66,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	clusterName := params["id"]
 	glog.V(2).Info("SyncResources() for cluster: ", clusterName)
 
-	response := SyncResponse{}
+	response := SyncResponse{version: config.AGGREGATOR_API_VERSION}
 
 	// Function that sends the current response and the given status code.
 	// If you want to bail out early, make sure to call return right after.
