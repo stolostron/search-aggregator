@@ -12,40 +12,52 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/golang/glog"
 	rg "github.com/redislabs/redisgraph-go"
 )
+
+func handleInsertChunkingError(resources []Edge, err error) ChunkedOperationResult {
+	glog.V(3).Info("Error inserting edge(s)", err)
+	if len(resources) == 1 { // If this was a single resource
+		uid := fmt.Sprintf("(%s)-[:%s]->(%s)", resources[0].SourceUID, resources[0].EdgeType, resources[0].DestUID)
+		return ChunkedOperationResult{
+			ResourceErrors: map[string]error{uid: err},
+		}
+	} else { // If this is multiple resources, we make a recursive call to find which half had the error.
+		firstHalf := chunkedInsertEdgeHelper(resources[0 : len(resources)/2])
+		secondHalf := chunkedInsertEdgeHelper(resources[len(resources)/2:])
+		if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil { // Again, if either one has a redis conn issue we just instantly bail
+			return ChunkedOperationResult{
+				ConnectionError: err,
+			}
+		}
+		return ChunkedOperationResult{
+			ResourceErrors:      mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
+			SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources, // These will be 0 if there were errs in the halves
+		}
+	}
+}
 
 // Recursive helper for InsertEdge. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
 func chunkedInsertEdgeHelper(resources []Edge) ChunkedOperationResult {
 	if len(resources) == 0 {
 		return ChunkedOperationResult{} // No errors, and no SuccessfulResources
 	}
-	_, err := InsertEdge(resources) // We currently ignore encoding errors as they are always recoverable, may change in the future.
-	if IsBadConnection(err) {       // this is false if err is nil
+
+	res, err := InsertEdge(resources)
+
+	if IsBadConnection(err) { // this is false if err is nil
 		return ChunkedOperationResult{
 			ConnectionError: err,
 		}
 	}
-	if err != nil {
-		if len(resources) == 1 { // If this was a single resource
-			uid := fmt.Sprintf("(%s)-[:%s]->(%s)", resources[0].SourceUID, resources[0].EdgeType, resources[0].DestUID)
-			return ChunkedOperationResult{
-				ResourceErrors: map[string]error{uid: err},
-			}
-		} else { // If this is multiple resources, we make a recursive call to find which half had the error.
-			firstHalf := chunkedInsertEdgeHelper(resources[0 : len(resources)/2])
-			secondHalf := chunkedInsertEdgeHelper(resources[len(resources)/2:])
-			if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil { // Again, if either one has a redis conn issue we just instantly bail
-				return ChunkedOperationResult{
-					ConnectionError: err,
-				}
-			}
-			return ChunkedOperationResult{
-				ResourceErrors:      mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
-				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources, // These will be 0 if there were errs in the halves
-			}
-		}
+
+	allEdgesCreated := strings.Contains(strings.Join(res.Statistics, ""), fmt.Sprintf("Relationships created: %d", len(resources)))
+
+	if err != nil || !allEdgesCreated { // error or not all edges created, start insert chunking
+		return handleInsertChunkingError(resources, err)
 	}
+
 	// All clear, return that we got everything in
 	return ChunkedOperationResult{
 		SuccessfulResources: len(resources),
