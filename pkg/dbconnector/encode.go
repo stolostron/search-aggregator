@@ -15,6 +15,13 @@ import (
 	"strings"
 )
 
+// Escape or remove any characters that could break the query.
+func sanitizeValue(value string) string {
+	res1 := strings.Replace(value, "\"", "\\\"", -1) // Escape all double quotes. A double quote would finalize the redis query.
+	res2 := strings.Replace(res1, "'", "\\'", -1)    // Escape all single quotes. A single quote would finalize the redis query.
+	return res2
+}
+
 // Tells whether the given clusterName is valid, i.e. has no illegal characters and isn't empty
 func ValidateClusterName(clusterName string) error {
 	if len(clusterName) == 0 {
@@ -31,9 +38,6 @@ func (r Resource) encodeProperties() (map[string]interface{}, error) {
 	res := make(map[string]interface{}, len(r.Properties))
 	for k, v := range r.Properties {
 		// Get all the rg props for this property.
-		if k == "label" { // Labels will be supported in a future release.
-			continue
-		}
 		partial, err := encodeProperty(k, v)
 		if err != nil { // if anything went wrong just log a warning and skip it
 			// glog.Warning("Skipping property ", k, " on resource ", r.UID, ": ", err)
@@ -72,40 +76,34 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 	// Useful doc regarding default types: https://golang.org/pkg/encoding/json/#Unmarshal
 	switch typedVal := value.(type) {
 	case string:
-		if !strings.Contains(typedVal, "'") {
-			if key == "kind" { // we lowercase the kind.
-				res[key] = strings.ToLower(typedVal)
-			} else {
-				res[key] = typedVal
-			}
+		if key == "kind" { // we lowercase the kind.
+			res[key] = strings.ToLower(sanitizeValue(typedVal))
+		} else {
+			res[key] = sanitizeValue(typedVal)
 		}
+
 	case []interface{}:
+		// RedisGraph 1.0.15 doesn't support a list of properties. As a workaround to this limitation
+		// we are encoding a list of values in a single string.
 		elementStrings := make([]string, 0, len(typedVal))
 		for _, e := range typedVal {
 			elementString := fmt.Sprintf("%v", e)
-			if strings.Contains(elementString, "'") { // skip any with bad chars
-				continue
-			}
 			elementStrings = append(elementStrings, elementString)
 		}
+		res[key] = sanitizeValue(strings.Join(elementStrings, ", ")) // e.g. val1, val2, val3
 
-		res[key] = strings.Join(elementStrings, ", ") // e.g. val1, val2, val3
-
-	/*
-		// TODO maps will be supported in a later release - they require some special logic around updating, since the property keys aren't predefined.
-		case map[string]interface{}:
-			for k, v := range typedVal {
-				switch typedElement := v.(type) {
-				case string:
-					if strings.Contains(typedElement, "'") { // skip any with bad chars
-						continue
-					}
-					res[fmt.Sprintf("__%s-%s", key, k)] = v // e.g. __map-key1=val1, __map-key2=val2, __map-key3=val3
-				default: // Skip anything not a string.
-					continue
-				}
+	case map[string]interface{}:
+		// RedisGraph 1.0.15 doesn't support a list of properties. As a workaround to this limitation
+		// we are encoding the labels in a single string.
+		if key == "label" {
+			labelStrings := make([]string, 0, len(typedVal))
+			for key, value := range typedVal {
+				labelString := fmt.Sprintf("%s=%s", key, value)
+				labelStrings = append(labelStrings, labelString)
 			}
-	*/
+			res[key] = sanitizeValue(strings.Join(labelStrings, "; ")) // e.g. key1=val1; key2=val2; key3=val3
+		}
+
 	case int64:
 		res[key] = typedVal
 	case float64: // As of 4/15/2019 we don't have any numerical properties that aren't ints.
