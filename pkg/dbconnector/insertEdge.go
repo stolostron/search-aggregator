@@ -44,7 +44,7 @@ func chunkedInsertEdgeHelper(resources []Edge) ChunkedOperationResult {
 		return ChunkedOperationResult{} // No errors, and no SuccessfulResources
 	}
 
-	res, err := InsertEdge(resources)
+	_, err := InsertEdge(resources)
 
 	if IsBadConnection(err) { // this is false if err is nil
 		return ChunkedOperationResult{
@@ -52,9 +52,7 @@ func chunkedInsertEdgeHelper(resources []Edge) ChunkedOperationResult {
 		}
 	}
 
-	allEdgesCreated := strings.Contains(strings.Join(res.Statistics, ""), fmt.Sprintf("Relationships created: %d", len(resources)))
-
-	if err != nil || !allEdgesCreated { // error or not all edges created, start insert chunking
+	if err != nil { // error, start insert chunking
 		return handleInsertChunkingError(resources, err)
 	}
 
