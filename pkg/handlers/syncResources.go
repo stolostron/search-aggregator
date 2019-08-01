@@ -50,7 +50,7 @@ type SyncResponse struct {
 	DeleteErrors      []SyncError
 	AddEdgeErrors     []SyncError
 	DeleteEdgeErrors  []SyncError
-	version           string
+	Version           string
 }
 
 // SyncError is used to respond with errors.
@@ -66,7 +66,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	clusterName := params["id"]
 	glog.V(2).Info("SyncResources() for cluster: ", clusterName)
 
-	response := SyncResponse{version: config.AGGREGATOR_API_VERSION}
+	response := SyncResponse{Version: config.AGGREGATOR_API_VERSION}
 
 	// Function that sends the current response and the given status code.
 	// If you want to bail out early, make sure to call return right after.
