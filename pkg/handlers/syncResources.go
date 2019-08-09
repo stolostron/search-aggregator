@@ -104,7 +104,14 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	err = db.ValidateClusterName(clusterName)
 	if err != nil {
-		glog.Error("Invalid Cluster Name: ", clusterName)
+		glog.Warning("Invalid Cluster Name: ", clusterName)
+		respond(http.StatusBadRequest)
+		return
+	}
+
+	// Validate that we have a Cluster CRD so we can build edges on create
+	if !assertClusterNode(clusterName) {
+		glog.Warningf("Warning, couldn't to find a Cluster resource with name: %s. This means that the sync request came from a remote cluster that hasn’t joined MCM. Rejecting the incoming sync request.", clusterName)
 		respond(http.StatusBadRequest)
 		return
 	}
@@ -132,7 +139,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		syncEvent.AddResources[i].Properties["cluster"] = clusterName
 	}
 
-	insertResponse := db.ChunkedInsert(syncEvent.AddResources)
+	insertResponse := db.ChunkedInsert(syncEvent.AddResources, clusterName)
 	response.TotalAdded = insertResponse.SuccessfulResources // could be 0
 	if insertResponse.ConnectionError != nil {
 		respond(http.StatusServiceUnavailable)

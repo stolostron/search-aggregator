@@ -71,8 +71,7 @@ func DeleteCluster(clusterName string) (rg.QueryResult, error) {
 		return rg.QueryResult{}, err
 	}
 	query := fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' DELETE n", clusterName)
-	resp, err := Store.Query(query)
-	return resp, err
+	return Store.Query(query)
 }
 
 func TotalNodes(clusterName string) (rg.QueryResult, error) {
@@ -81,8 +80,7 @@ func TotalNodes(clusterName string) (rg.QueryResult, error) {
 		return rg.QueryResult{}, err
 	}
 	query := fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' RETURN count(n)", clusterName)
-	resp, err := Store.Query(query)
-	return resp, err
+	return Store.Query(query)
 }
 
 // Returns a result set with all INTRA edges within the clusterName
@@ -91,7 +89,21 @@ func TotalIntraEdges(clusterName string) (rg.QueryResult, error) {
 	if err != nil {
 		return rg.QueryResult{}, err
 	}
-	query := fmt.Sprintf("MATCH (s)-[e]->(d) WHERE s.cluster=d.cluster AND s.cluster='%s' RETURN count(e)", clusterName)
+	query := fmt.Sprintf("MATCH (s)-[e]->(d) WHERE s.cluster='%s' AND e._interCluster != true RETURN count(e)", clusterName)
 	resp, err := Store.Query(query)
 	return resp, err
+}
+
+func MergeDummyCluster() (rg.QueryResult, error) {
+	query := "MERGE (:Cluster {name: 'local-cluster'})"
+	return Store.Query(query)
+}
+
+func CheckClusterResource(clusterName string) (rg.QueryResult, error) {
+	err := ValidateClusterName(clusterName)
+	if err != nil {
+		return rg.QueryResult{}, err
+	}
+	query := fmt.Sprintf("MATCH (c:Cluster {name: '%s'}) RETURN count(c)", clusterName)
+	return Store.Query(query)
 }

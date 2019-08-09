@@ -59,3 +59,34 @@ func computeIntraEdges(clusterName string) int {
 
 	return count
 }
+
+func assertClusterNode(clusterName string) bool {
+	if clusterName == "local-cluster" {
+		_, err := db.MergeDummyCluster()
+		if err != nil {
+			glog.Error("Could not merge local cluster Cluster resource: ", err)
+			return false
+		}
+	} else {
+		resp, err := db.CheckClusterResource(clusterName)
+		if err != nil {
+			glog.Error("Could not check cluster resource by name: ", err)
+			return false
+		}
+
+		// headers are at the top of table - count is in second row
+		countString := resp.Results[1][0]
+		count, err := strconv.Atoi(countString)
+
+		if err != nil {
+			glog.Errorf("Could not parse Cluster count string for cluster %s: %s", clusterName, countString)
+			return false
+		}
+
+		if count <= 0 {
+			return false
+		}
+	}
+
+	return true
+}

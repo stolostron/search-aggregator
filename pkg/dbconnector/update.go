@@ -116,3 +116,30 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 
 	return queryString, encodingErrors
 }
+
+func UpdateByName(resource Resource) (rg.QueryResult, error) {
+	resource.addRbacProperty()
+	encodedProps, err := resource.encodeProperties()
+	if err != nil {
+		glog.Error("Cannot encode resource ", resource.UID, ", excluding it from update: ", err)
+		return rg.QueryResult{}, err
+	}
+
+	// we need to add the uid to the encoded props so if we update a dummy node we can attach a UID to it
+	encodedProps["_uid"] = resource.UID
+
+	setStrings := []string{} // Build the SET portion.
+	for k, v := range encodedProps {
+		switch typed := v.(type) { // At this point it's either string or int64. Need to wrap in quotes if it's string
+		case int64:
+			setStrings = append(setStrings, fmt.Sprintf("n.%s=%d", k, typed)) // e.g. n.<key>=<value>
+		default:
+			setStrings = append(setStrings, fmt.Sprintf("n.%s='%s'", k, typed)) // e.g. n.<key>=<value>
+		}
+	}
+
+	// e.g. "MATCH (n:Cluster {name: 'abc123'}) SET n.foo=4"
+	queryString := fmt.Sprintf("MATCH (n:%s {name: '%s'}) SET %s", resource.Properties["kind"], resource.Properties["name"], strings.Join(setStrings, ", "))
+	resp, err := Store.Query(queryString)
+	return resp, err
+}
