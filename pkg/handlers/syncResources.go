@@ -214,6 +214,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB through a work order, so it can take a second
 	response.TotalEdges = computeIntraEdges(clusterName)
 	respond(http.StatusOK)
+	go buildInterClusterEdges()
 }
 
 // internal function to inline the errors
