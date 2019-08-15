@@ -51,13 +51,6 @@ func buildSubscriptions() (rg.QueryResult, error) {
 		return rg.QueryResult{}, err
 	}
 
-	// list of hub subscriptions
-	query = "MATCH (n {kind: 'subscription', cluster: 'local-cluster'}) RETURN n._uid, n.namespace, n.name"
-	hubSubscriptons, err := db.Store.Query(query)
-	if err != nil {
-		return rg.QueryResult{}, err
-	}
-
 	// list of remote subscriptions
 	query = "MATCH (n {kind: 'subscription'}) WHERE n.cluster != 'local-cluster' RETURN n._uid, n._hostingSubscription"
 	remoteSubscriptions, err := db.Store.Query(query)
@@ -66,6 +59,13 @@ func buildSubscriptions() (rg.QueryResult, error) {
 	}
 
 	if len(remoteSubscriptions.Results) > 1 { //Check if any results are returned
+		// list of hub subscriptions
+		query = "MATCH (n {kind: 'subscription', cluster: 'local-cluster'}) RETURN n._uid, n.namespace, n.name"
+		hubSubscriptons, err := db.Store.Query(query)
+		if err != nil {
+			return rg.QueryResult{}, err
+		}
+
 		for _, remoteSub := range remoteSubscriptions.Results[1:] {
 			// parse the hosting subscription into name and namespace
 			hostingSub := strings.Split(remoteSub[1], "/")
