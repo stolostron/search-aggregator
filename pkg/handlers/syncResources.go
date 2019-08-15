@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -29,6 +30,7 @@ type SyncEvent struct {
 
 	AddEdges    []db.Edge
 	DeleteEdges []db.Edge
+	RequestId   int
 }
 
 // DeleteResourceEvent - Contains the information needed to delete an existing resource.
@@ -51,6 +53,7 @@ type SyncResponse struct {
 	AddEdgeErrors     []SyncError
 	DeleteEdgeErrors  []SyncError
 	Version           string
+	RequestId         int
 }
 
 // SyncError is used to respond with errors.
@@ -61,6 +64,7 @@ type SyncError struct {
 
 // SyncResources - Process Add, Update, and Delete events.
 func SyncResources(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	clusterName := params["id"]
@@ -72,8 +76,9 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// If you want to bail out early, make sure to call return right after.
 	respond := func(status int) {
 		statusMessage := fmt.Sprintf(
-			"Responding to cluster %s with status %d, stats: {Added: %d, Updated: %d, Deleted: %d, Edges Added: %d, Edges Deleted: %d, Total Resources: %d}",
+			"Responding to cluster %s with requestId %d, status %d, stats: {Added: %d, Updated: %d, Deleted: %d, Edges Added: %d, Edges Deleted: %d, Total Resources: %d}",
 			clusterName,
+			response.RequestId,
 			status,
 			response.TotalAdded,
 			response.TotalUpdated,
@@ -101,6 +106,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		respond(http.StatusBadRequest)
 		return
 	}
+	response.RequestId = syncEvent.RequestId
+	glog.V(3).Infof("Processing Request with { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }", syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
 
 	err = db.ValidateClusterName(clusterName)
 	if err != nil {
@@ -213,6 +220,13 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	glog.V(2).Infof("Done updating resources for cluster %s, preparing response", clusterName)
 	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB through a work order, so it can take a second
 	response.TotalEdges = computeIntraEdges(clusterName)
+	elapsed := time.Since(start)
+	if int(elapsed.Seconds()) > 60 {
+		glog.Warningf("SyncResources took %s", elapsed)
+		glog.Warningf("Increased Processing time with { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }", syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
+	} else {
+		glog.V(4).Infof("SyncResources took %s", elapsed)
+	}
 	respond(http.StatusOK)
 	go buildInterClusterEdges()
 }

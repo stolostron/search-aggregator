@@ -23,7 +23,7 @@ const (
 	DEFAULT_REDIS_HOST         = "localhost"
 	DEFAULT_REDIS_PORT         = "6379"
 	DEFAULT_REDISCOVER_RATE_MS = 60000 // 1 min
-	DEFAULT_HTTP_TIMEOUT       = 10000 // 10 secs
+	DEFAULT_HTTP_TIMEOUT       = 120000 // 120 secs, to fix the EOF response at the collector
 	AGGREGATOR_API_VERSION     = "4.1.0"
 )
 
