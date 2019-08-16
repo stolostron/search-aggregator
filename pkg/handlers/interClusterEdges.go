@@ -99,6 +99,12 @@ func buildSubscriptions() (rg.QueryResult, error) {
 	}
 	// Record elapsed time
 	elapsed := time.Since(start)
-	glog.Infof("Intercluster edge deletion and re-creation took %s", elapsed)
+	// Log a warning if it takes more than 100ms.
+	if elapsed.Nanoseconds() > 100*1000*1000 {
+		glog.Warningf("Intercluster edge deletion and re-creation took %s", elapsed)
+	} else {
+		glog.V(4).Infof("Intercluster edge deletion and re-creation took %s", elapsed)
+	}
+
 	return rg.QueryResult{}, nil
 }
