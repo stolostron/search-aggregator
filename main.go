@@ -31,6 +31,9 @@ func main() {
 	// Watch clusters and sync status to Redis.
 	go clustermgmt.WatchClusters()
 
+	// Run routine to build intercluster edges
+	go handlers.BuildInterClusterEdges()
+
 	router := mux.NewRouter()
 
 	router.HandleFunc("/liveness", handlers.LivenessProbe).Methods("GET")

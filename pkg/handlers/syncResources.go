@@ -228,7 +228,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		glog.V(4).Infof("SyncResources took %s", elapsed)
 	}
 	respond(http.StatusOK)
-	go buildInterClusterEdges()
+
+	// update the timestamp if we made any changes for the incluster edges routine
+	if len(syncEvent.AddResources)+len(syncEvent.UpdateResources)+len(syncEvent.DeleteResources)+len(syncEvent.AddEdges)+len(syncEvent.DeleteEdges) > 0 {
+		LastUpdated = time.Now()
+	}
 }
 
 // internal function to inline the errors

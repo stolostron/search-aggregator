@@ -17,13 +17,14 @@ import (
 	"github.com/golang/glog"
 
 	rg "github.com/redislabs/redisgraph-go"
+	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
 	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
-// runs all the specific inter-cluster relationships we want to connect
-func buildInterClusterEdges() {
-	glog.V(3).Info("Building intercluster edges")
+var LastUpdated time.Time
 
+// runs all the specific inter-cluster relationships we want to connect
+func BuildInterClusterEdges() {
 	var tranforms = []struct {
 		transfrom   func() (rg.QueryResult, error)
 		description string
@@ -34,10 +35,23 @@ func buildInterClusterEdges() {
 		},
 	}
 
-	for _, edgeFunc := range tranforms {
-		_, err := edgeFunc.transfrom()
-		if err != nil {
-			glog.Errorf("Error %s : %s", edgeFunc.description, err)
+	for {
+		interval := time.Duration(config.Cfg.EdgeBuildRateMS) * time.Millisecond
+		time.Sleep(interval)
+		// if no updates have been made during the sleep skip edge building
+		// logic here is if timestamp < current time - interval
+		if LastUpdated.Before(time.Now().Add(-interval)) {
+			glog.V(3).Info("Skipping intercluster edges build because nothing has changed")
+			continue
+		}
+
+		glog.V(3).Info("Building intercluster edges")
+
+		for _, edgeFunc := range tranforms {
+			_, err := edgeFunc.transfrom()
+			if err != nil {
+				glog.Errorf("Error %s : %s", edgeFunc.description, err)
+			}
 		}
 	}
 }
