@@ -98,9 +98,11 @@ func buildSubscriptions() (rg.QueryResult, error) {
 					query1 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})-[]->(n) CREATE (remoteSub)-[:hostedSub {_interCluster: true}]->(hubSub), (n)-[:hostedSub {_interCluster: true}]->(hubSub)", hubSub[0], remoteSub[0])
 					// Add edges from hubSub to all resources that flow into remoteSub eg: pods, deployments, services, replicasets etc.
 					query2 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true}]->(hubSub)", hubSub[0], remoteSub[0])
-					// Connect all resources that flow into remoteSub with the hubsub's application/channel
-					query3 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})-[]->(appChan) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE appChan.kind = 'application' OR appChan.kind = 'channel' CREATE (n)-[r:hostedSub {_interCluster: true}]->(appChan)", hubSub[0], remoteSub[0])
-					queries := [...]string{query1, query2, query3}
+					// Connect all resources that flow into remoteSub with the hubsub's channel
+					query3 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})-[]->(chan) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE chan.kind = 'channel' CREATE (n)-[r:hostedSub {_interCluster: true}]->(chan)", hubSub[0], remoteSub[0])
+					// Connect all resources that flow into remoteSub with the hubsub's application
+					query4 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE app.kind = 'application' CREATE (n)-[r:hostedSub {_interCluster: true}]->(app)", hubSub[0], remoteSub[0])
+					queries := [...]string{query1, query2, query3, query4}
 					for _, query := range queries {
 						_, err = db.Store.Query(query)
 						if err != nil {
