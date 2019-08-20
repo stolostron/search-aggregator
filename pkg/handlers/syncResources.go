@@ -221,7 +221,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB through a work order, so it can take a second
 	response.TotalEdges = computeIntraEdges(clusterName)
 	elapsed := time.Since(start)
-	if int(elapsed.Seconds()) > 60 {
+	if int(elapsed.Seconds()) > 5 {
 		glog.Warningf("SyncResources took %s", elapsed)
 		glog.Warningf("Increased Processing time with { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }", syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
 	} else {
