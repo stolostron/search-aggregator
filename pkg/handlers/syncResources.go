@@ -76,7 +76,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// If you want to bail out early, make sure to call return right after.
 	respond := func(status int) {
 		statusMessage := fmt.Sprintf(
-			"Responding to cluster %s with requestId %d, status %d, stats: {Added: %d, Updated: %d, Deleted: %d, Edges Added: %d, Edges Deleted: %d, Total Resources: %d}",
+			"Responding to cluster %s with requestId %d, status %d, stats: {Added: %d, Updated: %d, Deleted: %d, Edges Added: %d, Edges Deleted: %d, Total Resources: %d, Total Edges: %d}",
 			clusterName,
 			response.RequestId,
 			status,
@@ -86,6 +86,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			response.TotalEdgesAdded,
 			response.TotalEdgesDeleted,
 			response.TotalResources,
+			response.TotalEdges,
 		)
 		if status == http.StatusOK {
 			glog.Infof(statusMessage)
