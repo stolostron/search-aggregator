@@ -152,7 +152,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	if insertResponse.ConnectionError != nil {
 		respond(http.StatusServiceUnavailable)
 		return
-	} else if insertResponse.ResourceErrors != nil {
+	} else if len(insertResponse.ResourceErrors) != 0 {
 		response.AddErrors = processSyncErrors(insertResponse.ResourceErrors, "inserted")
 		respond(http.StatusBadRequest)
 		return
@@ -169,7 +169,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	if updateResponse.ConnectionError != nil {
 		respond(http.StatusServiceUnavailable)
 		return
-	} else if updateResponse.ResourceErrors != nil {
+	} else if len(updateResponse.ResourceErrors) != 0 {
 		response.UpdateErrors = processSyncErrors(updateResponse.ResourceErrors, "updated")
 		respond(http.StatusBadRequest)
 		return
@@ -188,7 +188,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	if deleteResponse.ConnectionError != nil {
 		respond(http.StatusServiceUnavailable)
 		return
-	} else if deleteResponse.ResourceErrors != nil {
+	} else if len(deleteResponse.ResourceErrors) != 0 {
 		response.DeleteErrors = processSyncErrors(deleteResponse.ResourceErrors, "deleted")
 		respond(http.StatusBadRequest)
 		return
@@ -200,7 +200,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	if insertEdgeResponse.ConnectionError != nil {
 		respond(http.StatusServiceUnavailable)
 		return
-	} else if insertEdgeResponse.ResourceErrors != nil {
+	} else if len(insertEdgeResponse.ResourceErrors) != 0 {
 		response.AddEdgeErrors = processSyncErrors(insertEdgeResponse.ResourceErrors, "inserted by edge")
 		respond(http.StatusBadRequest)
 		return
@@ -212,7 +212,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	if deleteEdgeResponse.ConnectionError != nil {
 		respond(http.StatusServiceUnavailable)
 		return
-	} else if deleteEdgeResponse.ResourceErrors != nil {
+	} else if len(deleteEdgeResponse.ResourceErrors) != 0 {
 		response.DeleteEdgeErrors = processSyncErrors(deleteEdgeResponse.ResourceErrors, "removed by edge")
 		respond(http.StatusBadRequest)
 		return

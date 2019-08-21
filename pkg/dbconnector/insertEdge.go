@@ -10,99 +10,76 @@ package dbconnector
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
-	"github.com/golang/glog"
 	rg "github.com/redislabs/redisgraph-go"
 )
 
-func handleInsertChunkingError(resources []Edge, err error) ChunkedOperationResult {
-	glog.V(3).Info("Error inserting edge(s)", err)
-	if len(resources) == 1 { // If this was a single resource
-		uid := fmt.Sprintf("(%s)-[:%s]->(%s)", resources[0].SourceUID, resources[0].EdgeType, resources[0].DestUID)
-		return ChunkedOperationResult{
-			ResourceErrors: map[string]error{uid: err},
-		}
-	} else { // If this is multiple resources, we make a recursive call to find which half had the error.
-		firstHalf := chunkedInsertEdgeHelper(resources[0 : len(resources)/2])
-		secondHalf := chunkedInsertEdgeHelper(resources[len(resources)/2:])
-		if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil { // Again, if either one has a redis conn issue we just instantly bail
-			return ChunkedOperationResult{
-				ConnectionError: err,
-			}
-		}
-		return ChunkedOperationResult{
-			ResourceErrors:      mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
-			SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources, // These will be 0 if there were errs in the halves
-		}
-	}
-}
-
-// Recursive helper for InsertEdge. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
-func chunkedInsertEdgeHelper(resources []Edge) ChunkedOperationResult {
-	if len(resources) == 0 {
-		return ChunkedOperationResult{} // No errors, and no SuccessfulResources
-	}
-
-	_, err := InsertEdge(resources)
-
-	if IsBadConnection(err) { // this is false if err is nil
-		return ChunkedOperationResult{
-			ConnectionError: err,
-		}
-	}
-
-	if err != nil { // error, start insert chunking
-		return handleInsertChunkingError(resources, err)
-	}
-
-	// All clear, return that we got everything in
-	return ChunkedOperationResult{
-		SuccessfulResources: len(resources),
-	}
-}
-
-// Inserts the given edges in the graph, does chunking for you and returns errors related to individual edges.
+// Inserts the given edges grouped by source
 func ChunkedInsertEdge(resources []Edge) ChunkedOperationResult {
-	var resourceErrors map[string]error
-	totalSuccessful := 0
-	for i := 0; i < len(resources); i += CHUNK_SIZE {
-		endIndex := min(i+CHUNK_SIZE, len(resources))
-		chunkResult := chunkedInsertEdgeHelper(resources[i:endIndex])
-		if chunkResult.ConnectionError != nil {
-			return chunkResult
-		} else if chunkResult.ResourceErrors != nil {
-			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is still nil.
+	if len(resources) == 0 {
+		return ChunkedOperationResult{
+			ResourceErrors:      nil,
+			SuccessfulResources: 0,
 		}
-		totalSuccessful += chunkResult.SuccessfulResources
 	}
+
+	// sort our slice addessending by combination source/type to build efficient queries
+	sort.Slice(resources, func(i, j int) bool {
+		// https://stackoverflow.com/questions/4576714/sort-by-two-values-prioritizing-on-one-of-them
+		return resources[i].SourceUID < resources[j].SourceUID || resources[i].EdgeType < resources[j].EdgeType
+	})
+
+	// status to return in ChunkedOperationResult
+	resourceErrors := make(map[string]error)
+	totalAdded := 0
+	currentLength := 0
+
+	var whereClause strings.Builder
+	for i := range resources {
+		// add dest uid for each node in the group to where clause
+		if whereClause.Len() == 0 {
+			fmt.Fprintf(&whereClause, "WHERE d._uid='%s'", resources[i].DestUID)
+		} else {
+			fmt.Fprintf(&whereClause, " OR d._uid='%s'", resources[i].DestUID)
+		}
+
+		currentLength++
+
+		//look ahead to see if we are in a differnet group or if at max chuck size
+		if currentLength == CHUNK_SIZE || (i < len(resources)-1 && (resources[i+1].SourceUID != resources[i].SourceUID || resources[i+1].EdgeType != resources[i].EdgeType)) {
+			_, err := insertEdge(resources[i], whereClause.String())
+			if err != nil {
+				// saving JUST the source as the key to the map
+				resourceErrors[resources[i].SourceUID] = err
+			} else {
+				totalAdded += currentLength
+			}
+			whereClause.Reset()
+			currentLength = 0
+		}
+	}
+
+	// commit the last edge string to the db
+	_, err := insertEdge(resources[len(resources)-1], whereClause.String())
+	if err != nil {
+		// saving JUST the source as the key to the map
+		resourceErrors[resources[len(resources)-1].SourceUID] = err
+	} else {
+		totalAdded += currentLength
+	}
+
 	return ChunkedOperationResult{
 		ResourceErrors:      resourceErrors,
-		SuccessfulResources: totalSuccessful,
+		SuccessfulResources: totalAdded,
 	}
 }
 
-// Returns the result, any errors when encoding, and any error from the query itself.
-func InsertEdge(edges []Edge) (rg.QueryResult, error) {
-	query := insertEdgeQuery(edges) // Encoding errors are recoverable, but we still report them
+// e.g. MATCH (s:{_uid:'abc'}), (d) WHERE d._uid='def' OR d._uid='ghi' CREATE (s)-[:Type]>(d)
+func insertEdge(edge Edge, whereClause string) (rg.QueryResult, error) {
+	query := fmt.Sprintf("MATCH (s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)", edge.SourceUID, whereClause, edge.EdgeType)
+	//glog.Info(query)
 	resp, err := Store.Query(query)
 	return resp, err
-}
-
-// Returns a query used to draw an edge between 2 existing nodes.
-// e.g. MATCH (s:{_uid:"abc"}), (d:{_uid:"def"}) CREATE (s)-[:Type]>(d)
-func insertEdgeQuery(edges []Edge) string {
-	if len(edges) == 0 {
-		return ""
-	}
-
-	matchStrings := []string{}  // Build the MATCH portion
-	createStrings := []string{} // Build the CREATE portion. Declare this at the same time so that we can do this in one pass.
-	for i, edge := range edges {
-		matchStrings = append(matchStrings, fmt.Sprintf("(s%d {_uid: '%s'}), (d%d {_uid: '%s'})", i, edge.SourceUID, i, edge.DestUID)) // e.g. (s0 {_uid: 'abc123'}), (d0 {_uid: 'abc321'})
-		createStrings = append(createStrings, fmt.Sprintf("(s%d)-[:%s]->(d%[1]d)", i, edge.EdgeType))                                  // e.g. (s0)-[:type]->(d0)
-	}
-
-	queryString := fmt.Sprintf("%s%s", "MATCH "+strings.Join(matchStrings, ", "), " CREATE "+strings.Join(createStrings, ", "))
-	return queryString
 }
