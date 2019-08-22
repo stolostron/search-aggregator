@@ -95,7 +95,7 @@ func TotalIntraEdges(clusterName string) (rg.QueryResult, error) {
 }
 
 func MergeDummyCluster() (rg.QueryResult, error) {
-	query := "MERGE (:Cluster {name: 'local-cluster'})"
+	query := "MERGE (:Cluster {name: 'local-cluster', kind: 'cluster'})"
 	return Store.Query(query)
 }
 
