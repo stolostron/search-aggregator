@@ -23,9 +23,9 @@ const (
 	DEFAULT_REDIS_HOST         = "localhost"
 	DEFAULT_REDIS_PORT         = "6379"
 	DEFAULT_REDISCOVER_RATE_MS = 60000  // 1 min
-	DEFAULT_HTTP_TIMEOUT       = 120000 // 120 secs, to fix the EOF response at the collector
+	DEFAULT_HTTP_TIMEOUT       = 300000 // 5 min, to fix the EOF response at the collector
 	DEFAULT_EDGE_BUILD_RATE_MS = 30000  // 30 sec
-	AGGREGATOR_API_VERSION     = "4.1.0"
+	AGGREGATOR_API_VERSION     = "3.2.1"
 )
 
 // Define a config type to hold our config properties.
