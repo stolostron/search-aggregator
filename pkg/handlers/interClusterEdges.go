@@ -95,6 +95,7 @@ func buildSubscriptions() (rg.QueryResult, error) {
 				// check if it is in the hub subs
 				for _, hubSub := range hubSubscriptons.Results[1:] {
 					if hubSub[1] == namespace && hubSub[2] == name {
+						//TODO: For the subscription model, all intercluster edges are named as 'hostedSub {_interCluster: true}'. Change this to relevant names in future
 						//To add edges from hubSub to all resources connected to the remoteSub (bidirectional) - incoming edges and outgoing edges
 						// Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
 						query1 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})-[]->(n) CREATE (remoteSub)-[:hostedSub {_interCluster: true}]->(hubSub), (n)-[:hostedSub {_interCluster: true}]->(hubSub)", hubSub[0], remoteSub[0])
@@ -104,7 +105,10 @@ func buildSubscriptions() (rg.QueryResult, error) {
 						query3 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})-[]->(chan) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE chan.kind = 'channel' CREATE (n)-[r:hostedSub {_interCluster: true}]->(chan)", hubSub[0], remoteSub[0])
 						// Connect all resources that flow into remoteSub with the hubsub's application
 						query4 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE app.kind = 'application' CREATE (remoteSub)-[:hostedSub {_interCluster: true}]->(app), (n)-[r:hostedSub {_interCluster: true}]->(app)", hubSub[0], remoteSub[0])
-						queries := [...]string{query1, query2, query3, query4}
+						// Connect clusters that are connected to remoteSub with the hubsub's application
+						query5 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})-[]->(n {kind:'cluster'})  WHERE app.kind = 'application' CREATE (n)-[r:hosts {_interCluster: true}]->(app)", hubSub[0], remoteSub[0])
+
+						queries := [...]string{query1, query2, query3, query4, query5}
 						for _, query := range queries {
 							_, err = db.Store.Query(query)
 							if err != nil {
