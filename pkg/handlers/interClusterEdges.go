@@ -59,7 +59,7 @@ func BuildInterClusterEdges() {
 func buildSubscriptions() (rg.QueryResult, error) {
 	// Record start time
 	start := time.Now()
-	query := "MATCH	()-[s:hostedSub {_interCluster: true}]->() DELETE s"
+	query := "MATCH	()-[s {_interCluster: true}]->() DELETE s"
 	_, err := db.Store.Query(query)
 	if err != nil {
 		return rg.QueryResult{}, err
