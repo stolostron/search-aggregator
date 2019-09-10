@@ -24,7 +24,7 @@ const (
 	DEFAULT_REDIS_PORT         = "6379"
 	DEFAULT_REDISCOVER_RATE_MS = 60000  // 1 min
 	DEFAULT_HTTP_TIMEOUT       = 300000 // 5 min, to fix the EOF response at the collector
-	DEFAULT_EDGE_BUILD_RATE_MS = 30000  // 30 sec
+	DEFAULT_EDGE_BUILD_RATE_MS = 10000  // 10 sec
 	AGGREGATOR_API_VERSION     = "3.2.1"
 )
 

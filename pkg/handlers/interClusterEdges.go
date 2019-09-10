@@ -56,6 +56,12 @@ func BuildInterClusterEdges() {
 	}
 }
 
+func getUIDsForSubscriptions() (rg.QueryResult, error) {
+	query := "MATCH (n {kind: 'subscription'})  RETURN n._uid"
+	uidResults, err := db.Store.Query(query)
+	return uidResults, err
+}
+
 func buildSubscriptions() (rg.QueryResult, error) {
 	// Record start time
 	start := time.Now()

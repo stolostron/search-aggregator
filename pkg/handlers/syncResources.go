@@ -69,6 +69,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	clusterName := params["id"]
 	glog.V(2).Info("SyncResources() for cluster: ", clusterName)
+	interClusterUpdated := false                // flag to decide the time when last suscription was changed
+	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
 
 	response := SyncResponse{Version: config.AGGREGATOR_API_VERSION}
 
@@ -139,6 +141,19 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	// let us store the Current Subscription Uids in a map [String] -> boolean
+	uidresults, uiderr := getUIDsForSubscriptions()
+	if uiderr == nil {
+		if len(uidresults.Results) > 1 {
+			for _, uid := range uidresults.Results[1:] {
+				subscriptionUIDMap[uid[0]] = true
+			}
+		}
+
+	} else {
+		glog.Warningf("Error Fetching Subscriptions %s", uiderr)
+	}
+	glog.V(3).Infof("Current Subscriptions found %d", len(subscriptionUIDMap))
 
 	// INSERT Resources
 
@@ -230,8 +245,58 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(http.StatusOK)
 
-	// update the timestamp if we made any changes for the incluster edges routine
-	if len(syncEvent.AddResources)+len(syncEvent.UpdateResources)+len(syncEvent.DeleteResources)+len(syncEvent.AddEdges)+len(syncEvent.DeleteEdges) > 0 {
+	// update the timestamp if we made any changes Kind = Subscription OR
+	// An Edge which connect from/to a Node (Kind = Subscription)
+
+	// if any Node with kind Subscription Added then interClusterUpdated
+	for i := range syncEvent.AddResources {
+		if syncEvent.AddResources[i].Properties["kind"] == "Subscription" || syncEvent.AddResources[i].Properties["kind"] == "Application" {
+			glog.V(3).Infof("Will trigger Intercluster - Added  Node %s ", syncEvent.AddResources[i].Properties["name"])
+			interClusterUpdated = true
+			break
+		}
+
+	}
+	// if interClusterUpdated == false check any updates to Node with Kind = Subscription
+	if !interClusterUpdated {
+		for i := range syncEvent.UpdateResources {
+			if syncEvent.UpdateResources[i].Properties["kind"] == "Subscription" || syncEvent.UpdateResources[i].Properties["kind"] == "Application" {
+				glog.V(3).Infof("Will trigger Intercluster - Updated  Node %s ", syncEvent.UpdateResources[i].Properties["name"])
+				interClusterUpdated = true
+				break
+			}
+
+		}
+
+	}
+
+	// if interClusterUpdated == false check Updated and Deleted edges
+	if !interClusterUpdated {
+		// Check Added Edges - Do they have a UID  which is present in  Subscriptions Map we created
+		for i := range syncEvent.AddEdges {
+			if subscriptionUIDMap[syncEvent.AddEdges[i].SourceUID] || subscriptionUIDMap[syncEvent.AddEdges[i].DestUID] {
+				glog.V(3).Infof("Will trigger Intercluster Added Edge %s -> %s ", syncEvent.AddEdges[i].SourceUID, syncEvent.AddEdges[i].DestUID)
+				interClusterUpdated = true
+				break
+			}
+
+		}
+		//if we have interClusterUpdated = false , check for the deleted edges if they had connection to Kind = Subscription
+		if !interClusterUpdated {
+			for i := range syncEvent.DeleteEdges {
+				if subscriptionUIDMap[syncEvent.DeleteEdges[i].SourceUID] || subscriptionUIDMap[syncEvent.DeleteEdges[i].DestUID] {
+					glog.V(3).Infof("Will trigger Intercluster Deleted Edge %s -> %s ", syncEvent.DeleteEdges[i].SourceUID, syncEvent.DeleteEdges[i].DestUID)
+					interClusterUpdated = true
+					break
+				}
+
+			}
+
+		}
+
+	}
+
+	if interClusterUpdated {
 		LastUpdated = time.Now()
 	}
 }
