@@ -24,13 +24,10 @@ type Resource struct {
 	Properties     map[string]interface{}
 }
 
-// Edge Type Constants
-type EdgeType string
-
 // Describes a relationship between resources
 type Edge struct {
 	SourceUID, DestUID string
-	EdgeType           EdgeType
+	EdgeType           string
 }
 
 // Represents the results of a chunked db operation

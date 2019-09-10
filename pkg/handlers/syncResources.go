@@ -126,21 +126,14 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// This usually indicates that something has gone wrong, basically that the collector detected we are out of sync and wants us to start over.
-	if syncEvent.ClearAll {
-		glog.Infof("Clearing previous data for cluster %s", clusterName)
-		_, err := db.DeleteCluster(clusterName)
-		if err != nil {
-			glog.Error("Error deleting current resources for cluster: ", err)
-			if db.IsBadConnection(err) {
-				respond(http.StatusServiceUnavailable)
-				return
-			} else if !db.IsGraphMissing(err) {
-				respond(http.StatusBadRequest)
-				return
-			}
-		}
+	// add cluster fields
+	for i := range syncEvent.AddResources {
+		syncEvent.AddResources[i].Properties["cluster"] = clusterName
 	}
+	for i := range syncEvent.UpdateResources {
+		syncEvent.UpdateResources[i].Properties["cluster"] = clusterName
+	}
+
 	// let us store the Current Subscription Uids in a map [String] -> boolean
 	uidresults, uiderr := getUIDsForSubscriptions()
 	if uiderr == nil {
@@ -155,89 +148,101 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 	glog.V(3).Infof("Current Subscriptions found %d", len(subscriptionUIDMap))
 
-	// INSERT Resources
+	// This usually indicates that something has gone wrong, basically that the collector detected we are out of sync and wants us to resync.
+	if syncEvent.ClearAll {
+		stats, err := resyncCluster(clusterName, syncEvent.AddResources, syncEvent.AddEdges)
+		if err != nil {
+			glog.Warning("Error on resyncCluster. ", err)
+		} else {
+			response.TotalAdded = stats.TotalAdded
+			response.TotalUpdated = stats.TotalUpdated
+			response.TotalDeleted = stats.TotalDeleted
+			response.TotalEdgesAdded = stats.TotalEdgesAdded
+			response.TotalEdgesDeleted = stats.TotalEdgesDeleted
+			response.AddErrors = stats.AddErrors
+			response.UpdateErrors = stats.UpdateErrors
+			response.DeleteErrors = stats.DeleteErrors
+			response.AddEdgeErrors = stats.AddEdgeErrors
+			response.DeleteEdgeErrors = stats.DeleteEdgeErrors
+		}
 
-	// add cluster fields
-	for i := range syncEvent.AddResources {
-		syncEvent.AddResources[i].Properties["cluster"] = clusterName
-	}
+	} else {
 
-	insertResponse := db.ChunkedInsert(syncEvent.AddResources, clusterName)
-	response.TotalAdded = insertResponse.SuccessfulResources // could be 0
-	if insertResponse.ConnectionError != nil {
-		respond(http.StatusServiceUnavailable)
-		return
-	} else if len(insertResponse.ResourceErrors) != 0 {
-		response.AddErrors = processSyncErrors(insertResponse.ResourceErrors, "inserted")
-		respond(http.StatusBadRequest)
-		return
-	}
+		// INSERT Resources
 
-	// UPDATE Resources
+		insertResponse := db.ChunkedInsert(syncEvent.AddResources, clusterName)
+		response.TotalAdded = insertResponse.SuccessfulResources // could be 0
+		if insertResponse.ConnectionError != nil {
+			respond(http.StatusServiceUnavailable)
+			return
+		} else if len(insertResponse.ResourceErrors) != 0 {
+			response.AddErrors = processSyncErrors(insertResponse.ResourceErrors, "inserted")
+			respond(http.StatusBadRequest)
+			return
+		}
 
-	// add cluster fields
-	for i := range syncEvent.UpdateResources {
-		syncEvent.UpdateResources[i].Properties["cluster"] = clusterName
-	}
-	updateResponse := db.ChunkedUpdate(syncEvent.UpdateResources)
-	response.TotalUpdated = updateResponse.SuccessfulResources // could be 0
-	if updateResponse.ConnectionError != nil {
-		respond(http.StatusServiceUnavailable)
-		return
-	} else if len(updateResponse.ResourceErrors) != 0 {
-		response.UpdateErrors = processSyncErrors(updateResponse.ResourceErrors, "updated")
-		respond(http.StatusBadRequest)
-		return
-	}
+		// UPDATE Resources
 
-	// DELETE Resources
+		updateResponse := db.ChunkedUpdate(syncEvent.UpdateResources)
+		response.TotalUpdated = updateResponse.SuccessfulResources // could be 0
+		if updateResponse.ConnectionError != nil {
+			respond(http.StatusServiceUnavailable)
+			return
+		} else if len(updateResponse.ResourceErrors) != 0 {
+			response.UpdateErrors = processSyncErrors(updateResponse.ResourceErrors, "updated")
+			respond(http.StatusBadRequest)
+			return
+		}
 
-	// reformat to []string
-	deleteUIDS := make([]string, 0, len(syncEvent.DeleteResources))
-	for _, de := range syncEvent.DeleteResources {
-		deleteUIDS = append(deleteUIDS, de.UID)
-	}
+		// DELETE Resources
 
-	deleteResponse := db.ChunkedDelete(deleteUIDS)
-	response.TotalDeleted = deleteResponse.SuccessfulResources // could be 0
-	if deleteResponse.ConnectionError != nil {
-		respond(http.StatusServiceUnavailable)
-		return
-	} else if len(deleteResponse.ResourceErrors) != 0 {
-		response.DeleteErrors = processSyncErrors(deleteResponse.ResourceErrors, "deleted")
-		respond(http.StatusBadRequest)
-		return
-	}
+		// reformat to []string
+		deleteUIDS := make([]string, 0, len(syncEvent.DeleteResources))
+		for _, de := range syncEvent.DeleteResources {
+			deleteUIDS = append(deleteUIDS, de.UID)
+		}
 
-	// Insert Edges
-	insertEdgeResponse := db.ChunkedInsertEdge(syncEvent.AddEdges)
-	response.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
-	if insertEdgeResponse.ConnectionError != nil {
-		respond(http.StatusServiceUnavailable)
-		return
-	} else if len(insertEdgeResponse.ResourceErrors) != 0 {
-		response.AddEdgeErrors = processSyncErrors(insertEdgeResponse.ResourceErrors, "inserted by edge")
-		respond(http.StatusBadRequest)
-		return
-	}
+		deleteResponse := db.ChunkedDelete(deleteUIDS)
+		response.TotalDeleted = deleteResponse.SuccessfulResources // could be 0
+		if deleteResponse.ConnectionError != nil {
+			respond(http.StatusServiceUnavailable)
+			return
+		} else if len(deleteResponse.ResourceErrors) != 0 {
+			response.DeleteErrors = processSyncErrors(deleteResponse.ResourceErrors, "deleted")
+			respond(http.StatusBadRequest)
+			return
+		}
 
-	// Delete Edges
-	deleteEdgeResponse := db.ChunkedDeleteEdge(syncEvent.DeleteEdges)
-	response.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
-	if deleteEdgeResponse.ConnectionError != nil {
-		respond(http.StatusServiceUnavailable)
-		return
-	} else if len(deleteEdgeResponse.ResourceErrors) != 0 {
-		response.DeleteEdgeErrors = processSyncErrors(deleteEdgeResponse.ResourceErrors, "removed by edge")
-		respond(http.StatusBadRequest)
-		return
+		// Insert Edges
+		insertEdgeResponse := db.ChunkedInsertEdge(syncEvent.AddEdges)
+		response.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
+		if insertEdgeResponse.ConnectionError != nil {
+			respond(http.StatusServiceUnavailable)
+			return
+		} else if len(insertEdgeResponse.ResourceErrors) != 0 {
+			response.AddEdgeErrors = processSyncErrors(insertEdgeResponse.ResourceErrors, "inserted by edge")
+			respond(http.StatusBadRequest)
+			return
+		}
+
+		// Delete Edges
+		deleteEdgeResponse := db.ChunkedDeleteEdge(syncEvent.DeleteEdges)
+		response.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
+		if deleteEdgeResponse.ConnectionError != nil {
+			respond(http.StatusServiceUnavailable)
+			return
+		} else if len(deleteEdgeResponse.ResourceErrors) != 0 {
+			response.DeleteEdgeErrors = processSyncErrors(deleteEdgeResponse.ResourceErrors, "removed by edge")
+			respond(http.StatusBadRequest)
+			return
+		}
 	}
 
 	glog.V(2).Infof("Done updating resources for cluster %s, preparing response", clusterName)
 	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB through a work order, so it can take a second
 	response.TotalEdges = computeIntraEdges(clusterName)
 	elapsed := time.Since(start)
-	if int(elapsed.Seconds()) > 5 {
+	if int(elapsed.Seconds()) > 2 {
 		glog.Warningf("SyncResources from %s took %s", clusterName, elapsed)
 		glog.Warningf("Increased Processing time with { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }", syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
 	} else {

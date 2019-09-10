@@ -97,7 +97,7 @@ func insertQuery(resources []*Resource, clusterName string) (string, map[string]
 	resourceStrings := []string{} // Build the query string piece by piece.
 	for _, resource := range resources {
 		resource.addRbacProperty()
-		encodedProps, err := resource.encodeProperties()
+		encodedProps, err := resource.EncodeProperties()
 		if err != nil {
 			glog.Error("Cannot encode resource ", resource.UID, ", excluding it from insertion: ", err)
 			encodingErrors[resource.UID] = err

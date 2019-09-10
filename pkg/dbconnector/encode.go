@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 )
 
@@ -34,7 +35,7 @@ func ValidateClusterName(clusterName string) error {
 }
 
 // Given a resource, output all the redisgraph properties for it in map[string]interface{} (always string or int64, that's what redisgraph supports) pairs.
-func (r Resource) encodeProperties() (map[string]interface{}, error) {
+func (r Resource) EncodeProperties() (map[string]interface{}, error) {
 	res := make(map[string]interface{}, len(r.Properties))
 	for k, v := range r.Properties {
 		// Get all the rg props for this property.
@@ -90,6 +91,7 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 			elementString := fmt.Sprintf("%v", e)
 			elementStrings = append(elementStrings, elementString)
 		}
+		sort.Strings(elementStrings)                                 // Sotring to make comparisons more predictable
 		res[key] = sanitizeValue(strings.Join(elementStrings, ", ")) // e.g. val1, val2, val3
 
 	case map[string]interface{}:
@@ -101,6 +103,7 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 				labelString := fmt.Sprintf("%s=%s", key, value)
 				labelStrings = append(labelStrings, labelString)
 			}
+			sort.Strings(labelStrings)                                 // Sotring to make comparisons more predictable
 			res[key] = sanitizeValue(strings.Join(labelStrings, "; ")) // e.g. key1=val1; key2=val2; key3=val3
 		}
 

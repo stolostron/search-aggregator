@@ -96,7 +96,7 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 	for i, resource := range resources {
 		resource.addRbacProperty()
 		matchStrings = append(matchStrings, fmt.Sprintf("(n%d:%s {_uid: '%s'})", i, resource.Properties["kind"], resource.UID)) // e.g. (n0:Pod {_uid: 'abc123'})
-		encodedProps, err := resource.encodeProperties()
+		encodedProps, err := resource.EncodeProperties()
 		if err != nil {
 			glog.Error("Cannot encode resource ", resource.UID, ", excluding it from update: ", err)
 			encodingErrors[resource.UID] = err
@@ -119,7 +119,7 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 
 func UpdateByName(resource Resource) (rg.QueryResult, error) {
 	resource.addRbacProperty()
-	encodedProps, err := resource.encodeProperties()
+	encodedProps, err := resource.EncodeProperties()
 	if err != nil {
 		glog.Error("Cannot encode resource ", resource.UID, ", excluding it from update: ", err)
 		return rg.QueryResult{}, err
