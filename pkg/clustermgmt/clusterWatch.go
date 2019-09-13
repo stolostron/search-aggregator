@@ -146,6 +146,8 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 		_, err := db.DeleteCluster(cluster.GetName())
 		if err != nil {
 			glog.Error("Error deleting current resources for cluster: ", err)
+		} else {
+			db.DeleteClustersCache(resource.UID)
 		}
 	}
 }

@@ -10,6 +10,7 @@ package dbconnector
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/golang/glog"
@@ -128,6 +129,18 @@ func UpdateByName(resource Resource) (rg.QueryResult, error) {
 	// we need to add the uid to the encoded props so if we update a dummy node we can attach a UID to it
 	encodedProps["_uid"] = resource.UID
 
+	// Decide if we want to SET again in REDIS -> if we keep setting values Redis is going OOM .
+	// We check if REDIS is responding , if not we will clean our memory cache so that we write to redis
+	// Check if this is from Update Intent and Map is not nil , we can check if the same values are already there in redis and return
+	// with out performing a SET . This will help alleviate the OOM situation
+	if isKeyClustersCache(resource.UID) {
+		mapInRG := getClustersCache(resource.UID)
+		if reflect.DeepEqual(mapInRG, encodedProps) {
+			glog.V(3).Infof("No updates performed as the Object values have not changed")
+			return rg.QueryResult{Results: nil, Statistics: []string{"Update Not Required"}}, err
+		}
+
+	}
 	setStrings := []string{} // Build the SET portion.
 	for k, v := range encodedProps {
 		switch typed := v.(type) { // At this point it's either string or int64. Need to wrap in quotes if it's string
@@ -141,5 +154,17 @@ func UpdateByName(resource Resource) (rg.QueryResult, error) {
 	// e.g. "MATCH (n:Cluster {name: 'abc123'}) SET n.foo=4"
 	queryString := fmt.Sprintf("MATCH (n:%s {name: '%s'}) SET %s", resource.Properties["kind"], resource.Properties["name"], strings.Join(setStrings, ", "))
 	resp, err := Store.Query(queryString)
+	//if there is no error store the Map in Global encodedPropsMap
+	if err == nil {
+		if isClustersCacheNil() {
+			glog.V(3).Infof("Creating  new cluster cache")
+			createClustersCache(resource.UID, encodedProps)
+		} else {
+			setClustersCache(resource.UID, encodedProps)
+
+		}
+
+	}
+
 	return resp, err
 }

@@ -19,13 +19,14 @@ import (
 )
 
 const (
-	DEFAULT_AGGREGATOR_ADDRESS = ":3010"
-	DEFAULT_REDIS_HOST         = "localhost"
-	DEFAULT_REDIS_PORT         = "6379"
-	DEFAULT_REDISCOVER_RATE_MS = 60000  // 1 min
-	DEFAULT_HTTP_TIMEOUT       = 300000 // 5 min, to fix the EOF response at the collector
-	DEFAULT_EDGE_BUILD_RATE_MS = 10000  // 10 sec
-	AGGREGATOR_API_VERSION     = "3.2.1"
+	DEFAULT_AGGREGATOR_ADDRESS   = ":3010"
+	DEFAULT_REDIS_HOST           = "localhost"
+	DEFAULT_REDIS_PORT           = "6379"
+	DEFAULT_REDISCOVER_RATE_MS   = 60000  // 1 min
+	DEFAULT_HTTP_TIMEOUT         = 300000 // 5 min, to fix the EOF response at the collector
+	DEFAULT_EDGE_BUILD_RATE_MS   = 10000  // 10 sec
+	AGGREGATOR_API_VERSION       = "3.2.1"
+	DEFAULT_REDIS_WATCH_INTERVAL = 15000 //15 seconds
 )
 
 // Define a config type to hold our config properties.
@@ -38,6 +39,7 @@ type Config struct {
 	KubeConfig        string // Local kubeconfig path
 	RediscoverRateMS  int    // time in MS we should check on cluster resource type
 	EdgeBuildRateMS   int    // rate at which intercluster edges should be build
+	RedisWatchRate    int    // rate at which Redis Ping hapens to check health
 	HTTPTimeout       int    // timeout when the http server should drop connections
 }
 
@@ -63,6 +65,7 @@ func init() {
 	setDefault(&Cfg.RedisPassword, "REDIS_PASSWORD", "")
 	setDefaultInt(&Cfg.RediscoverRateMS, "REDISCOVER_RATE_MS", DEFAULT_REDISCOVER_RATE_MS)
 	setDefaultInt(&Cfg.EdgeBuildRateMS, "EDGE_BUILD_RATE_MS", DEFAULT_EDGE_BUILD_RATE_MS)
+	setDefaultInt(&Cfg.RedisWatchRate, "REDIS_WATCH_RATE_MS", DEFAULT_REDIS_WATCH_INTERVAL)
 	setDefaultInt(&Cfg.HTTPTimeout, "HTTP_TIMEOUT", DEFAULT_HTTP_TIMEOUT)
 
 	defaultKubePath := filepath.Join(os.Getenv("HOME"), ".kube", "config")
