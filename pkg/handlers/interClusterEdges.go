@@ -65,7 +65,7 @@ func getUIDsForSubscriptions() (rg.QueryResult, error) {
 func buildSubscriptions() (rg.QueryResult, error) {
 	// Record start time
 	start := time.Now()
-	query := "MATCH	()-[e]->() WHERE e._interCluster=true AND (type(e)='hostedSub' OR type(e)='hosts') DELETE e"
+	query := "MATCH	()-[e]->() WHERE e._interCluster=true AND (type(e)='hostedSub' OR type(e)='hosts' OR type(e)='deployedBy') DELETE e"
 	_, err := db.Store.Query(query)
 	if err != nil {
 		return rg.QueryResult{}, err
@@ -109,12 +109,14 @@ func buildSubscriptions() (rg.QueryResult, error) {
 						query2 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true}]->(hubSub)", hubSub[0], remoteSub[0])
 						// Connect all resources that flow into remoteSub with the hubsub's channel
 						query3 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})-[]->(chan) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE chan.kind = 'channel' CREATE (n)-[r:hostedSub {_interCluster: true}]->(chan)", hubSub[0], remoteSub[0])
+						// Connect the remoteSub with the hubsub's application
+						query4 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})  WHERE app.kind = 'application' CREATE (remoteSub)-[:deployedBy {_interCluster: true}]->(app)", hubSub[0], remoteSub[0])
 						// Connect all resources that flow into remoteSub with the hubsub's application
-						query4 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE app.kind = 'application' CREATE (remoteSub)-[:hostedSub {_interCluster: true}]->(app), (n)-[r:hostedSub {_interCluster: true}]->(app)", hubSub[0], remoteSub[0])
+						query5 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE app.kind = 'application' CREATE (n)-[r:deployedBy {_interCluster: true}]->(app)", hubSub[0], remoteSub[0])
 						// Connect clusters that are connected to remoteSub with the hubsub's application
-						query5 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})-[]->(n {kind:'cluster'})  WHERE app.kind = 'application' CREATE (n)-[r:hosts {_interCluster: true}]->(app)", hubSub[0], remoteSub[0])
+						query6 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})-[]->(n {kind:'cluster'})  WHERE app.kind = 'application' CREATE (n)-[r:hosts {_interCluster: true}]->(app)", hubSub[0], remoteSub[0])
 
-						queries := [...]string{query1, query2, query3, query4, query5}
+						queries := [...]string{query1, query2, query3, query4, query5, query6}
 						for _, query := range queries {
 							_, err = db.Store.Query(query)
 							if err != nil {
