@@ -10,9 +10,9 @@ package handlers
 import (
 	"testing"
 
-	rg "github.com/redislabs/redisgraph-go"
 	"github.com/stretchr/testify/assert"
 	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	rg "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
 type MockCache struct {

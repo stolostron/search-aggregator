@@ -16,9 +16,9 @@ import (
 
 	"github.com/golang/glog"
 
-	rg "github.com/redislabs/redisgraph-go"
 	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
 	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	rg "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
 var LastUpdated time.Time

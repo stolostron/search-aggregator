@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	rg "github.com/redislabs/redisgraph-go"
 )
 
 // Recursive helper for ChunkedUpdate. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
@@ -75,7 +74,7 @@ func ChunkedUpdate(resources []*Resource) ChunkedOperationResult {
 
 // Updates given resources into graph, transparently builds query for you and returns the reponse and errors given by redisgraph.
 // Returns the result, any errors when encoding, and any error from the query itself.
-func Update(resources []*Resource) (rg.QueryResult, map[string]error, error) {
+func Update(resources []*Resource) (QueryResult, map[string]error, error) {
 	query, encodingErrors := updateQuery(resources) // Encoding errors are recoverable, but we still report them
 	resp, err := Store.Query(query)
 	return resp, encodingErrors, err
@@ -118,12 +117,12 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 	return queryString, encodingErrors
 }
 
-func UpdateByName(resource Resource) (rg.QueryResult, error) {
+func UpdateByName(resource Resource) (QueryResult, error) {
 	resource.addRbacProperty()
 	encodedProps, err := resource.EncodeProperties()
 	if err != nil {
 		glog.Error("Cannot encode resource ", resource.UID, ", excluding it from update: ", err)
-		return rg.QueryResult{}, err
+		return QueryResult{}, err
 	}
 
 	// we need to add the uid to the encoded props so if we update a dummy node we can attach a UID to it
@@ -137,7 +136,7 @@ func UpdateByName(resource Resource) (rg.QueryResult, error) {
 		mapInRG := getClustersCache(resource.UID)
 		if reflect.DeepEqual(mapInRG, encodedProps) {
 			glog.V(3).Infof("No updates performed as the Object values have not changed")
-			return rg.QueryResult{Results: nil, Statistics: []string{"Update Not Required"}}, err
+			return QueryResult{Results: nil, Statistics: []string{"Update Not Required"}}, err
 		}
 
 	}

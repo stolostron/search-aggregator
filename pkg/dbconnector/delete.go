@@ -11,8 +11,6 @@ package dbconnector
 import (
 	"fmt"
 	"strings"
-
-	rg "github.com/redislabs/redisgraph-go"
 )
 
 // Recursive helper for ChunkedDelete. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
@@ -73,7 +71,7 @@ func ChunkedDelete(resources []string) ChunkedOperationResult {
 
 // Deletes resources with the given UIDs, transparently builds query for you and returns the reponse and errors given by redisgraph.
 // No encoding errors possible with this operation.
-func Delete(uids []string) (rg.QueryResult, error) {
+func Delete(uids []string) (QueryResult, error) {
 	query := deleteQuery(uids)
 	resp, err := Store.Query(query)
 	return resp, err

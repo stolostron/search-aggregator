@@ -12,20 +12,18 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	rg "github.com/redislabs/redisgraph-go"
 )
 
 type MockCache struct {
 	goodQuery string
-	ret       rg.QueryResult
+	ret       QueryResult
 }
 
-func (mc MockCache) Query(input string) (rg.QueryResult, error) {
+func (mc MockCache) Query(input string) (QueryResult, error) {
 	if input == mc.goodQuery {
 		return mc.ret, nil
 	}
-	return rg.QueryResult{}, errors.New("Incorrect Query formed")
+	return QueryResult{}, errors.New("Incorrect Query formed")
 }
 
 func TestDeleteCluster(t *testing.T) {

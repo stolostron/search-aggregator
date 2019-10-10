@@ -11,8 +11,6 @@ package dbconnector
 import (
 	"fmt"
 	"strings"
-
-	rg "github.com/redislabs/redisgraph-go"
 )
 
 // Recursive helper for DeleteEdge. Takes a single chunk, and recursively attempts to delete that chunk, then the first and second halves of that chunk independently, and so on.
@@ -73,7 +71,7 @@ func ChunkedDeleteEdge(resources []Edge) ChunkedOperationResult {
 }
 
 // Returns the result, any errors when encoding, and any error from the query itself.
-func DeleteEdge(edges []Edge) (rg.QueryResult, error) {
+func DeleteEdge(edges []Edge) (QueryResult, error) {
 	query := deleteEdgeQuery(edges) // Encoding errors are recoverable, but we still report them
 	resp, err := Store.Query(query)
 	return resp, err

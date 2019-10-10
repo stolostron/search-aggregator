@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	rg "github.com/redislabs/redisgraph-go"
 )
 
 // Recursive helper for ChunkedInsert. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
@@ -79,7 +78,7 @@ func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationRe
 
 // Inserts given resources into graph, transparently builds query for you and returns the response and errors given by redisgraph.
 // Returns the result, any errors when encoding, and any error from the query itself.
-func Insert(resources []*Resource, clusterName string) (rg.QueryResult, map[string]error, error) {
+func Insert(resources []*Resource, clusterName string) (QueryResult, map[string]error, error) {
 	query, encodingErrors := insertQuery(resources, clusterName) // Encoding errors are recoverable, but we still report them
 	resp, err := Store.Query(query)
 	return resp, encodingErrors, err

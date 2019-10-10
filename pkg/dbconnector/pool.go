@@ -39,7 +39,7 @@ func init() {
 		Wait:         true,
 	}
 
-	Store = RedisGraphStore{}
+	Store = RedisGraphStoreV1{}
 
 }
 
