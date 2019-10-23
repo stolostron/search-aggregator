@@ -19,7 +19,7 @@ import (
 )
 
 func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge) (stats SyncResponse, err error) {
-	start := time.Now()
+	metrics := InitSyncMetrics()
 	glog.Info("Resync for cluster: ", clusterName)
 
 	// First get the existing resources from the datastore for the cluster
@@ -112,6 +112,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	// INSERT Resources
 
+	metrics.NodeSyncStart = time.Now()
 	insertResponse := db.ChunkedInsert(resourcesToAdd, clusterName)
 	stats.TotalAdded = insertResponse.SuccessfulResources // could be 0
 	if insertResponse.ConnectionError != nil {
@@ -144,8 +145,11 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		stats.DeleteErrors = processSyncErrors(deleteResponse.ResourceErrors, "deleted")
 	}
 
+	metrics.NodeSyncEnd = time.Now()
+
 	// RE-SYNC Edges
 
+	metrics.EdgeSyncStart = time.Now()
 	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s)-[r]->(d) WHERE s.cluster='%s' AND d.cluster='%s' RETURN s._uid, type(r), d._uid", clusterName, clusterName))
 	if edgesError != nil {
 		glog.Warning("Error getting all existing edges for cluster ", clusterName, edgesError)
@@ -197,13 +201,10 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	// There's no need to UPDATE edges because edges don't have properties yet.
 
+	metrics.EdgeSyncEnd = time.Now()
+	metrics.SyncEnd = time.Now()
 	// Log performance stats
-	elapsed := time.Since(start)
-	if int(elapsed.Seconds()) >= 2 {
-		glog.Warningf("ReSync of cluster %s took %s", clusterName, elapsed)
-	} else {
-		glog.V(4).Infof("ReSync of cluster %s took %s", clusterName, elapsed)
-	}
+	metrics.LogPerformanceMetrics(clusterName, SyncEvent{})
 
 	return stats, err
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
+
 	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
@@ -64,7 +65,7 @@ type SyncError struct {
 
 // SyncResources - Process Add, Update, and Delete events.
 func SyncResources(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	metrics := InitSyncMetrics()
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	clusterName := params["id"]
@@ -167,9 +168,9 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-
 		// INSERT Resources
 
+		metrics.NodeSyncStart = time.Now()
 		insertResponse := db.ChunkedInsert(syncEvent.AddResources, clusterName)
 		response.TotalAdded = insertResponse.SuccessfulResources // could be 0
 		if insertResponse.ConnectionError != nil {
@@ -212,8 +213,10 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			respond(http.StatusBadRequest)
 			return
 		}
+		metrics.NodeSyncEnd = time.Now()
 
 		// Insert Edges
+		metrics.EdgeSyncStart = time.Now()
 		insertEdgeResponse := db.ChunkedInsertEdge(syncEvent.AddEdges)
 		response.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
 		if insertEdgeResponse.ConnectionError != nil {
@@ -236,18 +239,16 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			respond(http.StatusBadRequest)
 			return
 		}
+
+		metrics.EdgeSyncEnd = time.Now()
+		metrics.SyncEnd = time.Now()
+		metrics.LogPerformanceMetrics(clusterName, syncEvent)
 	}
 
 	glog.V(2).Infof("Done updating resources for cluster %s, preparing response", clusterName)
 	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB through a work order, so it can take a second
 	response.TotalEdges = computeIntraEdges(clusterName)
-	elapsed := time.Since(start)
-	if int(elapsed.Seconds()) > 2 {
-		glog.Warningf("SyncResources from %s took %s", clusterName, elapsed)
-		glog.Warningf("Increased Processing time with { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }", syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
-	} else {
-		glog.V(4).Infof("SyncResources from %s took %s", clusterName, elapsed)
-	}
+
 	respond(http.StatusOK)
 
 	// update the timestamp if we made any changes Kind = Subscription OR
