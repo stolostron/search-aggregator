@@ -113,7 +113,7 @@ func buildPolicyEdges() (rg.QueryResult, error) {
 					remoteUID := mcPolicy[1]
 					hubPolicyInfo := strings.Split(mcPolicy[0], "/") // index 0 namespace , index 1 policy name
 					//create Edge
-					createQuery := fmt.Sprintf("MATCH (parent: {kind:'policy' cluster: 'local-cluster' namespace: '%s' name: '%s'}), (policy: {_uid: '%s}) CREATE (policy)-[:ownedBy {_interCluster: true}]->(parent)", hubPolicyInfo[0], hubPolicyInfo[1], remoteUID)
+					createQuery := fmt.Sprintf("MATCH (parent {kind: 'policy', cluster: 'local-cluster', namespace: '%s', name: '%s'}), (policy {_uid: '%s'}) CREATE (policy)-[:ownedBy {_interCluster: true}]->(parent)", hubPolicyInfo[0], hubPolicyInfo[1], remoteUID)
 					glog.V(4).Infof("Policy edge to be created %s : ", createQuery)
 					_, crerr := db.Store.Query(createQuery)
 					if crerr != nil {
