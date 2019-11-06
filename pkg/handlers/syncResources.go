@@ -72,7 +72,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	glog.V(2).Info("SyncResources() for cluster: ", clusterName)
 	interClusterUpdated := false                // flag to decide the time when last suscription was changed
 	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
-
+	policyUpdated := false
 	response := SyncResponse{Version: config.AGGREGATOR_API_VERSION}
 
 	// Function that sends the current response and the given status code.
@@ -251,25 +251,33 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	respond(http.StatusOK)
 
-	// update the timestamp if we made any changes Kind = Subscription OR
+	// update the timestamp if we made any changes Kind = Subscription OR Kind = Policy
 	// An Edge which connect from/to a Node (Kind = Subscription)
 
 	// if any Node with kind Subscription Added then interClusterUpdated
+	// if any Node with kind Policy Added then policyUpdated
 	for i := range syncEvent.AddResources {
 		if syncEvent.AddResources[i].Properties["kind"] == "Subscription" || syncEvent.AddResources[i].Properties["kind"] == "Application" {
 			glog.V(3).Infof("Will trigger Intercluster - Added  Node %s ", syncEvent.AddResources[i].Properties["name"])
 			interClusterUpdated = true
-			break
+		}
+		if syncEvent.AddResources[i].Properties["kind"] == "Policy" {
+			glog.V(3).Infof("Will trigger Policy Intercluster - Added  Node %s ", syncEvent.AddResources[i].Properties["name"])
+			policyUpdated = true
 		}
 
 	}
-	// if interClusterUpdated == false check any updates to Node with Kind = Subscription
-	if !interClusterUpdated {
+	// if interClusterUpdated == false or policyUpdated == false check any updates to Node with Kind = Subscription , or Kind = Policy
+	// if there is any update set the flag
+	if !interClusterUpdated || !policyUpdated {
 		for i := range syncEvent.UpdateResources {
 			if syncEvent.UpdateResources[i].Properties["kind"] == "Subscription" || syncEvent.UpdateResources[i].Properties["kind"] == "Application" {
 				glog.V(3).Infof("Will trigger Intercluster - Updated  Node %s ", syncEvent.UpdateResources[i].Properties["name"])
 				interClusterUpdated = true
-				break
+			}
+			if syncEvent.UpdateResources[i].Properties["kind"] == "Policy" {
+				glog.V(3).Infof("Will trigger Policy Intercluster - Updated  Node %s ", syncEvent.UpdateResources[i].Properties["name"])
+				policyUpdated = true
 			}
 
 		}
@@ -303,7 +311,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if interClusterUpdated {
-		LastUpdated = time.Now()
+		ApplicationLastUpdated = time.Now()
+	}
+
+	if policyUpdated {
+		PolicyLastUpdated = time.Now()
 	}
 }
 

@@ -21,33 +21,51 @@ import (
 	rg "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
-var LastUpdated time.Time
+var ApplicationLastUpdated time.Time
+var PolicyLastUpdated time.Time
+
+func getApplicationUpdateTime() time.Time {
+	return ApplicationLastUpdated
+}
+
+func getPolicyUpdateTime() time.Time {
+	return PolicyLastUpdated
+}
 
 // runs all the specific inter-cluster relationships we want to connect
 func BuildInterClusterEdges() {
 	var tranforms = []struct {
 		transfrom   func() (rg.QueryResult, error)
 		description string
+		getUpdate   func() time.Time
 	}{
 		{
 			buildSubscriptions,
 			"connecting subscription edges",
+			getApplicationUpdateTime,
+		},
+		{
+			buildPolicyEdges,
+			"connecting policy edges",
+			getPolicyUpdateTime,
 		},
 	}
 
 	for {
 		interval := time.Duration(config.Cfg.EdgeBuildRateMS) * time.Millisecond
 		time.Sleep(interval)
-		// if no updates have been made during the sleep skip edge building
-		// logic here is if timestamp < current time - interval
-		if LastUpdated.Before(time.Now().Add(-interval)) {
-			glog.V(3).Info("Skipping intercluster edges build because nothing has changed")
-			continue
-		}
 
 		glog.V(3).Info("Building intercluster edges")
 
 		for _, edgeFunc := range tranforms {
+			// if no updates have been made during the sleep skip edge building
+			// logic here is if timestamp < current time - interval
+			updateTime := edgeFunc.getUpdate()
+			if updateTime.Before(time.Now().Add(-interval)) {
+				glog.V(3).Infof("Skipping %s because nothing has changed", edgeFunc.description)
+				continue
+			}
+			glog.V(3).Infof("Running  %s because changed observed", edgeFunc.description)
 			_, err := edgeFunc.transfrom()
 			if err != nil {
 				glog.Errorf("Error %s : %s", edgeFunc.description, err)
@@ -60,6 +78,66 @@ func getUIDsForSubscriptions() (rg.QueryResult, error) {
 	query := "MATCH (n {kind: 'subscription'})  RETURN n._uid"
 	uidResults, err := db.Store.Query(query)
 	return uidResults, err
+}
+
+func buildPolicyEdges() (rg.QueryResult, error) {
+
+	// Record start time
+	start := time.Now()
+	policiesWithParent := make(map[string]bool)
+	//Get all the Nodes connected to a policy with interCluter true - store the UIDs
+	hub_query := "MATCH (n)-[:ownedBy {_interCluster: true}]->( {kind: 'policy'}) RETURN n._uid"
+	connectedPolicies, herr := db.Store.Query(hub_query)
+	if herr != nil {
+		return rg.QueryResult{}, herr
+	}
+	if len(connectedPolicies.Results) > 1 { //  If there is any result
+		for _, hubPolicy := range connectedPolicies.Results[1:] {
+			policiesWithParent[hubPolicy[0]] = true
+		}
+
+	}
+	//Get all the polices from Remote clusters , if the UID is in the map above - we alredy have an edge , skip it - else create an edge
+	mc_query := "MATCH (n{kind:'policy'}) where n.cluster!='local-cluster' AND exists(n._parentPolicy)=true AND n.apigroup='policy.mcm.ibm.com' return  n._parentPolicy,n._uid"
+	mcPolicies, merr := db.Store.Query(mc_query)
+	if merr != nil {
+		return rg.QueryResult{}, merr
+	}
+	if len(mcPolicies.Results) > 1 { //  If there is any result
+		for _, mcPolicy := range mcPolicies.Results[1:] {
+			if mcPolicy[0] != "" && mcPolicy[1] != "" { // check if its valid policy and uid
+				_, ok := policiesWithParent[mcPolicy[1]]
+				if ok {
+					continue //we already have the uid connected to a parent policy
+				} else { // this parent is present in our Hub
+					remoteUID := mcPolicy[1]
+					hubPolicyInfo := strings.Split(mcPolicy[0], "/") // index 0 namespace , index 1 policy name
+					//create Edge
+					createQuery := fmt.Sprintf("MATCH (parent: {kind:'policy' cluster: 'local-cluster' namespace: '%s' name: '%s'}), (policy: {_uid: '%s}) CREATE (policy)-[:ownedBy {_interCluster: true}]->(parent)", hubPolicyInfo[0], hubPolicyInfo[1], remoteUID)
+					glog.V(4).Infof("Policy edge to be created %s : ", createQuery)
+					_, crerr := db.Store.Query(createQuery)
+					if crerr != nil {
+						glog.V(4).Infof("Policy edge creation failed  %s : ", createQuery)
+						continue // if there is an error continue with next Policy
+					}
+				}
+			}
+
+		}
+	} else {
+		//there is no policy in managed - return with out any new edges
+		return rg.QueryResult{}, nil
+	}
+	// Record elapsed time
+	elapsed := time.Since(start)
+	// Log a warning if it takes more than 100ms.
+	if elapsed.Nanoseconds() > 100*1000*1000 {
+		glog.Warningf("Intercluster policy edge creation took %s", elapsed)
+	} else {
+		glog.V(4).Infof("Intercluster policy edge creation took %s", elapsed)
+	}
+	return rg.QueryResult{}, nil
+
 }
 
 func buildSubscriptions() (rg.QueryResult, error) {
