@@ -10,6 +10,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -60,6 +61,7 @@ func BuildInterClusterEdges() {
 			// if no updates have been made during the sleep skip edge building
 			// logic here is if timestamp < current time - interval
 			updateTime := edgeFunc.getUpdate()
+			// Comment out the Next 3 lines if you want to test intercluster locally
 			if updateTime.Before(time.Now().Add(-interval)) {
 				glog.V(3).Infof("Skipping %s because nothing has changed", edgeFunc.description)
 				continue
@@ -79,12 +81,18 @@ func getUIDsForSubscriptions() (rg.QueryResult, error) {
 	return uidResults, err
 }
 
-func buildPolicyEdges() (rg.QueryResult, error) {
+func getUIDsForPolicies() (rg.QueryResult, error) {
+	query := "MATCH (n) where n.kind='vulnerabilitypolicy' OR n.kind='mutationpolicy' OR n.kind='policy'  RETURN n._uid"
+	uidResults, err := db.Store.Query(query)
+	return uidResults, err
+}
 
+func buildPolicyEdges() (rg.QueryResult, error) {
 	// Record start time
 	start := time.Now()
 	policiesWithParent := make(map[string]bool)
-	//Get all the Nodes connected to a policy with interCluter true - store the UIDs
+	//Get all the Nodes connected to Kind :policy with interCluter true - store the UIDs
+	// These Policies may be Parent Policies  which We would like Policy and VA/MA from remotes to connected to
 	hub_query := "MATCH (n)-[:ownedBy {_interCluster: true}]->( {kind: 'policy'}) RETURN n._uid"
 	connectedPolicies, herr := db.Store.Query(hub_query)
 	if herr != nil {
@@ -96,36 +104,66 @@ func buildPolicyEdges() (rg.QueryResult, error) {
 		}
 
 	}
-	//Get all the polices from Remote clusters , if the UID is in the map above - we alredy have an edge , skip it - else create an edge
-	mc_query := "MATCH (n{kind:'policy'}) where n.cluster!='local-cluster' AND exists(n._parentPolicy)=true AND n.apigroup='policy.mcm.ibm.com' return  n._parentPolicy,n._uid"
+	//Get all the VA/MA policies using (VAMA)-[:ownedBy]->polices from Remote clusters , will get vama policy uids , their parents uid and namespace/name of the Parent policy in HUB -- refer comment before hub_query
+	mc_query := "MATCH (child)-[:ownedBy]->(policy{kind:'policy'}) where exists(policy._parentPolicy)=true AND policy.cluster!='local-cluster' AND policy.apigroup='policy.mcm.ibm.com' AND (child.kind='mutationpolicy' OR child.kind='vulnerabilitypolicy') return  policy._parentPolicy,policy._uid,child._uid"
 	mcPolicies, merr := db.Store.Query(mc_query)
 	if merr != nil {
 		return rg.QueryResult{}, merr
 	}
 	if len(mcPolicies.Results) > 1 { //  If there is any result
+		//create a map for having unique policyIds , VA/MA Uids
+		resultUids := make(map[string]string)
 		for _, mcPolicy := range mcPolicies.Results[1:] {
-			if mcPolicy[0] != "" && mcPolicy[1] != "" { // check if its valid policy and uid
-				_, ok := policiesWithParent[mcPolicy[1]]
-				if ok {
-					continue //we already have the uid connected to a parent policy
-				} else { // this parent is present in our Hub
-					remoteUID := mcPolicy[1]
-					hubPolicyInfo := strings.Split(mcPolicy[0], "/") // index 0 namespace , index 1 policy name
-					//create Edge
-					createQuery := fmt.Sprintf("MATCH (parent {kind: 'policy', cluster: 'local-cluster', namespace: '%s', name: '%s'}), (policy {_uid: '%s'}) CREATE (policy)-[:ownedBy {_interCluster: true}]->(parent)", hubPolicyInfo[0], hubPolicyInfo[1], remoteUID)
-					glog.V(4).Infof("Policy edge to be created %s : ", createQuery)
-					_, crerr := db.Store.Query(createQuery)
-					if crerr != nil {
-						glog.V(4).Infof("Policy edge creation failed  %s : ", createQuery)
-						continue // if there is an error continue with next Policy
-					}
+			if mcPolicy[0] != "" && mcPolicy[1] != "" && mcPolicy[2] != "" {
+				resultUids[mcPolicy[1]] = mcPolicy[0] // Set the parent -> _parentPolicy
+				resultUids[mcPolicy[2]] = mcPolicy[0] // Set the VA/MA (child) -> _parentPolicy
+			}
+		}
+
+		//Now iterate the result and create the needed edges
+		for key, val := range resultUids {
+			_, ok := policiesWithParent[key]
+			if ok {
+				// If we have the Source UID - we expect that no one cane manually edit the Parent and point to a different parent
+				// If they delete the edge to Policy will automatically gets deleted
+				continue //we already have the uid connected to a parent policy
+			} else { // We need to create an edge between the Key and Val
+				remoteUID := key
+				hubParentPolicy := strings.Split(val, "/") // index 0 namespace , index 1 policy name
+				//create Edge
+				createQuery := fmt.Sprintf("MATCH (parent {kind: 'policy', cluster: 'local-cluster', namespace: '%s', name: '%s'}), (policy {_uid: '%s'}) CREATE (policy)-[:ownedBy {_interCluster: true}]->(parent)", hubParentPolicy[0], hubParentPolicy[1], remoteUID)
+				glog.V(4).Infof("Policy InterCluster edge to be created %s : ", createQuery)
+				_, crerr := db.Store.Query(createQuery)
+				if crerr != nil {
+					glog.V(4).Infof("Policy InterCluster  edge creation failed  %s : ", createQuery)
+					continue // if there is an error continue with next Policy
 				}
 			}
-
 		}
-	} else {
-		//there is no policy in managed - return with out any new edges
-		return rg.QueryResult{}, nil
+	}
+	// Typical Setup of Policies (1) A Parent Policy in HUB (2) A policy in HUB which is exaclty copied to REMOTE (3) The Replica of Policy in item -2- In REMOTE (4) A VA or MA policy connected to -Policy in 3-
+	// 2 hop query , get all subscriptions that violates either VA/MA policy -> connected to its remote  parent
+	// make a direct connection from subscription to parent policy -
+	randomTrackId := rand.Intn(99999) // A track Id which we will use in Redisgraph to find out what edges were created in this call , rest all can be deleted . This is to avoid creating deplicate edges by redisgraph
+	querySubToPolicy := fmt.Sprintf("MATCH (subscription {kind:'subscription'})-[:violates]->(vama)-[:ownedBy {_interCluster:true}]->(parent{kind:'policy'}) where vama.kind='mutationpolicy' OR vama.kind='vulnerabilitypolicy' WITH subscription as SS , parent as PP MATCH (SSA {kind:'subscription'}),(PPA {kind:'policy'}) where SSA._uid=SS._uid AND PPA._uid=PP._uid  CREATE (SSA)-[t:violates {_interCluster: true,trackId: %d}]->(PPA)", randomTrackId)
+	glog.V(4).Infof("Policy InterCluster 2 Hop Query for Subsciption -> Policy edge to be created %s  ", querySubToPolicy)
+	_, subPolErr := db.Store.Query(querySubToPolicy)
+	if subPolErr != nil {
+		return rg.QueryResult{}, subPolErr
+	}
+
+	// The Above quey will add edges to Subscriptions to Policies - but it can also create duplicate edges, but we know what we created in this instance by using the randomTrackId
+	//We will delete all the duplicate edges - they will have old different randomTrackID - If we are unlucky to get same ramdom ID 2 consecutive times , then we will have , duplicates for some time , though the data is valid
+	deleteSubToPolicy := fmt.Sprintf("MATCH (subscription {kind:'subscription'})-[e:violates{_interCluster:true}]->(parent{kind:'policy'}) where e.trackId!=%d delete e", randomTrackId)
+	glog.V(4).Infof("Policy InterCluster Delete Query for Subsciption -> Policy edge to be deleted %s  ", deleteSubToPolicy)
+	_, delSubPolErr := db.Store.Query(deleteSubToPolicy)
+	if delSubPolErr != nil {
+		return rg.QueryResult{}, delSubPolErr
+	}
+	//We need to call build Subscriptions as we need to pull the edges to Application
+	_, errSubs := buildSubscriptions()
+	if delSubPolErr != nil {
+		return rg.QueryResult{}, errSubs
 	}
 	// Record elapsed time
 	elapsed := time.Since(start)

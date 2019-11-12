@@ -69,8 +69,9 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	clusterName := params["id"]
 	glog.V(2).Info("SyncResources() for cluster: ", clusterName)
-	interClusterUpdated := false                // flag to decide the time when last suscription was changed
+	subscriptionUpdated := false                // flag to decide the time when last suscription was changed
 	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
+	policyUIDMap := make(map[string]bool)       // map to hold exisiting VA/MA Policies
 	policyUpdated := false
 	response := SyncResponse{Version: config.AGGREGATOR_API_VERSION}
 
@@ -146,7 +147,19 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	} else {
 		glog.Warningf("Error Fetching Subscriptions %s", uiderr)
 	}
-	glog.V(3).Infof("Current Subscriptions found %d", len(subscriptionUIDMap))
+
+	// let us store the Current Policies Uids in a map [String] -> boolean
+	uidresults, uiderr = getUIDsForPolicies()
+	if uiderr == nil {
+		if len(uidresults.Results) > 1 {
+			for _, uid := range uidresults.Results[1:] {
+				policyUIDMap[uid[0]] = true
+			}
+		}
+
+	} else {
+		glog.Warningf("Error Fetching Policies %s", uiderr)
+	}
 
 	// This usually indicates that something has gone wrong, basically that the collector detected we are out of sync and wants us to resync.
 	if syncEvent.ClearAll {
@@ -251,65 +264,66 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	respond(http.StatusOK)
 
 	// update the timestamp if we made any changes Kind = Subscription OR Kind = Policy
-	// An Edge which connect from/to a Node (Kind = Subscription)
+	// An Edge which connect from/to a Node (Kind = Subscription) or (Kind = Policy or VulnerabilityPolicy or MutationPolicy)
 
-	// if any Node with kind Subscription Added then interClusterUpdated
-	// if any Node with kind Policy Added then policyUpdated
+	// if any Node with kind Subscription Added then subscriptionUpdated
+	// if any Node with kind Policy/VulnerabilityPolicy / MutationPolicy Added then policyUpdated
 	for i := range syncEvent.AddResources {
-		if syncEvent.AddResources[i].Properties["kind"] == "Subscription" || syncEvent.AddResources[i].Properties["kind"] == "Application" {
+		if (!subscriptionUpdated) && (syncEvent.AddResources[i].Properties["kind"] == "Subscription" || syncEvent.AddResources[i].Properties["kind"] == "Application") {
 			glog.V(3).Infof("Will trigger Intercluster - Added  Node %s ", syncEvent.AddResources[i].Properties["name"])
-			interClusterUpdated = true
-		}
-		if syncEvent.AddResources[i].Properties["kind"] == "Policy" {
+			subscriptionUpdated = true
+		} else if (!policyUpdated) && (syncEvent.AddResources[i].Properties["kind"] == "Policy" || syncEvent.AddResources[i].Properties["kind"] == "MutationPolicy" || syncEvent.AddResources[i].Properties["kind"] == "VulnerabilityPolicy") {
 			glog.V(3).Infof("Will trigger Policy Intercluster - Added  Node %s ", syncEvent.AddResources[i].Properties["name"])
 			policyUpdated = true
 		}
-
+		if subscriptionUpdated && policyUpdated {
+			break
+		}
 	}
-	// if interClusterUpdated == false or policyUpdated == false check any updates to Node with Kind = Subscription , or Kind = Policy
-	// if there is any update set the flag
-	if !interClusterUpdated || !policyUpdated {
+	if !subscriptionUpdated || !policyUpdated {
 		for i := range syncEvent.UpdateResources {
-			if syncEvent.UpdateResources[i].Properties["kind"] == "Subscription" || syncEvent.UpdateResources[i].Properties["kind"] == "Application" {
+			if (!subscriptionUpdated) && (syncEvent.UpdateResources[i].Properties["kind"] == "Subscription" || syncEvent.UpdateResources[i].Properties["kind"] == "Application") {
 				glog.V(3).Infof("Will trigger Intercluster - Updated  Node %s ", syncEvent.UpdateResources[i].Properties["name"])
-				interClusterUpdated = true
-			}
-			if syncEvent.UpdateResources[i].Properties["kind"] == "Policy" {
+				subscriptionUpdated = true
+			} else if (!policyUpdated) && (syncEvent.UpdateResources[i].Properties["kind"] == "Policy" || syncEvent.UpdateResources[i].Properties["kind"] == "MutationPolicy" || syncEvent.UpdateResources[i].Properties["kind"] == "VulnerabilityPolicy") {
 				glog.V(3).Infof("Will trigger Policy Intercluster - Updated  Node %s ", syncEvent.UpdateResources[i].Properties["name"])
 				policyUpdated = true
 			}
-
-		}
-
-	}
-
-	// if interClusterUpdated == false check Updated and Deleted edges
-	if !interClusterUpdated {
-		// Check Added Edges - Do they have a UID  which is present in  Subscriptions Map we created
-		for i := range syncEvent.AddEdges {
-			if subscriptionUIDMap[syncEvent.AddEdges[i].SourceUID] || subscriptionUIDMap[syncEvent.AddEdges[i].DestUID] {
-				glog.V(3).Infof("Will trigger Intercluster Added Edge %s -> %s ", syncEvent.AddEdges[i].SourceUID, syncEvent.AddEdges[i].DestUID)
-				interClusterUpdated = true
+			if subscriptionUpdated && policyUpdated {
 				break
 			}
-
 		}
-		//if we have interClusterUpdated = false , check for the deleted edges if they had connection to Kind = Subscription
-		if !interClusterUpdated {
-			for i := range syncEvent.DeleteEdges {
-				if subscriptionUIDMap[syncEvent.DeleteEdges[i].SourceUID] || subscriptionUIDMap[syncEvent.DeleteEdges[i].DestUID] {
-					glog.V(3).Infof("Will trigger Intercluster Deleted Edge %s -> %s ", syncEvent.DeleteEdges[i].SourceUID, syncEvent.DeleteEdges[i].DestUID)
-					interClusterUpdated = true
-					break
-				}
-
+	}
+	if !subscriptionUpdated || !policyUpdated {
+		for i := range syncEvent.AddEdges {
+			if (!subscriptionUpdated) && (subscriptionUIDMap[syncEvent.AddEdges[i].SourceUID] || subscriptionUIDMap[syncEvent.AddEdges[i].DestUID]) {
+				glog.V(3).Infof("Will trigger Intercluster Added Edge %s -> %s ", syncEvent.AddEdges[i].SourceUID, syncEvent.AddEdges[i].DestUID)
+				subscriptionUpdated = true
+			} else if (!policyUpdated) && (policyUIDMap[syncEvent.AddEdges[i].SourceUID] || policyUIDMap[syncEvent.AddEdges[i].DestUID]) {
+				glog.V(3).Infof("Will trigger Policy Intercluster Added Edge %s -> %s ", syncEvent.AddEdges[i].SourceUID, syncEvent.AddEdges[i].DestUID)
+				policyUpdated = true
 			}
-
+			if subscriptionUpdated && policyUpdated {
+				break
+			}
 		}
-
+	}
+	if !subscriptionUpdated || !policyUpdated {
+		for i := range syncEvent.DeleteEdges {
+			if (!subscriptionUpdated) && (subscriptionUIDMap[syncEvent.DeleteEdges[i].SourceUID] || subscriptionUIDMap[syncEvent.DeleteEdges[i].DestUID]) {
+				glog.V(3).Infof("Will trigger Intercluster Deleted Edge %s -> %s ", syncEvent.DeleteEdges[i].SourceUID, syncEvent.DeleteEdges[i].DestUID)
+				subscriptionUpdated = true
+			} else if (!policyUpdated) && (policyUIDMap[syncEvent.DeleteEdges[i].SourceUID] || policyUIDMap[syncEvent.DeleteEdges[i].DestUID]) {
+				glog.V(3).Infof("Will trigger Policy Intercluster Deleted Edge %s -> %s ", syncEvent.DeleteEdges[i].SourceUID, syncEvent.DeleteEdges[i].DestUID)
+				policyUpdated = true
+			}
+			if subscriptionUpdated && policyUpdated {
+				break
+			}
+		}
 	}
 
-	if interClusterUpdated {
+	if subscriptionUpdated {
 		ApplicationLastUpdated = time.Now()
 	}
 
