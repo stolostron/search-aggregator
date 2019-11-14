@@ -17,44 +17,18 @@ import (
 	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
 	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
 	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
-	clientset "k8s.io/cluster-registry/pkg/client/clientset/versioned"
 	informers "k8s.io/cluster-registry/pkg/client/informers/externalversions"
 )
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
-	var clientConfig *rest.Config
 	var err error
+	clusterClient, mcmClient, err := config.InitClient()
 	var stopper chan struct{}
 	informerRunning := false
 
-	if config.Cfg.KubeConfig != "" {
-		glog.Infof("Creating k8s client using path: %s", config.Cfg.KubeConfig)
-		clientConfig, err = clientcmd.BuildConfigFromFlags("", config.Cfg.KubeConfig)
-	} else {
-		glog.Info("Creating k8s client using InClusterConfig()")
-		clientConfig, err = rest.InClusterConfig()
-	}
-
-	if err != nil {
-		glog.Fatal("Error Constructing Client From Config: ", err)
-	}
-
-	// Initialize the mcm client, used for ClusterStatus resource
-	mcmClient, err := mcmClientset.NewForConfig(clientConfig)
-	if err != nil {
-		glog.Fatal("Cannot Construct MCM Client From Config: ", err)
-	}
-
-	// Initialize the cluster client, used for Cluster resource
-	clusterClient, err := clientset.NewForConfig(clientConfig)
-	if err != nil {
-		glog.Fatal("Cannot Construct Cluster Client From Config: ", err)
-	}
 	clusterFactory := informers.NewSharedInformerFactory(clusterClient, 0)
 	clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{

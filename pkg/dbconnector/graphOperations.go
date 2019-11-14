@@ -9,6 +9,9 @@ package dbconnector
 
 import (
 	"fmt"
+
+	"github.com/golang/glog"
+	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
 )
 
 const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
@@ -65,7 +68,18 @@ func TotalIntraEdges(clusterName string) (QueryResult, error) {
 }
 
 func MergeDummyCluster() (QueryResult, error) {
-	query := "MERGE (:Cluster {name: 'local-cluster', kind: 'cluster'})"
+	kubeVersion := ""
+	if config.ClusterClient != nil {
+		clusterClientServerVersion, verr := config.ClusterClient.ServerVersion()
+		if verr != nil {
+			glog.Error("clusterClientServerVersion not found")
+		} else {
+			kubeVersion = clusterClientServerVersion.String()
+		}
+	} else {
+		glog.Error("ClusterClient not initialized")
+	}
+	query := fmt.Sprintf("MERGE (c:Cluster {name: 'local-cluster', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", kubeVersion)
 	return Store.Query(query)
 }
 
