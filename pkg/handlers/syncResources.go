@@ -323,12 +323,12 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if subscriptionUpdated {
-		ApplicationLastUpdated = time.Now()
-	}
-
 	if policyUpdated {
 		PolicyLastUpdated = time.Now()
+		// Policy update triggers Build SubscriptionEdges , we dont need to send twice
+		//Skip updating ApplicationLastUpdated
+	} else if subscriptionUpdated {
+		ApplicationLastUpdated = time.Now()
 	}
 }
 

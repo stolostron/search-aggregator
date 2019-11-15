@@ -68,7 +68,7 @@ func getRedisConnection() (redis.Conn, error) {
 		}
 		redisConn, err = redis.Dial("tcp", config.Cfg.RedisHost+":"+config.Cfg.RedisSSHPort,
 			redis.DialTLSConfig(tlsconf),
-			redis.DialUseTLS(true))
+			redis.DialUseTLS(true)) // Set this to false when you want to connect to redis via SSH from local laptop
 		if err != nil {
 			glog.Error("Error connecting redis using SSH.  Original error: ", err)
 			return nil, err
