@@ -17,8 +17,7 @@ import (
 	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
-func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge) (stats SyncResponse, err error) {
-	metrics := InitSyncMetrics()
+func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge, metrics *SyncMetrics) (stats SyncResponse, err error) {
 	glog.Info("Resync for cluster: ", clusterName)
 
 	// First get the existing resources from the datastore for the cluster
@@ -201,9 +200,6 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	// There's no need to UPDATE edges because edges don't have properties yet.
 
 	metrics.EdgeSyncEnd = time.Now()
-	metrics.SyncEnd = time.Now()
-	// Log performance stats
-	metrics.LogPerformanceMetrics(clusterName, SyncEvent{})
 
 	return stats, err
 }

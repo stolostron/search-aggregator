@@ -18,28 +18,30 @@ import (
 )
 
 const (
+	AGGREGATOR_API_VERSION       = "3.3.0"
 	DEFAULT_AGGREGATOR_ADDRESS   = ":3010"
+	DEFAULT_EDGE_BUILD_RATE_MS   = 10000  // 10 sec
+	DEFAULT_HTTP_TIMEOUT         = 300000 // 5 min, to fix the EOF response at the collector
+	DEFAULT_REDISCOVER_RATE_MS   = 60000  // 1 min
 	DEFAULT_REDIS_HOST           = "localhost"
 	DEFAULT_REDIS_PORT           = "6379"
-	DEFAULT_REDISCOVER_RATE_MS   = 60000  // 1 min
-	DEFAULT_HTTP_TIMEOUT         = 300000 // 5 min, to fix the EOF response at the collector
-	DEFAULT_EDGE_BUILD_RATE_MS   = 10000  // 10 sec
-	AGGREGATOR_API_VERSION       = "3.2.1"
-	DEFAULT_REDIS_WATCH_INTERVAL = 15000 //15 seconds
+	DEFAULT_REDIS_WATCH_INTERVAL = 15000 // 15 seconds
+	DEFAULT_REQUEST_LIMIT        = 5     // Max number of concurrent requests.
 )
 
 // Define a config type to hold our config properties.
 type Config struct {
 	AggregatorAddress string // address for collector <-> aggregator
+	EdgeBuildRateMS   int    // rate at which intercluster edges should be build
+	HTTPTimeout       int    // timeout when the http server should drop connections
+	KubeConfig        string // Local kubeconfig path
 	RedisHost         string // host path for redis
+	RedisPassword     string // password for redis
 	RedisPort         string // port for redis
 	RedisSSHPort      string // ssh port for redis
-	RedisPassword     string // password for redis
-	KubeConfig        string // Local kubeconfig path
-	RediscoverRateMS  int    // time in MS we should check on cluster resource type
-	EdgeBuildRateMS   int    // rate at which intercluster edges should be build
 	RedisWatchRate    int    // rate at which Redis Ping hapens to check health
-	HTTPTimeout       int    // timeout when the http server should drop connections
+	RediscoverRateMS  int    // time in MS we should check on cluster resource type
+	RequestLimit      int    // Max number of concurrent requests. Used to prevent from overloading Redis.
 }
 
 var Cfg = Config{}
@@ -62,10 +64,11 @@ func init() {
 	setDefault(&Cfg.RedisPort, "REDIS_PORT", DEFAULT_REDIS_PORT)
 	setDefault(&Cfg.RedisSSHPort, "REDIS_SSH_PORT", "")
 	setDefault(&Cfg.RedisPassword, "REDIS_PASSWORD", "")
-	setDefaultInt(&Cfg.RediscoverRateMS, "REDISCOVER_RATE_MS", DEFAULT_REDISCOVER_RATE_MS)
 	setDefaultInt(&Cfg.EdgeBuildRateMS, "EDGE_BUILD_RATE_MS", DEFAULT_EDGE_BUILD_RATE_MS)
-	setDefaultInt(&Cfg.RedisWatchRate, "REDIS_WATCH_RATE_MS", DEFAULT_REDIS_WATCH_INTERVAL)
 	setDefaultInt(&Cfg.HTTPTimeout, "HTTP_TIMEOUT", DEFAULT_HTTP_TIMEOUT)
+	setDefaultInt(&Cfg.RequestLimit, "REQUEST_LIMIT", DEFAULT_REQUEST_LIMIT)
+	setDefaultInt(&Cfg.RedisWatchRate, "REDIS_WATCH_RATE_MS", DEFAULT_REDIS_WATCH_INTERVAL)
+	setDefaultInt(&Cfg.RediscoverRateMS, "REDISCOVER_RATE_MS", DEFAULT_REDISCOVER_RATE_MS)
 
 	defaultKubePath := filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	if _, err := os.Stat(defaultKubePath); os.IsNotExist(err) {

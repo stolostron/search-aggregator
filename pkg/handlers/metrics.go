@@ -12,9 +12,13 @@ import (
 	"github.com/golang/glog"
 )
 
+// Track clusters with pending requests.
+var PendingRequests = make(map[string]*SyncMetrics)
+
 // Used to collect sync performance metrics
 type SyncMetrics struct {
-	SyncStart     time.Time // Entire cluster sync event
+	clusterName   string
+	syncStart     time.Time // Entire cluster sync event
 	SyncEnd       time.Time // Entire cluster sync event
 	NodeSyncStart time.Time
 	NodeSyncEnd   time.Time
@@ -22,20 +26,26 @@ type SyncMetrics struct {
 	EdgeSyncEnd   time.Time
 }
 
-func InitSyncMetrics() SyncMetrics {
-	s := SyncMetrics{SyncStart: time.Now()}
+func InitSyncMetrics(clusterName string) SyncMetrics {
+	s := SyncMetrics{clusterName: clusterName, syncStart: time.Now()}
+	PendingRequests[clusterName] = &s
 	return s
 }
 
-func (m SyncMetrics) LogPerformanceMetrics(clusterName string, syncEvent SyncEvent) {
-	elapsed := time.Since(m.SyncStart)
+func (m SyncMetrics) CompleteSyncEvent() {
+	glog.V(2).Info("Completed sync of cluster: ", m.clusterName)
+	delete(PendingRequests, m.clusterName)
+}
+
+func (m SyncMetrics) LogPerformanceMetrics(syncEvent SyncEvent) {
+	elapsed := time.Since(m.syncStart)
 	if int(elapsed.Seconds()) > 1 {
-		glog.Warningf("SyncResources from %s took %s", clusterName, elapsed)
+		glog.Warningf("SyncResources from %s took %s", m.clusterName, elapsed)
 		glog.Warningf("Increased Processing time with { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }", syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
 		glog.Warning("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
 		glog.Warning("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
 	} else {
-		glog.V(4).Infof("SyncResources from %s took %s", clusterName, elapsed)
+		glog.V(4).Infof("SyncResources from %s took %s", m.clusterName, elapsed)
 		glog.V(4).Info("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
 		glog.V(4).Info("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
 	}

@@ -64,11 +64,25 @@ type SyncError struct {
 
 // SyncResources - Process Add, Update, and Delete events.
 func SyncResources(w http.ResponseWriter, r *http.Request) {
-	metrics := InitSyncMetrics()
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	clusterName := params["id"]
-	glog.V(2).Info("SyncResources() for cluster: ", clusterName)
+
+	// Limit amount of concurrent requests to prevent overloading Redis.
+	// Give priority to the local-cluster, because it's the hub and this is how we debug search.
+	// TODO: The next step is to degrade performance instead of rejecting the request.
+	//       We will give priority to nodes over edges after reaching certain load.
+	//       Will also prioritize small updates over a large resync.
+	if len(PendingRequests) > config.Cfg.RequestLimit && clusterName != "local-cluster" {
+		glog.Warningf("Too many pending requests (%d). Rejecting sync from cluster %s", len(PendingRequests), clusterName)
+		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
+		return
+	}
+
+	glog.V(2).Info("Starting SyncResources() for cluster: ", clusterName)
+	metrics := InitSyncMetrics(clusterName)
+	defer metrics.CompleteSyncEvent()
+
 	subscriptionUpdated := false                // flag to decide the time when last suscription was changed
 	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
 	policyUIDMap := make(map[string]bool)       // map to hold exisiting VA/MA Policies
@@ -163,9 +177,9 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	// This usually indicates that something has gone wrong, basically that the collector detected we are out of sync and wants us to resync.
 	if syncEvent.ClearAll {
-		stats, err := resyncCluster(clusterName, syncEvent.AddResources, syncEvent.AddEdges)
+		stats, err := resyncCluster(clusterName, syncEvent.AddResources, syncEvent.AddEdges, &metrics)
 		if err != nil {
-			glog.Warning("Error on resyncCluster. ", err)
+			glog.Warning("Error on resyncCluster. ", clusterName, err)
 		} else {
 			response.TotalAdded = stats.TotalAdded
 			response.TotalUpdated = stats.TotalUpdated
@@ -253,9 +267,9 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		}
 
 		metrics.EdgeSyncEnd = time.Now()
-		metrics.SyncEnd = time.Now()
-		metrics.LogPerformanceMetrics(clusterName, syncEvent)
 	}
+	metrics.SyncEnd = time.Now()
+	metrics.LogPerformanceMetrics(syncEvent)
 
 	glog.V(2).Infof("Done updating resources for cluster %s, preparing response", clusterName)
 	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB through a work order, so it can take a second
