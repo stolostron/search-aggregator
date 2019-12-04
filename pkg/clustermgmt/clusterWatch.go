@@ -8,6 +8,7 @@ The source code for this program is not published or otherwise divested of its t
 package clustermgmt
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -142,7 +143,14 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
 	if cluster.GetLabels() != nil {
-		props["label"] = cluster.GetLabels()
+		var labelMap map[string]interface{}
+		clusterLabels, _ := json.Marshal(cluster.GetLabels())
+		err := json.Unmarshal(clusterLabels, &labelMap)
+		// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
+		// This was getting skipped before as map[string]string was not handled in switch case encode#77
+		if err == nil {
+			props["label"] = labelMap
+		}
 	}
 	if cluster.GetNamespace() != "" {
 		props["namespace"] = cluster.GetNamespace()
