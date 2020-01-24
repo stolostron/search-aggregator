@@ -7,13 +7,17 @@ The source code for this program is not published or otherwise divested of its t
 package handlers
 
 import (
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
 )
 
 // Track clusters with pending requests.
-var PendingRequests = make(map[string]*SyncMetrics)
+var (
+	PendingRequests      = make(map[string]*SyncMetrics)
+	PendingRequestsMutex = sync.RWMutex{}
+)
 
 // Used to collect sync performance metrics
 type SyncMetrics struct {
@@ -28,13 +32,17 @@ type SyncMetrics struct {
 
 func InitSyncMetrics(clusterName string) SyncMetrics {
 	s := SyncMetrics{clusterName: clusterName, syncStart: time.Now()}
+	PendingRequestsMutex.Lock()
 	PendingRequests[clusterName] = &s
+	PendingRequestsMutex.Unlock()
 	return s
 }
 
 func (m SyncMetrics) CompleteSyncEvent() {
 	glog.V(2).Info("Completed sync of cluster: ", m.clusterName)
+	PendingRequestsMutex.Lock()
 	delete(PendingRequests, m.clusterName)
+	PendingRequestsMutex.Unlock()
 }
 
 func (m SyncMetrics) LogPerformanceMetrics(syncEvent SyncEvent) {
