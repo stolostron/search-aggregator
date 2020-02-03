@@ -220,7 +220,7 @@ func buildSubscriptions() (rg.QueryResult, error) {
 						//TODO: For the subscription model, all intercluster edges are named as 'hostedSub {_interCluster: true}'. Change this to relevant names in future
 						//To add edges from hubSub to all resources connected to the remoteSub (bidirectional) - incoming edges and outgoing edges
 						// Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
-						query1 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})-[]->(n) CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSub[0], remoteSub[0], currentAppInstance, currentAppInstance)
+						query1 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})-[]->(n) WHERE n.kind != 'application' AND n.kind != 'subscription' CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSub[0], remoteSub[0], currentAppInstance, currentAppInstance)
 						// Add edges from hubSub to all resources that flow into remoteSub eg: pods, deployments, services, replicasets etc.
 						query2 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSub[0], remoteSub[0], currentAppInstance)
 						// Connect all resources that flow into remoteSub with the hubsub's channel
@@ -230,12 +230,9 @@ func buildSubscriptions() (rg.QueryResult, error) {
 						// Connect all resources that flow into remoteSub with the hubsub's application
 						query5 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE app.kind = 'application' CREATE (n)-[r:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSub[0], remoteSub[0], currentAppInstance)
 						// Connect resources that are connected to remoteSub with the hubsub's application - add check to avoid connecting application to itself
-						query6 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})-[]->(n)  WHERE app.kind = 'application' AND n.kind != 'application' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSub[0], remoteSub[0], currentAppInstance)
+						query6 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})-[]->(n)  WHERE app.kind = 'application' AND n.kind != 'application' AND n.kind != 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSub[0], remoteSub[0], currentAppInstance)
 
-						//Delete interclusters with other instance Ids
-						deleteOldInstance := fmt.Sprintf("MATCH ()-[e {_interCluster:true}]->() WHERE (type(e)='hostedSub' OR type(e)='usedBy' OR type(e)='deployedBy') AND e.app_instance!=%d delete e", currentAppInstance)
-
-						queries := [...]string{query1, query2, query3, query4, query5, query6, deleteOldInstance}
+						queries := [...]string{query1, query2, query3, query4, query5, query6}
 						for _, query := range queries {
 							_, err = db.Store.Query(query)
 							if err != nil {
@@ -245,6 +242,12 @@ func buildSubscriptions() (rg.QueryResult, error) {
 					}
 				}
 			}
+		}
+		//Delete interclusters with other instance ids after all hub subscriptions are processed
+		deleteOldInstance := fmt.Sprintf("MATCH ()-[e {_interCluster:true}]->() WHERE (type(e)='hostedSub' OR type(e)='usedBy' OR type(e)='deployedBy') AND e.app_instance!=%d delete e", currentAppInstance)
+		_, err = db.Store.Query(deleteOldInstance)
+		if err != nil {
+			return rg.QueryResult{}, err
 		}
 	}
 	previousAppInstance = currentAppInstance // Next iteration we dont want to use this ID
