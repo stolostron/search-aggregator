@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
+	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
 	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
@@ -60,8 +61,8 @@ func computeIntraEdges(clusterName string) int {
 }
 
 func assertClusterNode(clusterName string) bool {
-	if clusterName == "local-cluster" {
-		_, err := db.MergeDummyCluster()
+	if clusterName == "local-cluster" || config.Cfg.SkipClusterValidation == "true" {
+		_, err := db.MergeDummyCluster(clusterName)
 		if err != nil {
 			glog.Error("Could not merge local cluster Cluster resource: ", err)
 			return false

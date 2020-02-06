@@ -67,7 +67,7 @@ func TotalIntraEdges(clusterName string) (QueryResult, error) {
 	return resp, err
 }
 
-func MergeDummyCluster() (QueryResult, error) {
+func MergeDummyCluster(name string) (QueryResult, error) {
 	kubeVersion := ""
 	if config.ClusterClient != nil {
 		clusterClientServerVersion, verr := config.ClusterClient.ServerVersion()
@@ -79,7 +79,7 @@ func MergeDummyCluster() (QueryResult, error) {
 	} else {
 		glog.Error("ClusterClient not initialized")
 	}
-	query := fmt.Sprintf("MERGE (c:Cluster {name: 'local-cluster', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", kubeVersion)
+	query := fmt.Sprintf("MERGE (c:Cluster {name: '%s', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", name, kubeVersion)
 	return Store.Query(query)
 }
 
