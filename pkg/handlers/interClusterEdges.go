@@ -8,7 +8,6 @@ The source code for this program is not published or otherwise divested of its t
 package handlers
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -196,48 +195,44 @@ func buildSubscriptions() (rg.QueryResult, error) {
 
 	if len(remoteSubscriptions.Results) > 1 { //Check if any results are returned
 		// list of hub subscriptions
-		query = "MATCH (n:Subscription) WHERE  n.cluster='local-cluster' RETURN n._uid, n.namespace, n.name"
+		query = "MATCH (n:Subscription) WHERE  n.cluster='local-cluster' RETURN n._uid, n.namespace+'/'+n.name"
 		hubSubscriptons, err := db.Store.Query(query)
 		if err != nil {
 			return rg.QueryResult{}, err
 		}
 
+		//Adding all hubsubscriptions to a map: key is subscription's "namespace+'/'+name", value is UID
+		hubSubMap := make(map[string]string)
+		for _, hubSub := range hubSubscriptons.Results[1:] {
+			hubSubMap[hubSub[1]] = hubSub[0]
+		}
+
 		for _, remoteSub := range remoteSubscriptions.Results[1:] {
+			// remoteSub[1] has the hosting subscription information which is in the format hosting subscription's "namespace+'/'+name"
 			if remoteSub[1] != "" {
-				// parse the hosting subscription into name and namespace
-				hostingSub := strings.Split(remoteSub[1], "/")
-				if len(hostingSub) != 2 {
-					msg := fmt.Sprintf("found incorrect hostingSubscription format when parsing: %s", remoteSub[1])
-					glog.Errorf("Error %s : %s", rg.QueryResult{}, errors.New(msg)) //Logging error so that loop won't exit because of formatting error
-					continue                                                        //Continue with the next remote subscription
-				}
-				namespace := hostingSub[0]
-				name := hostingSub[1]
+				//So, we look up if the hostingSubscription is in the hubSubMap. If it is there, get the UID
+				if hubSubUID, ok := hubSubMap[remoteSub[1]]; ok {
 
-				// check if it is in the hub subs
-				for _, hubSub := range hubSubscriptons.Results[1:] {
-					if hubSub[1] == namespace && hubSub[2] == name {
-						//TODO: For the subscription model, all intercluster edges are named as 'hostedSub {_interCluster: true}'. Change this to relevant names in future
-						//To add edges from hubSub to all resources connected to the remoteSub (bidirectional) - incoming edges and outgoing edges
-						// Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
-						query1 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})-[]->(n) WHERE n.kind != 'application' AND n.kind != 'subscription' CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSub[0], remoteSub[0], currentAppInstance, currentAppInstance)
-						// Add edges from hubSub to all resources that flow into remoteSub eg: pods, deployments, services, replicasets etc.
-						query2 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSub[0], remoteSub[0], currentAppInstance)
-						// Connect all resources that flow into remoteSub with the hubsub's channel
-						query3 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})-[]->(chan) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE chan.kind = 'channel' CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(chan)", hubSub[0], remoteSub[0], currentAppInstance)
-						// Connect the remoteSub with the hubsub's application
-						query4 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})  WHERE app.kind = 'application' CREATE (remoteSub)-[:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSub[0], remoteSub[0], currentAppInstance)
-						// Connect all resources that flow into remoteSub with the hubsub's application
-						query5 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE app.kind = 'application' CREATE (n)-[r:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSub[0], remoteSub[0], currentAppInstance)
-						// Connect resources that are connected to remoteSub with the hubsub's application - add check to avoid connecting application to itself
-						query6 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})-[]->(n)  WHERE app.kind = 'application' AND n.kind != 'application' AND n.kind != 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSub[0], remoteSub[0], currentAppInstance)
+					//TODO: For the subscription model, all intercluster edges are named as 'hostedSub {_interCluster: true}'. Change this to relevant names in future
+					//To add edges from hubSub to all resources connected to the remoteSub (bidirectional) - incoming edges and outgoing edges
+					// Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
+					query1 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})-[]->(n) WHERE n.kind != 'application' AND n.kind != 'subscription' CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance, currentAppInstance)
+					// Add edges from hubSub to all resources that flow into remoteSub eg: pods, deployments, services, replicasets etc.
+					query2 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
+					// Connect all resources that flow into remoteSub with the hubsub's channel
+					query3 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})-[]->(chan) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE chan.kind = 'channel' CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(chan)", hubSubUID, remoteSub[0], currentAppInstance)
+					// Connect the remoteSub with the hubsub's application
+					query4 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})  WHERE app.kind = 'application' CREATE (remoteSub)-[:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
+					// Connect all resources that flow into remoteSub with the hubsub's application
+					query5 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE app.kind = 'application' CREATE (n)-[r:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
+					// Connect resources that are connected to remoteSub with the hubsub's application - add check to avoid connecting application to itself
+					query6 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})-[]->(n)  WHERE app.kind = 'application' AND n.kind != 'application' AND n.kind != 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
 
-						queries := [...]string{query1, query2, query3, query4, query5, query6}
-						for _, query := range queries {
-							_, err = db.Store.Query(query)
-							if err != nil {
-								glog.Errorf("Error %s : %s", rg.QueryResult{}, err) //Logging error so that loop will continue
-							}
+					queries := [...]string{query1, query2, query3, query4, query5, query6}
+					for _, query := range queries {
+						_, err = db.Store.Query(query)
+						if err != nil {
+							glog.Errorf("Error %s : %s", rg.QueryResult{}, err) //Logging error so that loop will continue
 						}
 					}
 				}
