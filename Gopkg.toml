@@ -50,7 +50,7 @@
   version = "kubernetes-1.13.1"
 
 [[constraint]]
-  name = "github.ibm.com/IBMPrivateCloud/hcm-api"
+  name = "github.com/open-cluster-management/hcm-api"
   branch = "master"
 
 [prune]
