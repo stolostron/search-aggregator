@@ -156,6 +156,17 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:5aace9c036ac4c06f2841f7e5a3c0179cfe6c3ae10aff66b3687f748f739ae6e"
+  name = "github.com/open-cluster-management/hcm-api"
+  packages = [
+    "pkg/apis/mcm/v1alpha1",
+    "pkg/client/clientset_generated/clientset",
+  ]
+  pruneopts = "UT"
+  revision = "b9f23651c2f70a6421f4f348991c77db21e7f724"
+
+[[projects]]
+  branch = "master"
   digest = "1:3bf17a6e6eaa6ad24152148a631d18662f7212e21637c2699bff3369b7f00fa2"
   name = "github.com/petar/GoLLRB"
   packages = ["llrb"]
@@ -204,12 +215,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:dfa4278f4f158aeca2c5529a7dc65e4ab094b0e4074fe364a35b70d6cee671c1"
+  digest = "1:d7a763767a755c2272964a5622d20e3d3c793428ff43fe6e2d2a7fda1a911fda"
   name = "github.ibm.com/IBMPrivateCloud/hcm-api"
   packages = [
     "pkg/apis/mcm",
     "pkg/apis/mcm/v1alpha1",
-    "pkg/client/clientset_generated/clientset",
     "pkg/client/clientset_generated/clientset/scheme",
     "pkg/client/clientset_generated/clientset/typed/mcm/v1alpha1",
   ]
@@ -494,10 +504,10 @@
     "github.com/golang/glog",
     "github.com/gomodule/redigo/redis",
     "github.com/gorilla/mux",
+    "github.com/open-cluster-management/hcm-api/pkg/apis/mcm/v1alpha1",
+    "github.com/open-cluster-management/hcm-api/pkg/client/clientset_generated/clientset",
     "github.com/redislabs/redisgraph-go",
     "github.com/stretchr/testify/assert",
-    "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/apis/mcm/v1alpha1",
-    "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/client/clientset_generated/clientset",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/cache",
