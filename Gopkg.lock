@@ -217,20 +217,6 @@
   revision = "e8218aa0105916a9999e9c478a6e26802fa97462"
 
 [[projects]]
-  digest = "1:42d1d857708064d8cc617a6508e6eabfc892dff8955fff04159d1642d8f6cf33"
-  name = "github.ibm.com/IBMPrivateCloud/search-aggregator"
-  packages = [
-    "pkg/clustermgmt",
-    "pkg/config",
-    "pkg/dbconnector",
-    "pkg/handlers",
-    "pkg/utils",
-  ]
-  pruneopts = "UT"
-  revision = "bae3f72c66a23c55e6c76c7440655b8901ce6d6c"
-  version = "v3.3.0"
-
-[[projects]]
   digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
@@ -512,11 +498,6 @@
     "github.com/stretchr/testify/assert",
     "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/apis/mcm/v1alpha1",
     "github.ibm.com/IBMPrivateCloud/hcm-api/pkg/client/clientset_generated/clientset",
-    "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/clustermgmt",
-    "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config",
-    "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector",
-    "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/handlers",
-    "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/utils",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/cache",

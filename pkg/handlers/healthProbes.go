@@ -12,7 +12,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
-	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
 // LivenessProbe is used to check if this service is alive.

@@ -16,9 +16,9 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/clustermgmt"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/handlers"
+	"github.com/open-cluster-management/search-aggregator/pkg/clustermgmt"
+	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	"github.com/open-cluster-management/search-aggregator/pkg/handlers"
 )
 
 func main() {
