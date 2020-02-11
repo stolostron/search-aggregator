@@ -1,7 +1,3 @@
-#!/bin/bash
-# Dummy deploy
-echo "Dummy deploy."
-
 BINDIR              ?= output
 
 DOCKER_USER         ?=$(ARTIFACTORY_USER)
