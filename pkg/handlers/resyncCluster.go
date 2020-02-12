@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
 func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge, metrics *SyncMetrics) (stats SyncResponse, err error) {

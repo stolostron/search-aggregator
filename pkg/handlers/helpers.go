@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
-	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
 // returns the total number of nodes on cluster

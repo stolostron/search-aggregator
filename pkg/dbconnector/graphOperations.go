@@ -11,7 +11,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
+	"github.com/open-cluster-management/search-aggregator/pkg/config"
 )
 
 const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
