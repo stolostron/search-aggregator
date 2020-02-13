@@ -15,10 +15,10 @@ env:
     - COMPONENT_TAG_EXTENSION="-${TRAVIS_COMMIT}"
 
     # Component Specific
-    - COMPONENT_DEPLOY_COMMAND=${TRAVIS_BUILD_DIR}/deploy-to-cluster.sh
-    - COMPONENT_INIT_COMMAND=${TRAVIS_BUILD_DIR}/install-dependencies.sh
-    - COMPONENT_BUILD_COMMAND=${TRAVIS_BUILD_DIR}/build.sh
-    - COMPONENT_UNIT_TEST_COMMAND=${TRAVIS_BUILD_DIR}/run-unit-tests.sh 
+    - COMPONENT_DEPLOY_COMMAND=${TRAVIS_BUILD_DIR}/build/deploy-to-cluster.sh
+    - COMPONENT_INIT_COMMAND=${TRAVIS_BUILD_DIR}/build/install-dependencies.sh
+    - COMPONENT_BUILD_COMMAND=${TRAVIS_BUILD_DIR}/build/build.sh
+    - COMPONENT_UNIT_TEST_COMMAND=${TRAVIS_BUILD_DIR}/build/run-unit-tests.sh 
 
 
 stages:
@@ -37,7 +37,7 @@ jobs:
       script:
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
         - make component/build
-          make component/push
+        - make component/push
     - stage: unit-test
       name: "Deploy the image to a cluster and run e2e tests"
       if: type = pull_request
@@ -46,7 +46,7 @@ jobs:
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
         # Bootstrap the build harness, pull test image, and run unit tests.  
         - make component/pull 
-          make component/test/unit
+        - make component/test/unit
     - stage: test-e2e
       name: "Deploy the image to a cluster and run e2e tests"
       if: type = pull_request
@@ -54,7 +54,7 @@ jobs:
         #Check out a clusterpool, set up oc, deploy, run e2e tests, and return clusterpool cluster
         - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
         - make component/pull 
-          make component/test/e2e
+        - make component/test/e2e
     - stage: publish
       name: "Publish the image to quay with an official version/sha tag and publish entry to integration pipeline stage"
       if: type = push AND branch =~ /^release-[0-9]+\..*$/
