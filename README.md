@@ -1,5 +1,5 @@
 # search-aggregator
-Works with [search-collector](https://github.ibm.com/IBMPrivateCloud/search-collector) to synchronize kubernetes resources into [RedisGraph](https://oss.redislabs.com/redisgraph/), for use by the search UI. Runs on the hub cluster and receives from the collectors running on each remote cluster.
+Works with [search-collector](https://github.com/open-cluster-management/search-collector) to synchronize kubernetes resources into [RedisGraph](https://oss.redislabs.com/redisgraph/), for use by the search UI. Runs on the hub cluster and receives from the collectors running on each remote cluster.
 
 
 ## Development
