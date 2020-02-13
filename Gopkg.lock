@@ -219,19 +219,6 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:2f280d7c5fd9f172df8c266cb07cf86c882774d001a99d7cf4f10bb59d92f842"
-  name = "github.com/open-cluster-management/hcm-api"
-  packages = [
-    "pkg/apis/mcm",
-    "pkg/apis/mcm/v1alpha1",
-    "pkg/client/clientset_generated/clientset/scheme",
-    "pkg/client/clientset_generated/clientset/typed/mcm/v1alpha1",
-  ]
-  pruneopts = "UT"
-  revision = "b9f23651c2f70a6421f4f348991c77db21e7f724"
-  version = "master"
-
-[[projects]]
   branch = "master"
   digest = "1:ad2bf20798504fbde0c5bdf5ee83d3354fb101d32c5b2267f811c1958b91b0ab"
   name = "golang.org/x/crypto"
