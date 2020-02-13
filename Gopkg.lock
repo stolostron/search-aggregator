@@ -220,7 +220,7 @@
 
 [[projects]]
   digest = "1:2f280d7c5fd9f172df8c266cb07cf86c882774d001a99d7cf4f10bb59d92f842"
-  name = "github.ibm.com/IBMPrivateCloud/hcm-api"
+  name = "github.com/open-cluster-management/hcm-api"
   packages = [
     "pkg/apis/mcm",
     "pkg/apis/mcm/v1alpha1",
