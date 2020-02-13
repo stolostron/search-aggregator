@@ -1,6 +1,3 @@
-#
-# Sample .travis.yml using the mvp-helloworld image (a helmoperator)
-#
 os:
   - linux
 
@@ -29,6 +26,9 @@ stages:
   - unit-test
   - test-e2e
   - publish
+
+before_script:
+  - make init
 
 jobs:
   include:
