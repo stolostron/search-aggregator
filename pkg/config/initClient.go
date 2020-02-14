@@ -9,7 +9,7 @@ package config
 
 import (
 	"github.com/golang/glog"
-	mcmClientset "github.com/open-cluster-management/hcm-api/pkg/client/clientset_generated/clientset"
+	mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientset "k8s.io/cluster-registry/pkg/client/clientset/versioned"

@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	mcmapi "github.com/open-cluster-management/hcm-api/pkg/apis/mcm/v1alpha1"
+	mcmapi "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
 	utils "github.com/open-cluster-management/search-aggregator/pkg/utils"
 	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 )

@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	mcm "github.com/open-cluster-management/hcm-api/pkg/apis/mcm/v1alpha1"
-	mcmClientset "github.com/open-cluster-management/hcm-api/pkg/client/clientset_generated/clientset"
+	mcm "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
+	mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
