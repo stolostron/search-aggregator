@@ -12,7 +12,7 @@
 
 [[constraint]]
   name = "github.com/redislabs/redisgraph-go"
-  branch = "master"
+  revision = "0d6a4659a1b54d5789de6bdfcb4bb69bfe873ad1" # revision from private aggregator pkg lock, redisgo updated to 2.0 since we've last built
 
 [[override]]
   name = "k8s.io/api"

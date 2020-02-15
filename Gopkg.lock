@@ -200,12 +200,11 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0eabef973e036f3766d79c5cb3ef832f88b13756b618cbdc2d2fffa098b80e42"
+  digest = "1:cb253bc08709af634170e03228a845a0f69af8d972166c17385787d8b668653d"
   name = "github.com/redislabs/redisgraph-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "93518c54f8016fd3f92a47fe33264d342f4b4f6f"
+  revision = "0d6a4659a1b54d5789de6bdfcb4bb69bfe873ad1"
 
 [[projects]]
   digest = "1:524b71991fc7d9246cc7dc2d9e0886ccb97648091c63e30eef619e6862c955dd"
@@ -376,23 +375,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5859a579e02f41ee963e9688e54216459bec39b74ebbfacc8e9f04b47db10947"
+  digest = "1:a0ac3d2549ab736b793e58f479c4dddf78f0a462ac6d7c40ed47c7f7a901b6b3"
   name = "k8s.io/apiextensions-apiserver"
   packages = [
     "pkg/apis/apiextensions",
-    "pkg/apis/apiextensions/v1",
     "pkg/apis/apiextensions/v1beta1",
-    "pkg/client/clientset/clientset",
-    "pkg/client/clientset/clientset/scheme",
-    "pkg/client/clientset/clientset/typed/apiextensions/v1",
-    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
-    "pkg/client/informers/externalversions",
-    "pkg/client/informers/externalversions/apiextensions",
-    "pkg/client/informers/externalversions/apiextensions/v1",
-    "pkg/client/informers/externalversions/apiextensions/v1beta1",
-    "pkg/client/informers/externalversions/internalinterfaces",
-    "pkg/client/listers/apiextensions/v1",
-    "pkg/client/listers/apiextensions/v1beta1",
   ]
   pruneopts = "UT"
   revision = "2af94a2a482fcef53a8c24b7817ecb4ecdc450f8"
@@ -504,14 +491,6 @@
   pruneopts = "UT"
   revision = "2ca9ad30301bf30a8a6e0fa2110db6b8df699a91"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:533745b9452e27599b73ffa11c5248d44116e6d92b325fd7f400abab761187b9"
-  name = "k8s.io/utils"
-  packages = ["pointer"]
-  pruneopts = "UT"
-  revision = "861946025e3491219eaccb1bf693e23df70c2fa8"
 
 [[projects]]
   digest = "1:36d2b2cb1fa6e4a731e38c3582c203213cdbc52c5f202af07db6dc6eeaec88dc"
