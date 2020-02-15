@@ -375,15 +375,27 @@
   version = "kubernetes-1.13.12"
 
 [[projects]]
-  digest = "1:ad57ea49823c0ab40848c591dae05093b2ebefe6167b28fd9be2b1f57d72f754"
+  branch = "master"
+  digest = "1:5859a579e02f41ee963e9688e54216459bec39b74ebbfacc8e9f04b47db10947"
   name = "k8s.io/apiextensions-apiserver"
   packages = [
     "pkg/apis/apiextensions",
+    "pkg/apis/apiextensions/v1",
     "pkg/apis/apiextensions/v1beta1",
+    "pkg/client/clientset/clientset",
+    "pkg/client/clientset/clientset/scheme",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
+    "pkg/client/informers/externalversions",
+    "pkg/client/informers/externalversions/apiextensions",
+    "pkg/client/informers/externalversions/apiextensions/v1",
+    "pkg/client/informers/externalversions/apiextensions/v1beta1",
+    "pkg/client/informers/externalversions/internalinterfaces",
+    "pkg/client/listers/apiextensions/v1",
+    "pkg/client/listers/apiextensions/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "ee42d6166f481443ff2894b657bc866d6145d3aa"
-  version = "v0.17.3"
+  revision = "2af94a2a482fcef53a8c24b7817ecb4ecdc450f8"
 
 [[projects]]
   digest = "1:70b273d19f2ebc09e6689cf4c4dee6858cc247c24cba2d590ab1c298edfef687"
