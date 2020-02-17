@@ -6,3 +6,43 @@ include build/Configfile
 default::
 	@echo "Build Harness Bootstrapped"
 
+.PHONY: deps
+deps:
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+	go get -u github.com/golang/dep/cmd/dep
+	dep ensure -v
+
+.PHONY: search-aggregator
+search-aggregator:
+	CGO_ENABLED=0 go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
+
+.PHONY: build
+build: search-aggregator
+
+.PHONY: build-linux
+build-linux:
+	make search-aggregator GOOS=linux
+
+.PHONY: lint
+lint:
+	golangci-lint run
+
+.PHONY: test
+test:
+	go test ./... -v -coverprofile cover.out
+
+.PHONY: coverage
+coverage:
+	go tool cover -html=cover.out -o=cover.html
+
+.PHONY: copyright-check
+copyright-check:
+	./build/copyright-check.sh
+
+.PHONY: clean
+clean::
+	go clean
+	rm -f cover*
+	rm -rf ./$(BINDIR)
+	rm -rf ./.vendor-new
+	rm -rf ./vendor
