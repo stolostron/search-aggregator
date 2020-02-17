@@ -15,7 +15,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gomodule/redigo/redis"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
+	"github.com/open-cluster-management/search-aggregator/pkg/config"
 )
 
 // A global redis pool for other parts of this package to use

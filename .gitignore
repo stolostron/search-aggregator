@@ -3,4 +3,6 @@ output/
 vendor/
 .build-harness
 build-harness/
+build-harness-extensions/
+.build-harness-bootstrap
 search-aggregator

@@ -15,9 +15,9 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
-	"github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/config"
+	"github.com/open-cluster-management/search-aggregator/pkg/config"
 
-	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
+	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
 // SyncEvent - Object sent by the collector with the resources to change.

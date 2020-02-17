@@ -9,9 +9,9 @@ package handlers
 import (
 	"testing"
 
+	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	rg "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 	"github.com/stretchr/testify/assert"
-	db "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
-	rg "github.ibm.com/IBMPrivateCloud/search-aggregator/pkg/dbconnector"
 )
 
 type MockCache struct {
