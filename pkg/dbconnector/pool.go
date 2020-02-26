@@ -11,6 +11,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
+	"net"
 	"time"
 
 	"github.com/golang/glog"
@@ -66,7 +67,7 @@ func getRedisConnection() (redis.Conn, error) {
 			},
 			RootCAs: caCertPool,
 		}
-		redisConn, err = redis.Dial("tcp", config.Cfg.RedisHost+":"+config.Cfg.RedisSSHPort,
+		redisConn, err = redis.Dial("tcp", net.JoinHostPort(config.Cfg.RedisHost, config.Cfg.RedisSSHPort),
 			redis.DialTLSConfig(tlsconf),
 			redis.DialUseTLS(true)) // Set this to false when you want to connect to redis via SSH from local laptop
 		if err != nil {
@@ -78,7 +79,7 @@ func getRedisConnection() (redis.Conn, error) {
 		var err error
 		glog.V(2).Info("Initializing new Redis client with redisHost: ", config.Cfg.RedisHost, " redisPort: ", config.Cfg.RedisPort)
 
-		redisConn, err = redis.Dial("tcp", config.Cfg.RedisHost+":"+config.Cfg.RedisPort)
+		redisConn, err = redis.Dial("tcp", net.JoinHostPort(config.Cfg.RedisHost, config.Cfg.RedisPort))
 		if err != nil {
 			glog.Error("Error connecting redis host.")
 			return nil, err
