@@ -37,10 +37,11 @@ RUN microdnf install ca-certificates vi --nodocs &&\
 
 COPY license.txt /licenses/
 
-ENV VCS_REF="$VCS_REF"
+ENV VCS_REF="$VCS_REF" \
+    USER_UID=1001
 
 ADD output/search-aggregator /bin
 
 EXPOSE 3010
-
+USER ${USER_UID}
 ENTRYPOINT ["/bin/search-aggregator"]
