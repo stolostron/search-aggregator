@@ -1,4 +1,9 @@
+# Only use git commands if it exists
+ifdef GIT
 VCS_URL ?=$(shell git config --get remote.origin.url)
+IMAGE_VERSION :=$(shell git rev-parse --short HEAD)
+endif
+
 IMAGE_NAME =$(shell cat COMPONENT_NAME)
 IMAGE_DISPLAY_NAME =Search Aggregator
 ARCH = $(shell uname -m)
@@ -9,7 +14,7 @@ else
 endif
 IMAGE_MAINTAINER =jpadilla@redhat.com
 IMAGE_VENDOR =Red Hat
-IMAGE_VERSION :=$(shell git rev-parse --short HEAD)
+
 IMAGE_DESCRIPTION =Search aggregator
 IMAGE_SUMMARY =$(IMAGE_DESCRIPTION)
 IMAGE_OPENSHIFT_TAGS =Search aggregator
@@ -25,3 +30,5 @@ DOCKER_BUILD_OPTS=--build-arg "VCS_REF=$(SEMVERSION)" \
 	--build-arg "IMAGE_DESCRIPTION=$(IMAGE_DESCRIPTION)" \
 	--build-arg "IMAGE_SUMMARY=$(IMAGE_SUMMARY)" \
 	--build-arg "IMAGE_OPENSHIFT_TAGS=$(IMAGE_OPENSHIFT_TAGS)"
+
+
