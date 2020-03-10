@@ -54,7 +54,6 @@ jobs:
         # Bootstrap the build harness, pull test image, and run unit tests.  
         - make component/pull 
         - make component/test/unit
-        - make sonar/go 
     - stage: test-e2e
       name: "Deploy the image to a cluster and run e2e tests"
       if: type = pull_request
@@ -64,6 +63,7 @@ jobs:
         - make component/pull 
         - make component/test/e2e
         - make security/scans 
+        - make sonar/go 
     - stage: publish
       name: "Publish the image to quay with an official version/sha tag and publish entry to integration pipeline stage"
       if: type = push AND branch =~ /^release-[0-9]+\..*$/
