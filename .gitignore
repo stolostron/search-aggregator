@@ -6,3 +6,7 @@ build-harness/
 build-harness-extensions/
 .build-harness-bootstrap
 search-aggregator
+
+!vbh/.build-harness-vendorized
+!vbh/build-harness
+!vbh/build-harness-extensions
