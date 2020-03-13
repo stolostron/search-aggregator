@@ -17,13 +17,6 @@ Works with [search-collector](https://github.com/open-cluster-management/search-
     make build && ./output/search-aggregator
     ```
 
-## Pushing to Artifactory manually
-1. Export your github username (w3id) and personal access token as `GITHUB_USER` and `GITHUB_TOKEN`
-2. Fetch build harness: `make init`
-3. Build and tag image: `make build-linux docker:build docker:tag-arch`
-4. Export your `ARTIFACTORY_USER` and `ARTIFACTORY_TOKEN`
-5. Push to scratch repo in Artifactory `make docker:login docker:push-arch`
-
 ## API Usage
 
 1. **(currently unused)** GET https://localhost:3010/aggregator/status
