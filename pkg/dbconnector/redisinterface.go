@@ -37,7 +37,7 @@ func (RedisGraphStoreV1) Query(q string) (QueryResult, error) {
 	start := time.Now()
 	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
 	elapsed := time.Since(start)
-	glog.Infof("GET Connection %d", elapsed)
+	glog.Infof("GET Connection %d", elapsed/1000)
 	start2 := time.Now()
 	defer conn.Close()
 	qr := QueryResult{}
@@ -47,8 +47,8 @@ func (RedisGraphStoreV1) Query(q string) (QueryResult, error) {
 	}
 	result, err := g.Query(q)
 	elapsed2 := time.Since(start2)
-	q20 := q[0:19]
-	glog.Infof("Query:%s   time  %d", q20, elapsed2)
+	q20 := q[0:39]
+	glog.Infof("Query:%s   time  %d", q20, elapsed2/1000)
 	qr.Results = result.Results
 	qr.Statistics = result.Statistics
 	return qr, err
