@@ -75,7 +75,12 @@ func ChunkedInsertEdge(resources []Edge) ChunkedOperationResult {
 
 // e.g. MATCH (s:{_uid:'abc'}), (d) WHERE d._uid='def' OR d._uid='ghi' CREATE (s)-[:Type]>(d)
 func insertEdge(edge Edge, whereClause string) (QueryResult, error) {
-	query := fmt.Sprintf("MATCH (s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)", edge.SourceUID, whereClause, edge.EdgeType)
+	query := ""
+	if edge.SourceLabel != "" && edge.DestLabel != "" {
+		query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s) %s CREATE (s)-[:%s]->(d)", edge.SourceLabel, edge.SourceUID, edge.DestLabel, whereClause, edge.EdgeType)
+	} else {
+		query = fmt.Sprintf("MATCH (s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)", edge.SourceUID, whereClause, edge.EdgeType)
+	}
 	//glog.Info(query)
 	resp, err := Store.Query(query)
 	return resp, err
