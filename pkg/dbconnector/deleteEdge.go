@@ -87,8 +87,8 @@ func deleteEdgeQuery(edges []Edge) string {
 	deleteStrings := []string{} // Build the DELETE portion. Declare this at the same time so that we can do this in one pass.
 	for i, edge := range edges {
 		// e.g. MATCH (s {_uid: 'abc'})-[e:Type]->(d {_uid: 'def'})
-		if edge.SourceLabel != "" && edge.DestLabel != "" {
-			matchStrings = append(matchStrings, fmt.Sprintf("(s%d:%[5]s {_uid: '%s'})-[e%[1]d:%[3]s]->(d%[1]d:%[6]s {_uid: '%[4]s'})", i, edge.SourceUID, edge.EdgeType, edge.DestUID, edge.SourceLabel, edge.DestLabel))
+		if edge.SourceKind != "" && edge.DestKind != "" {
+			matchStrings = append(matchStrings, fmt.Sprintf("(s%d:%[5]s {_uid: '%s'})-[e%[1]d:%[3]s]->(d%[1]d:%[6]s {_uid: '%[4]s'})", i, edge.SourceUID, edge.EdgeType, edge.DestUID, edge.SourceKind, edge.DestKind))
 		} else {
 			matchStrings = append(matchStrings, fmt.Sprintf("(s%d {_uid: '%s'})-[e%[1]d:%[3]s]->(d%[1]d {_uid: '%[4]s'})", i, edge.SourceUID, edge.EdgeType, edge.DestUID))
 		}
