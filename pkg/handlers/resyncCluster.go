@@ -18,6 +18,7 @@ import (
 )
 
 func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge, metrics *SyncMetrics) (stats SyncResponse, err error) {
+	startx := time.Now()
 	glog.Info("Resync for cluster: ", clusterName)
 
 	// First get the existing resources from the datastore for the cluster
@@ -198,7 +199,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	}
 
 	// There's no need to UPDATE edges because edges don't have properties yet.
-
+	elapsedx := time.Since(startx)
+	glog.Infof("Cluster %s resync time %d", clusterName, elapsedx)
 	metrics.EdgeSyncEnd = time.Now()
 
 	return stats, err

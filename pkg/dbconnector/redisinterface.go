@@ -8,6 +8,10 @@ The source code for this program is not published or otherwise divested of its t
 package dbconnector
 
 import (
+	"time"
+
+	"github.com/golang/glog"
+
 	rg "github.com/redislabs/redisgraph-go"
 )
 
@@ -30,7 +34,11 @@ type QueryResult struct {
 // Called by the other functions
 func (RedisGraphStoreV1) Query(q string) (QueryResult, error) {
 	// Get connection from the pool
+	start := time.Now()
 	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
+	elapsed := time.Since(start)
+	glog.Infof("GET Connection %d", elapsed)
+	start2 := time.Now()
 	defer conn.Close()
 	qr := QueryResult{}
 	g := rg.Graph{
@@ -38,6 +46,9 @@ func (RedisGraphStoreV1) Query(q string) (QueryResult, error) {
 		Name: GRAPH_NAME,
 	}
 	result, err := g.Query(q)
+	elapsed2 := time.Since(start2)
+	q20 := q[0:19]
+	glog.Infof("Query:%s   time  %d", q20, elapsed2)
 	qr.Results = result.Results
 	qr.Statistics = result.Statistics
 	return qr, err
