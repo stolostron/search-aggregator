@@ -47,7 +47,11 @@ func (RedisGraphStoreV1) Query(q string) (QueryResult, error) {
 	}
 	result, err := g.Query(q)
 	elapsed2 := time.Since(start2)
-	q20 := q[0:39]
+	q20 := q
+	if len(q) > 400 {
+		q20 = q[0:400]
+	}
+
 	glog.Infof("Query:%s   time  %d", q20, elapsed2/1000)
 	qr.Results = result.Results
 	qr.Statistics = result.Statistics
