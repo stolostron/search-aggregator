@@ -200,7 +200,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	// There's no need to UPDATE edges because edges don't have properties yet.
 	elapsedx := time.Since(startx)
-	glog.Infof("Cluster %s resync time %d", clusterName, elapsedx/1000)
+	glog.Infof(" %s resync time %d", clusterName, elapsedx/1000)
 	metrics.EdgeSyncEnd = time.Now()
 
 	return stats, err
