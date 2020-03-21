@@ -26,8 +26,9 @@ type Resource struct {
 
 // Describes a relationship between resources
 type Edge struct {
-	SourceUID, DestUID string
-	EdgeType           string
+	SourceUID, DestUID   string
+	EdgeType             string
+	SourceKind, DestKind string
 }
 
 // Represents the results of a chunked db operation
