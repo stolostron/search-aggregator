@@ -116,6 +116,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var syncEvent SyncEvent
+	indexCreated := true // flag to check if all indices are created
 	err := json.NewDecoder(r.Body).Decode(&syncEvent)
 	if err != nil {
 		glog.Error("Error decoding body of syncEvent: ", err)
@@ -141,9 +142,19 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	// add cluster fields
 	for i := range syncEvent.AddResources {
+		if indexCreated { // check if this resource kind already has an index
+			if _, ok := db.ExistingIndexMap[syncEvent.AddResources[i].Properties["kind"].(string)]; !ok {
+				indexCreated = false // turn indexCreated flag to false
+			}
+		}
 		syncEvent.AddResources[i].Properties["cluster"] = clusterName
 	}
 	for i := range syncEvent.UpdateResources {
+		if indexCreated { // check if this resource kind already has an index
+			if _, ok := db.ExistingIndexMap[syncEvent.AddResources[i].Properties["kind"].(string)]; !ok {
+				indexCreated = false // turn indexCreated flag to false
+			}
+		}
 		syncEvent.UpdateResources[i].Properties["cluster"] = clusterName
 	}
 
@@ -179,6 +190,15 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
+		// INSERT index on each resource kind's _uid field
+		if !indexCreated {
+			res := db.InsertKindUIDIndexes()
+			if res.ConnectionError != nil {
+				glog.Warning("Indices not inserted - Not able to connect to Redisgraph.")
+			} else {
+				glog.Info("Index inserted for ", res.SuccessfulResources, " kinds. ")
+			}
+		}
 		// INSERT Resources
 
 		metrics.NodeSyncStart = time.Now()
