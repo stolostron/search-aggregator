@@ -21,7 +21,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	glog.Info("Resync for cluster: ", clusterName)
 
 	// First get the existing resources from the datastore for the cluster
-	result, error := db.Store.Query(fmt.Sprintf("MATCH (n) WHERE n.cluster='%s' RETURN n", clusterName))
+	result, error := db.Store.Query(fmt.Sprintf("MATCH (n {cluster: '%s'})  RETURN n", clusterName))
 
 	if error != nil {
 		glog.Error("Error getting existing resources for cluster ", clusterName)

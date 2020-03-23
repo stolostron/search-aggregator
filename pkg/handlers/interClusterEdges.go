@@ -10,7 +10,6 @@ package handlers
 import (
 	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -21,15 +20,10 @@ import (
 )
 
 var ApplicationLastUpdated time.Time
-var PolicyLastUpdated time.Time
 var previousAppInstance int
 
 func getApplicationUpdateTime() time.Time {
 	return ApplicationLastUpdated
-}
-
-func getPolicyUpdateTime() time.Time {
-	return PolicyLastUpdated
 }
 
 // runs all the specific inter-cluster relationships we want to connect
@@ -43,11 +37,6 @@ func BuildInterClusterEdges() {
 			buildSubscriptions,
 			"connecting subscription edges",
 			getApplicationUpdateTime,
-		},
-		{
-			buildPolicyEdges,
-			"connecting policy edges",
-			getPolicyUpdateTime,
 		},
 	}
 
@@ -81,13 +70,7 @@ func getUIDsForSubscriptions() (rg.QueryResult, error) {
 	return uidResults, err
 }
 
-func getUIDsForPolicies() (rg.QueryResult, error) {
-	query := "MATCH (n) where n.kind='vulnerabilitypolicy' OR n.kind='mutationpolicy' OR n.kind='policy'  RETURN n._uid"
-	uidResults, err := db.Store.Query(query)
-	return uidResults, err
-}
-
-func buildPolicyEdges() (rg.QueryResult, error) {
+/*func buildPolicyEdges() (rg.QueryResult, error) {
 	// Record start time
 	start := time.Now()
 	policiesWithParent := make(map[string]bool)
@@ -175,7 +158,7 @@ func buildPolicyEdges() (rg.QueryResult, error) {
 	}
 	return rg.QueryResult{}, nil
 
-}
+}*/
 
 func buildSubscriptions() (rg.QueryResult, error) {
 	// Record start time
