@@ -10,7 +10,6 @@ package handlers
 import (
 	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -71,7 +70,7 @@ func getUIDsForSubscriptions() (rg.QueryResult, error) {
 	return uidResults, err
 }
 
-func buildPolicyEdges() (rg.QueryResult, error) {
+/*func buildPolicyEdges() (rg.QueryResult, error) {
 	// Record start time
 	start := time.Now()
 	policiesWithParent := make(map[string]bool)
@@ -159,7 +158,7 @@ func buildPolicyEdges() (rg.QueryResult, error) {
 	}
 	return rg.QueryResult{}, nil
 
-}
+}*/
 
 func buildSubscriptions() (rg.QueryResult, error) {
 	// Record start time
