@@ -19,8 +19,6 @@ func InsertKindUIDIndexes() ChunkedOperationResult {
 	insertErrors := make(map[string]error)
 	if err == nil {
 		for _, kind := range resp.Results[1:] {
-			glog.Info("kind: ", kind[0])
-
 			if _, indexPresent := ExistingIndexMap[kind[0]]; !indexPresent {
 				_, err := insertIndex(kind[0], "_uid")
 				if err != nil {
