@@ -32,8 +32,8 @@ const (
 func init() {
 
 	Pool = &redis.Pool{
-		MaxIdle:      5,  // TODO: Expose with ENV. Idle connections are connections that have been returned to the pool.
-		MaxActive:    10, // TODO: Expose with ENV. Active connections = connections in-use + idle connections
+		MaxIdle:      10, // TODO: Expose with ENV. Idle connections are connections that have been returned to the pool.
+		MaxActive:    20, // TODO: Expose with ENV. Active connections = connections in-use + idle connections
 		Dial:         getRedisConnection,
 		TestOnBorrow: testRedisConnection,
 		Wait:         true,

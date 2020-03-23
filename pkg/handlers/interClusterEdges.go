@@ -81,12 +81,6 @@ func getUIDsForSubscriptions() (rg.QueryResult, error) {
 	return uidResults, err
 }
 
-func getUIDsForPolicies() (rg.QueryResult, error) {
-	query := "MATCH (n) where n.kind='vulnerabilitypolicy' OR n.kind='mutationpolicy' OR n.kind='policy'  RETURN n._uid"
-	uidResults, err := db.Store.Query(query)
-	return uidResults, err
-}
-
 func buildPolicyEdges() (rg.QueryResult, error) {
 	// Record start time
 	start := time.Now()
