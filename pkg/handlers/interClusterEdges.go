@@ -21,15 +21,10 @@ import (
 )
 
 var ApplicationLastUpdated time.Time
-var PolicyLastUpdated time.Time
 var previousAppInstance int
 
 func getApplicationUpdateTime() time.Time {
 	return ApplicationLastUpdated
-}
-
-func getPolicyUpdateTime() time.Time {
-	return PolicyLastUpdated
 }
 
 // runs all the specific inter-cluster relationships we want to connect
@@ -43,11 +38,6 @@ func BuildInterClusterEdges() {
 			buildSubscriptions,
 			"connecting subscription edges",
 			getApplicationUpdateTime,
-		},
-		{
-			buildPolicyEdges,
-			"connecting policy edges",
-			getPolicyUpdateTime,
 		},
 	}
 
