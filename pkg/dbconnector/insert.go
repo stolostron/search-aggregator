@@ -58,6 +58,10 @@ func chunkedInsertHelper(resources []*Resource, clusterName string) ChunkedOpera
 func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationResult {
 	var resourceErrors map[string]error
 	totalSuccessful := 0
+	kindMap := make(map[string]struct{})
+	for _, res := range resources {
+		kindMap[res.Properties["kind"].(string)] = struct{}{}
+	}
 	for i := 0; i < len(resources); i += CHUNK_SIZE {
 		endIndex := min(i+CHUNK_SIZE, len(resources))
 		chunkResult := chunkedInsertHelper(resources[i:endIndex], clusterName)
@@ -67,6 +71,18 @@ func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationRe
 			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is still nil.
 		}
 		totalSuccessful += chunkResult.SuccessfulResources
+	}
+	//Insert indexes if not present already
+	for kind := range kindMap {
+		if _, ok := ExistingIndexMap[kind]; !ok {
+			res := InsertKindUIDIndexes()
+			if res.ConnectionError != nil {
+				glog.Warning("Indices not inserted - Not able to connect to Redisgraph.")
+			} else {
+				glog.Info("Index inserted for ", res.SuccessfulResources, " kinds. ")
+			}
+			break
+		}
 	}
 	ret := ChunkedOperationResult{
 		ResourceErrors:      resourceErrors,
