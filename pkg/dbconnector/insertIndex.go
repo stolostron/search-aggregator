@@ -9,7 +9,7 @@ import (
 )
 
 // ExistingIndexMap - map to hold all resource kinds that have index built in redisgraph
-var ExistingIndexMap map[string]bool
+var ExistingIndexMap = make(map[string]bool)
 
 // GetIndexes() - returns map to hold all resource kinds that have index built in redisgraph
 func GetIndexes() {

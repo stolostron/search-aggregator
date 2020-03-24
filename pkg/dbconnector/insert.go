@@ -58,14 +58,19 @@ func chunkedInsertHelper(resources []*Resource, clusterName string) ChunkedOpera
 func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationResult {
 	var resourceErrors map[string]error
 	totalSuccessful := 0
+	kindMap := make(map[string]struct{})
 	for _, res := range resources {
-		if !ExistingIndexMap[res.Properties["kind"].(string)] {
-			insertErr := insertIndex(res.Properties["kind"].(string), "_uid")
+		kindMap[res.Properties["kind"].(string)] = struct{}{}
+	}
+	for kind := range kindMap {
+		if !ExistingIndexMap[kind] {
+			insertErr := insertIndex(kind, "_uid")
 			if insertErr == nil {
-				ExistingIndexMap[res.Properties["kind"].(string)] = true
+				ExistingIndexMap[kind] = true
 			}
 		}
 	}
+
 	for i := 0; i < len(resources); i += CHUNK_SIZE {
 		endIndex := min(i+CHUNK_SIZE, len(resources))
 		chunkResult := chunkedInsertHelper(resources[i:endIndex], clusterName)
