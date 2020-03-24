@@ -18,6 +18,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/open-cluster-management/search-aggregator/pkg/clustermgmt"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	"github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 	"github.com/open-cluster-management/search-aggregator/pkg/handlers"
 )
 
@@ -27,6 +28,7 @@ func main() {
 		glog.Info("Built from git commit: ", commit)
 	}
 
+	dbconnector.GetIndexes()
 	// Watch clusters and sync status to Redis.
 	go clustermgmt.WatchClusters()
 

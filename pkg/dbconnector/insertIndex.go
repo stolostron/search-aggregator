@@ -9,36 +9,22 @@ import (
 )
 
 // ExistingIndexMap - map to hold all resource kinds that have index built in redisgraph
-var ExistingIndexMap = make(map[string]struct{})
+var ExistingIndexMap map[string]bool
 
-// InsertKindUIDIndexes fetches all existing labels in the graph, transparently builds query for you and returns the response and errors given by redisgraph.
-// Returns the result, any errors when inserting, and any error from the query itself.
-func InsertKindUIDIndexes() ChunkedOperationResult {
+// GetIndexes() - returns map to hold all resource kinds that have index built in redisgraph
+func GetIndexes() {
 	resp, err := Store.Query("Match (n) return distinct labels(n)")
-	totalSuccessful := 0
-	insertErrors := make(map[string]error)
 	if err == nil {
 		for _, kind := range resp.Results[1:] {
+			//if the label is not present add to map and set to true
 			if _, indexPresent := ExistingIndexMap[kind[0]]; !indexPresent {
-				insertErr := insertIndex(kind[0], "_uid")
-				if insertErr != nil {
-					glog.Warning("Cannot insert index for ", kind[0], ", excluding it from insertion: ", insertErr)
-					insertErrors[kind[0]] = err
-					continue
-				} else {
-					totalSuccessful++
-					ExistingIndexMap[kind[0]] = struct{}{}
-				}
+				ExistingIndexMap[kind[0]] = true
 			}
 		}
 	} else {
-		glog.Warning("Error retrieving node labels from redisgraph while creating indices.")
+		glog.Error("Error retrieving node labels from redisgraph while creating indices.")
 	}
-	ret := ChunkedOperationResult{
-		ResourceErrors:      insertErrors,
-		SuccessfulResources: totalSuccessful,
-	}
-	return ret
+
 }
 
 // Given a resource, inserts index on resource uid into redisgraph.
