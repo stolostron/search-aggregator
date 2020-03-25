@@ -4,6 +4,7 @@ package dbconnector
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/golang/glog"
 )
@@ -11,16 +12,21 @@ import (
 // ExistingIndexMap - map to hold all resource kinds that have index built in redisgraph
 var ExistingIndexMap = make(map[string]bool)
 
-// GetIndexes() - returns map to hold all resource kinds that have index built in redisgraph
+// GetIndexes - returns map to hold all resource kinds that have index built in redisgraph
 func GetIndexes() {
 	resp, err := Store.Query("Match (n) return distinct labels(n)")
 	if err == nil {
+		// Lock map before writing
+		var ExistingIndexMapMutex = sync.RWMutex{}
+		ExistingIndexMapMutex.Lock()
 		for _, kind := range resp.Results[1:] {
 			//if the label is not present add to map and set to true
 			if _, indexPresent := ExistingIndexMap[kind[0]]; !indexPresent {
 				ExistingIndexMap[kind[0]] = true
 			}
 		}
+		ExistingIndexMapMutex.Unlock() // Unlock map after writing
+
 	} else {
 		glog.Error("Error retrieving node labels from redisgraph while creating indices.")
 	}

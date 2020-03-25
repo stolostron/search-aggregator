@@ -10,6 +10,7 @@ package dbconnector
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/golang/glog"
 )
@@ -58,10 +59,13 @@ func chunkedInsertHelper(resources []*Resource, clusterName string) ChunkedOpera
 func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationResult {
 	var resourceErrors map[string]error
 	totalSuccessful := 0
+	var ExistingIndexMapMutex = sync.RWMutex{}
+
 	kindMap := make(map[string]struct{})
 	for _, res := range resources {
 		kindMap[res.Properties["kind"].(string)] = struct{}{}
 	}
+	ExistingIndexMapMutex.Lock() // Lock map before writing
 	for kind := range kindMap {
 		if !ExistingIndexMap[kind] {
 			insertErr := insertIndex(kind, "_uid")
@@ -70,6 +74,7 @@ func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationRe
 			}
 		}
 	}
+	ExistingIndexMapMutex.Unlock() // Unlock map after writing
 
 	for i := 0; i < len(resources); i += CHUNK_SIZE {
 		endIndex := min(i+CHUNK_SIZE, len(resources))
