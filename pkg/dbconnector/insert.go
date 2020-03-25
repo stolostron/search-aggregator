@@ -65,19 +65,6 @@ func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationRe
 	for _, res := range resources {
 		kindMap[res.Properties["kind"].(string)] = struct{}{}
 	}
-	for kind := range kindMap {
-		ExistingIndexMapMutex.RLock()
-		exists := ExistingIndexMap[kind]
-		ExistingIndexMapMutex.RUnlock()
-		if !exists {
-			insertErr := insertIndex(kind, "_uid")
-			if insertErr == nil {
-				ExistingIndexMapMutex.Lock() // Lock map before writing
-				ExistingIndexMap[kind] = true
-				ExistingIndexMapMutex.Unlock() // Unlock map after writing
-			}
-		}
-	}
 
 	for i := 0; i < len(resources); i += CHUNK_SIZE {
 		endIndex := min(i+CHUNK_SIZE, len(resources))
@@ -92,6 +79,19 @@ func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationRe
 	ret := ChunkedOperationResult{
 		ResourceErrors:      resourceErrors,
 		SuccessfulResources: totalSuccessful,
+	}
+	for kind := range kindMap {
+		ExistingIndexMapMutex.RLock()
+		exists := ExistingIndexMap[kind]
+		ExistingIndexMapMutex.RUnlock()
+		if !exists {
+			insertErr := insertIndex(kind, "_uid")
+			if insertErr == nil {
+				ExistingIndexMapMutex.Lock() // Lock map before writing
+				ExistingIndexMap[kind] = true
+				ExistingIndexMapMutex.Unlock() // Unlock map after writing
+			}
+		}
 	}
 	return ret
 }
