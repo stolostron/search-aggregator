@@ -23,7 +23,7 @@ import (
 var Pool *redis.Pool
 
 const (
-	IDLE_TIMEOUT = 60           // ReadinessProbe runs every 30 seconds, this keeps the connection alive between probe intervals.
+	IDLE_TIMEOUT = 10           // ReadinessProbe runs every 30 seconds, this keeps the connection alive between probe intervals.
 	GRAPH_NAME   = "icp-search" // TODO read graph name from config
 )
 
@@ -107,5 +107,9 @@ func testRedisConnection(c redis.Conn, t time.Time) error {
 		return nil
 	}
 	_, err := c.Do("PING")
+	if err != nil {
+		//Clear index map if there is an error connecting to Redis
+		ExistingIndexMap = make(map[string]bool)
+	}
 	return err
 }
