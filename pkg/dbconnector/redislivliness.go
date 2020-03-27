@@ -35,6 +35,7 @@ func redisWatcher() {
 
 func clearClusterCache() {
 	existingClustersMap = nil
+	ExistingIndexMap = make(map[string]bool)
 }
 
 func createClustersCache(key string, val map[string]interface{}) {

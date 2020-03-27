@@ -44,7 +44,7 @@ func DeleteCluster(clusterName string) (QueryResult, error) {
 	if err != nil {
 		return QueryResult{}, err
 	}
-	query := fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' DELETE n", clusterName)
+	query := fmt.Sprintf("MATCH (n {cluster:'%s'}) DELETE n", clusterName)
 	return Store.Query(query)
 }
 
@@ -53,7 +53,7 @@ func TotalNodes(clusterName string) (QueryResult, error) {
 	if err != nil {
 		return QueryResult{}, err
 	}
-	query := fmt.Sprintf("MATCH (n) WHERE n.cluster = '%s' RETURN count(n)", clusterName)
+	query := fmt.Sprintf("MATCH (n {cluster:'%s'}) RETURN count(n)", clusterName)
 	return Store.Query(query)
 }
 
@@ -63,7 +63,7 @@ func TotalIntraEdges(clusterName string) (QueryResult, error) {
 	if err != nil {
 		return QueryResult{}, err
 	}
-	query := fmt.Sprintf("MATCH (s)-[e]->(d) WHERE s.cluster='%s' AND e._interCluster != true RETURN count(e)", clusterName)
+	query := fmt.Sprintf("MATCH (s {cluster:'%s'})-[e]->(d) WHERE e._interCluster != true RETURN count(e)", clusterName)
 	resp, err := Store.Query(query)
 	return resp, err
 }
