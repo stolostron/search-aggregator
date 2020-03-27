@@ -81,13 +81,13 @@ func deleteQuery(uids []string) string {
 	if len(uids) == 0 {
 		return ""
 	}
-
-	clauseStrings := []string{} // Build the clauses to filter down to only the ones we want.
-	for _, uid := range uids {
-		clauseStrings = append(clauseStrings, fmt.Sprintf("n._uid='%s'", uid))
+	queryString := fmt.Sprintf("MATCH (n {_uid:'%s'})  DELETE n", uids[0]) // e.g. MATCH (n {_uid:'uid1'}) DELETE n
+	if len(uids) > 1 {
+		clauseStrings := []string{} // Build the clauses to filter down to only the ones we want.
+		for _, uid := range uids {
+			clauseStrings = append(clauseStrings, fmt.Sprintf("n._uid='%s'", uid))
+		}
+		queryString = fmt.Sprintf("MATCH (n) WHERE (%s) DELETE n", strings.Join(clauseStrings, " OR ")) // e.g. MATCH (n) WHERE (n._uid='uid1' OR n._uid='uid2') DELETE n
 	}
-
-	queryString := fmt.Sprintf("MATCH (n) WHERE (%s) DELETE n", strings.Join(clauseStrings, " OR ")) // e.g. MATCH (n) WHERE (n._uid='uid1' OR n._uid='uid2') DELETE n
-
 	return queryString
 }
