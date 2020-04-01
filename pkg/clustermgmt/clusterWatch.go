@@ -157,10 +157,18 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 	}
 
 	// we are pulling the status from the cluster object and cluster info from the clusterStatus object :(
-	if len(cluster.Status.Conditions) > 0 && cluster.Status.Conditions[0].Type != "" {
-		props["status"] = string(cluster.Status.Conditions[0].Type)
+	if len(cluster.Status.Conditions) > 0 {
+		if cluster.Status.Conditions[0].Type != "" {
+			props["status"] = string(cluster.Status.Conditions[0].Type)
+		} else {
+			// status with conditions[0].type === '' indicates cluster is offline
+			props["status"] = "offline"
+		}
 	} else {
-		props["status"] = "offline"
+		// Empty status indicates cluster has not been imported
+		if clusterStatus == nil {
+			props["status"] = "pending"
+		}
 	}
 
 	if clusterStatus != nil {
