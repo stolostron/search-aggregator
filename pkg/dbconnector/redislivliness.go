@@ -16,7 +16,7 @@ import (
 
 var existingClustersMap map[string]map[string]interface{} // a map to hold Current properties already pushed to RedisGraph using SET
 
-func redisWatcher() {
+func RedisWatcher() {
 	conn := Pool.Get()
 	interval := time.Duration(config.Cfg.RedisWatchRate) * time.Millisecond
 
@@ -52,7 +52,7 @@ func createClustersCache(key string, val map[string]interface{}) {
 		if err != nil {
 			clearClusterCache()
 		} else {
-			go redisWatcher()
+			go RedisWatcher()
 		}
 
 	}

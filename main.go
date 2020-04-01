@@ -29,6 +29,7 @@ func main() {
 	}
 
 	dbconnector.GetIndexes()
+	go dbconnector.RedisWatcher()
 	// Watch clusters and sync status to Redis.
 	go clustermgmt.WatchClusters()
 
