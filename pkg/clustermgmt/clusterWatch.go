@@ -9,6 +9,7 @@ package clustermgmt
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"time"
 
@@ -166,7 +167,7 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 		}
 	} else {
 		// Empty status indicates cluster has not been imported
-		if clusterStatus == nil {
+		if reflect.DeepEqual(clusterregistry.Cluster{}.Status, cluster.Status) {
 			props["status"] = "pending"
 		}
 	}
