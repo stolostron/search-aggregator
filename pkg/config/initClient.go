@@ -10,6 +10,8 @@ package config
 import (
 	"github.com/golang/glog"
 	mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
+	hiveClientset "github.com/openshift/hive/pkg/client/clientset-generated/clientset"
+	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientset "k8s.io/cluster-registry/pkg/client/clientset/versioned"
@@ -17,7 +19,7 @@ import (
 
 var ClusterClient *clientset.Clientset
 
-func InitClient() (*clientset.Clientset, *mcmClientset.Clientset, error) {
+func InitClient() (*clientset.Clientset, *mcmClientset.Clientset, *hiveClientset.Clientset, *kubeClientset.Clientset, error) {
 	var clientConfig *rest.Config
 	var err error
 	//(*clientset.Clientset, *versioned.Clientset)
@@ -38,11 +40,22 @@ func InitClient() (*clientset.Clientset, *mcmClientset.Clientset, error) {
 		glog.Fatal("Cannot Construct MCM Client From Config: ", err)
 	}
 
+	kubeClient, err := kubeClientset.NewForConfig(clientConfig)
+	if err != nil {
+		glog.Fatal("Cannot Construct kube Client From Config: ", err)
+	}
+
+	// Initialize the hive client, used for ClusterDeployment resource
+	hiveClient, err := hiveClientset.NewForConfig(clientConfig)
+	if err != nil {
+		glog.Fatal("Cannot Construct Hive Client From Config: ", err)
+	}
+
 	// Initialize the cluster client, used for Cluster resource
 	clusterClient, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
 		glog.Fatal("Cannot Construct Cluster Client From Config: ", err)
 	}
 	ClusterClient = clusterClient
-	return clusterClient, mcmClient, err
+	return clusterClient, mcmClient, hiveClient, kubeClient, err
 }

@@ -18,16 +18,25 @@ import (
 	mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	hive "github.com/openshift/hive/pkg/apis/hive/v1"
+	hiveClientset "github.com/openshift/hive/pkg/client/clientset-generated/clientset"
+	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	informers "k8s.io/cluster-registry/pkg/client/informers/externalversions"
 )
 
+const HIVE_DOMAIN = "hive.openshift.io"
+const UNINSTALL_LABEL = HIVE_DOMAIN + "/uninstall"
+const INSTALL_LABEL = HIVE_DOMAIN + "/install"
+const CLUSTER_LABEL = HIVE_DOMAIN + "/cluster-deployment-name"
+
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
 	var err error
-	clusterClient, mcmClient, err := config.InitClient()
+	clusterClient, mcmClient, hiveClient, kubeClient, err := config.InitClient()
 	var stopper chan struct{}
 	informerRunning := false
 
@@ -35,11 +44,11 @@ func WatchClusters() {
 	clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			processClusterUpsert(obj, mcmClient)
+			processClusterUpsert(obj, mcmClient, hiveClient, kubeClient)
 
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
-			processClusterUpsert(next, mcmClient)
+			processClusterUpsert(next, mcmClient, hiveClient, kubeClient)
 		},
 		DeleteFunc: func(obj interface{}) {
 			cluster, ok := obj.(*clusterregistry.Cluster)
@@ -65,6 +74,7 @@ func WatchClusters() {
 
 	// periodically check if the cluster resource exists and start/stop the informer accordingly
 	for {
+		glog.Info("periodically check if the cluster resource exists and start/stop the informer accordingly")
 		_, err := clusterClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
 		// we fail to fetch for some reason other than not found
 		if err != nil && !isClusterMissing(err) {
@@ -86,7 +96,7 @@ func WatchClusters() {
 	}
 }
 
-func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
+func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hiveClient *hiveClientset.Clientset, kubeClient *kubeClientset.Clientset) {
 	cluster, ok := obj.(*clusterregistry.Cluster)
 	if !ok {
 		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
@@ -99,7 +109,23 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 		glog.Error("Failed to fetch cluster status: ", err)
 	}
 
+	//get the clusterDeployment if it exists
+	clusterDeployment, err := hiveClient.HiveV1().ClusterDeployments(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
+	if err != nil {
+		glog.Error("Failed to fetch cluster deployment: ", err)
+	}
+	//get install/uninstall jobs for cluster if they exist
+	jobs := kubeClient.BatchV1().Jobs(cluster.GetNamespace())
+	uninstallLabel := CLUSTER_LABEL + "=" + cluster.Name + "," + UNINSTALL_LABEL + "=true"
+	installLabel := CLUSTER_LABEL + "=" + cluster.Name + "," + INSTALL_LABEL + "=true"
+	listOptions := v1.ListOptions{}
+	listOptions.LabelSelector = uninstallLabel //"hive.openshift.io/cluster-deployment-name=test-cluster2, hive.openshift.io/install: "true""
+	uninstallJobs, err := jobs.List(listOptions)
+	listOptions.LabelSelector = installLabel //"hive.openshift.io/cluster-deployment-name=test-cluster2, hive.openshift.io/install: "true""
+	installJobs, err := jobs.List(listOptions)
+
 	resource := transformCluster(cluster, clusterStatus)
+	resource.Properties["status"] = getStatus(cluster, clusterStatus, uninstallJobs, installJobs, clusterDeployment)
 
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
 	res, err := db.UpdateByName(resource)
@@ -157,21 +183,6 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 		props["namespace"] = cluster.GetNamespace()
 	}
 
-	// we are pulling the status from the cluster object and cluster info from the clusterStatus object :(
-	if len(cluster.Status.Conditions) > 0 {
-		if cluster.Status.Conditions[0].Type != "" {
-			props["status"] = string(cluster.Status.Conditions[0].Type)
-		} else {
-			// status with conditions[0].type === '' indicates cluster is offline
-			props["status"] = "offline"
-		}
-	} else {
-		// Empty status indicates cluster has not been imported
-		if reflect.DeepEqual(clusterregistry.Cluster{}.Status, cluster.Status) {
-			props["status"] = "pending"
-		}
-	}
-
 	if clusterStatus != nil {
 		props["consoleURL"] = clusterStatus.Spec.ConsoleURL
 		props["cpu"], _ = clusterStatus.Spec.Capacity.Cpu().AsInt64()
@@ -198,4 +209,93 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 		Properties:     props,
 		ResourceString: "clusters",
 	}
+}
+
+func chkJobActive(jobs *batch.JobList, action string) string {
+	if jobs != nil && len(jobs.Items) > 0 {
+		for _, job := range jobs.Items {
+			if job.Status.Active == 1 {
+				if action == "uninstall" {
+					return "destroying"
+				} else {
+					return "creating"
+				}
+			}
+		}
+	}
+	return ""
+}
+
+//Similar to console-ui's cluster status - https://github.com/open-cluster-management/console-api/blob/98a3a58bed402930c557c0e9c854deab8f84cf38/src/v2/models/cluster.js#L30
+func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus, uninstallJobs *batch.JobList, installJobs *batch.JobList, cd *hive.ClusterDeployment) string {
+	glog.Info("Inside getstatus fn for cluster: ", cluster.Name)
+	// we are using a combination of conditions to determine cluster status
+	var clusterdeploymentStatus = ""
+	var status = ""
+	if cd != nil {
+		if uninstallJobs != nil && len(uninstallJobs.Items) > 0 {
+			clusterdeploymentStatus = chkJobActive(uninstallJobs, "uninstall")
+		} else if installJobs != nil && len(installJobs.Items) > 0 {
+			clusterdeploymentStatus = chkJobActive(installJobs, "install")
+		} else {
+			if len(cd.Status.Conditions) > 0 {
+				for _, condition := range cd.Status.Conditions {
+					if condition.Type == "Available" {
+						if condition.Status == "True" {
+							clusterdeploymentStatus = "detached"
+						} else {
+							clusterdeploymentStatus = "unknown"
+						}
+						break
+					}
+				}
+			}
+		}
+		glog.Info("status in cd != nil ", status)
+		glog.Info("clusterdeploymentStatus in cd != nil ", clusterdeploymentStatus)
+
+	}
+	if cluster != nil {
+		if cluster.DeletionTimestamp != nil {
+			glog.Info("Returning detaching")
+
+			return "detaching"
+		}
+
+		// we are pulling the status from the cluster object and cluster info from the clusterStatus object :(
+		if len(cluster.Status.Conditions) > 0 {
+			if cluster.Status.Conditions[0].Type != "" {
+				status = string(cluster.Status.Conditions[0].Type)
+			} else {
+				// status with conditions[0].type === '' indicates cluster is offline
+				status = "offline"
+			}
+		} else {
+			// Empty status indicates cluster has not been imported
+			if reflect.DeepEqual(clusterregistry.Cluster{}.Status, cluster.Status) {
+				status = "pending"
+			}
+		}
+
+		// If cluster is pending import because Hive is installing or uninstalling,
+		// show that status instead
+		if status == "pending" && clusterdeploymentStatus != "" && clusterdeploymentStatus != "detached" {
+			glog.Info("Returning clusterdeploymentStatus: ", clusterdeploymentStatus)
+			glog.Info("status: ", status)
+			glog.Info("clusterdeploymentStatus: ", clusterdeploymentStatus)
+
+			return clusterdeploymentStatus
+		}
+		glog.Info("Returning status1: ", status)
+		glog.Info("status: ", status)
+		glog.Info("clusterdeploymentStatus: ", clusterdeploymentStatus)
+
+		return status
+	}
+	glog.Info("Returning status2: ", status)
+	glog.Info("status: ", status)
+	glog.Info("clusterdeploymentStatus: ", clusterdeploymentStatus)
+
+	glog.Info("overall status is: ", status)
+	return clusterdeploymentStatus
 }
