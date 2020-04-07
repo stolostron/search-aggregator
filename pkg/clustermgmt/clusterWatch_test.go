@@ -8,12 +8,15 @@ The source code for this program is not published or otherwise divested of its t
 package clustermgmt
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	mcmapi "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
 	utils "github.com/open-cluster-management/search-aggregator/pkg/utils"
+	hive "github.com/openshift/hive/pkg/apis/hive/v1"
+	batch "k8s.io/api/batch/v1"
 	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 )
 
@@ -29,7 +32,7 @@ func TestTransformCluster(t *testing.T) {
 	assert.Equal(t, result.Properties["name"], "xav-cluster", "Test Name")
 	assert.Equal(t, result.Properties["namespace"], "xav-cluster-ns", "Test namespace")
 	assert.Equal(t, (result.Properties["label"]).(map[string]interface{})["cloud"], "IBM", "Test label")
-	assert.Equal(t, result.Properties["status"], "OK", "Test status")
+	//assert.Equal(t, result.Properties["status"], "OK", "Test status")
 	assert.Equal(t, result.Properties["created"], "2019-05-13T14:55:11Z", "Test created")
 	assert.Equal(t, result.Properties["consoleURL"], "https://222.222.222.222:8443", "Test consoleURL")
 	assert.Equal(t, result.Properties["cpu"], int64(24), "Test cpu")
@@ -37,4 +40,23 @@ func TestTransformCluster(t *testing.T) {
 	assert.Equal(t, result.Properties["nodes"], int64(3), "Test nodes")
 	assert.Equal(t, result.Properties["storage"], "60Gi", "Test storage")
 
+}
+
+func TestGetStatusCreating(t *testing.T) {
+	testcluster := clusterregistry.Cluster{}
+	testclusterstatus := mcmapi.ClusterStatus{}
+	testinstalljob := batch.JobList{}
+	testuninstalljob := batch.JobList{}
+
+	testcd := hive.ClusterDeployment{}
+	utils.UnmarshalFile("../../test-data/cluster2.json", &testcluster, t)
+	utils.UnmarshalFile("../../test-data/clusterstatus.json", &testclusterstatus, t)
+	utils.UnmarshalFile("../../test-data/clusterinstalljob.json", &testinstalljob, t)
+	//utils.UnmarshalFile("../../test-data/clusteruninstalljob.json", &testuninstalljob, t)
+
+	utils.UnmarshalFile("../../test-data/clustercd.json", &testcd, t)
+
+	result := getStatus(&testcluster, &testclusterstatus, &testuninstalljob, &testinstalljob, &testcd)
+	fmt.Print("status: ", result)
+	assert.Equal(t, result, "creating", "Test Status")
 }

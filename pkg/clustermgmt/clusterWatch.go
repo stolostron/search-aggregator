@@ -33,6 +33,8 @@ const UNINSTALL_LABEL = HIVE_DOMAIN + "/uninstall"
 const INSTALL_LABEL = HIVE_DOMAIN + "/install"
 const CLUSTER_LABEL = HIVE_DOMAIN + "/cluster-deployment-name"
 
+var anyClusterPending bool // Install/uninstall jobs might take some time to start - if cluster is pending, we use anyClusterPending bool to restart the clusterInformer in order to update cluster status
+
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
 	var err error
@@ -89,6 +91,15 @@ func WatchClusters() {
 				stopper = make(chan struct{})
 				informerRunning = true
 				go clusterInformer.Run(stopper)
+			} else {
+				if anyClusterPending {
+					glog.Info("Restarting cluster informer routine for cluster watch")
+					stopper <- struct{}{}
+					stopper = make(chan struct{})
+					informerRunning = true
+					anyClusterPending = false
+					go clusterInformer.Run(stopper)
+				}
 			}
 		}
 
@@ -102,7 +113,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
 		return
 	}
-
+	glog.Info("********* cluster: ", cluster.Name)
 	clusterStatus, err := mcmClient.McmV1alpha1().
 		ClusterStatuses(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
 	if err != nil {
@@ -123,9 +134,14 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 	uninstallJobs, err := jobs.List(listOptions)
 	listOptions.LabelSelector = installLabel //"hive.openshift.io/cluster-deployment-name=test-cluster2, hive.openshift.io/install: "true""
 	installJobs, err := jobs.List(listOptions)
-
 	resource := transformCluster(cluster, clusterStatus)
+
 	resource.Properties["status"] = getStatus(cluster, clusterStatus, uninstallJobs, installJobs, clusterDeployment)
+	if resource.Properties["status"] == "pending" {
+		// Install/uninstall jobs might take some time to start - if cluster is pending, we use anyClusterPending bool to restart the clusterInformer in order to update cluster status -
+		//TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
+		anyClusterPending = true
+	}
 
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
 	res, err := db.UpdateByName(resource)
@@ -223,16 +239,23 @@ func chkJobActive(jobs *batch.JobList, action string) string {
 			}
 		}
 	}
+	glog.Info(action, " Jobs nil")
 	return ""
 }
 
 //Similar to console-ui's cluster status - https://github.com/open-cluster-management/console-api/blob/98a3a58bed402930c557c0e9c854deab8f84cf38/src/v2/models/cluster.js#L30
 func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus, uninstallJobs *batch.JobList, installJobs *batch.JobList, cd *hive.ClusterDeployment) string {
 	glog.Info("Inside getstatus fn for cluster: ", cluster.Name)
+	glog.Info("len install jobs: ", len(installJobs.Items))
+	glog.Info("len uninstall jobs: ", len(uninstallJobs.Items))
+
 	// we are using a combination of conditions to determine cluster status
 	var clusterdeploymentStatus = ""
 	var status = ""
+
 	if cd != nil {
+		glog.Info("cd: ", cd)
+
 		if uninstallJobs != nil && len(uninstallJobs.Items) > 0 {
 			clusterdeploymentStatus = chkJobActive(uninstallJobs, "uninstall")
 		} else if installJobs != nil && len(installJobs.Items) > 0 {
@@ -249,6 +272,8 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 						break
 					}
 				}
+			} else {
+				glog.Info("len(cd.Status.Conditions) is zero ")
 			}
 		}
 		glog.Info("status in cd != nil ", status)
@@ -256,7 +281,7 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 
 	}
 	if cluster != nil {
-		if cluster.DeletionTimestamp != nil {
+		if clusterStatus != nil && cluster.DeletionTimestamp != nil {
 			glog.Info("Returning detaching")
 
 			return "detaching"
@@ -280,21 +305,21 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 		// If cluster is pending import because Hive is installing or uninstalling,
 		// show that status instead
 		if status == "pending" && clusterdeploymentStatus != "" && clusterdeploymentStatus != "detached" {
-			glog.Info("Returning clusterdeploymentStatus: ", clusterdeploymentStatus)
 			glog.Info("status: ", status)
 			glog.Info("clusterdeploymentStatus: ", clusterdeploymentStatus)
+			glog.Info("Returning clusterdeploymentStatus: ", clusterdeploymentStatus)
 
 			return clusterdeploymentStatus
 		}
-		glog.Info("Returning status1: ", status)
 		glog.Info("status: ", status)
 		glog.Info("clusterdeploymentStatus: ", clusterdeploymentStatus)
+		glog.Info("Returning status1: ", status)
 
 		return status
 	}
-	glog.Info("Returning status2: ", status)
 	glog.Info("status: ", status)
 	glog.Info("clusterdeploymentStatus: ", clusterdeploymentStatus)
+	glog.Info("Returning status2: ", status)
 
 	glog.Info("overall status is: ", status)
 	return clusterdeploymentStatus
