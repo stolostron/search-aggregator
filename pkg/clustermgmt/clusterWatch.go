@@ -268,7 +268,9 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 			clusterdeploymentStatus = chkJobActive(uninstallJobs, "uninstall")
 		} else if installJobs != nil && len(installJobs.Items) > 0 {
 			clusterdeploymentStatus = chkJobActive(installJobs, "install")
-		} else {
+		}
+		// else {
+		if clusterdeploymentStatus == "" {
 			if len(cd.Status.Conditions) > 0 {
 				for _, condition := range cd.Status.Conditions {
 					if condition.Type == "Available" {
@@ -284,6 +286,7 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 				glog.Info("len(cd.Status.Conditions) is zero ")
 			}
 		}
+		// }
 		glog.Info("status in cd != nil ", status)
 		glog.Info("clusterdeploymentStatus in cd != nil ", clusterdeploymentStatus)
 
