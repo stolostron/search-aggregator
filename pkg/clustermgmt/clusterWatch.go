@@ -59,7 +59,7 @@ func WatchClusters() {
 				return
 			}
 
-			glog.Info("Deleting Cluster resource in RedisGraph.")
+			glog.Info("Deleting Cluster resource ***", cluster.Name, "*** in RedisGraph.")
 			uid := string(cluster.GetUID())
 			_, err = db.Delete([]string{uid})
 			if err != nil {
@@ -132,8 +132,14 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 	listOptions := v1.ListOptions{}
 	listOptions.LabelSelector = uninstallLabel //"hive.openshift.io/cluster-deployment-name=test-cluster2, hive.openshift.io/install: "true""
 	uninstallJobs, err := jobs.List(listOptions)
+	if err != nil {
+		glog.Error("Failed to fetch uninstall jobs: ", err)
+	}
 	listOptions.LabelSelector = installLabel //"hive.openshift.io/cluster-deployment-name=test-cluster2, hive.openshift.io/install: "true""
 	installJobs, err := jobs.List(listOptions)
+	if err != nil {
+		glog.Error("Failed to fetch install jobs: ", err)
+	}
 	resource := transformCluster(cluster, clusterStatus)
 
 	resource.Properties["status"] = getStatus(cluster, clusterStatus, uninstallJobs, installJobs, clusterDeployment)
@@ -245,7 +251,9 @@ func chkJobActive(jobs *batch.JobList, action string) string {
 
 //Similar to console-ui's cluster status - https://github.com/open-cluster-management/console-api/blob/98a3a58bed402930c557c0e9c854deab8f84cf38/src/v2/models/cluster.js#L30
 func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus, uninstallJobs *batch.JobList, installJobs *batch.JobList, cd *hive.ClusterDeployment) string {
-	glog.Info("Inside getstatus fn for cluster: ", cluster.Name)
+	if cluster != nil {
+		glog.Info("Inside getstatus fn for cluster: ", cluster.Name)
+	}
 	glog.Info("len install jobs: ", len(installJobs.Items))
 	glog.Info("len uninstall jobs: ", len(uninstallJobs.Items))
 
