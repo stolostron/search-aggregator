@@ -293,7 +293,8 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 
 	}
 	if cluster != nil {
-		if clusterStatus != nil && cluster.DeletionTimestamp != nil {
+		glog.Info("clusterStatus: ", clusterStatus)
+		if clusterStatus != nil && clusterStatus.Name != "" && cluster.DeletionTimestamp != nil {
 			glog.Info("Returning detaching")
 
 			return "detaching"
