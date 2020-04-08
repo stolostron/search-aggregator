@@ -37,7 +37,7 @@ var anyClusterPending bool // Install/uninstall jobs might take some time to sta
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
-	var err error
+
 	clusterClient, mcmClient, hiveClient, kubeClient, err := config.InitClient()
 	var stopper chan struct{}
 	informerRunning := false
@@ -58,19 +58,7 @@ func WatchClusters() {
 				glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
 				return
 			}
-
-			glog.Info("Deleting Cluster resource ", cluster.Name, " from RedisGraph.")
-			uid := string(cluster.GetUID())
-			_, err = db.Delete([]string{uid})
-			if err != nil {
-				glog.Error("Error deleting Cluster kind with error: ", err)
-			}
-
-			// When a cluster (ClusterStatus) gets deleted, we must remove all resources for that cluster from RedisGraph.
-			_, err := db.DeleteCluster(cluster.GetName())
-			if err != nil {
-				glog.Error("Error deleting current resources for cluster: ", err)
-			}
+			delCluster(cluster)
 		},
 	})
 
@@ -165,6 +153,9 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 	} else if err != nil { // generic error not known above
 		glog.Error("Error updating Cluster kind with errors: ", err)
 		return
+	} else {
+		if c.Name != cluster.Name {
+		delCluster(cluster)
 	}
 
 	// If a cluster is offline or detached we should remove the cluster objects
@@ -250,6 +241,22 @@ func chkJobActive(jobs *batch.JobList, action string) string {
 		}
 	}
 	return ""
+}
+
+func delCluster(cluster *clusterregistry.Cluster) {
+	var err error
+	glog.Info("Deleting Cluster resource ", cluster.Name, " from RedisGraph.")
+	uid := string(cluster.GetUID())
+	_, err = db.Delete([]string{uid})
+	if err != nil {
+		glog.Error("Error deleting Cluster kind with error: ", err)
+	}
+
+	// When a cluster (ClusterStatus) gets deleted, we must remove all resources for that cluster from RedisGraph.
+	_, err = db.DeleteCluster(cluster.GetName())
+	if err != nil {
+		glog.Error("Error deleting current resources for cluster: ", err)
+	}
 }
 
 //Similar to console-ui's cluster status - https://github.com/open-cluster-management/console-api/blob/98a3a58bed402930c557c0e9c854deab8f84cf38/src/v2/models/cluster.js#L30
