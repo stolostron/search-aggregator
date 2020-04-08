@@ -46,13 +46,16 @@ func WatchClusters() {
 	clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			glog.Info("** In add")
 			processClusterUpsert(obj, mcmClient, hiveClient, kubeClient)
 
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
+			glog.Info("** In update")
 			processClusterUpsert(next, mcmClient, hiveClient, kubeClient)
 		},
 		DeleteFunc: func(obj interface{}) {
+			glog.Info("** In delete")
 			cluster, ok := obj.(*clusterregistry.Cluster)
 			if !ok {
 				glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
@@ -150,7 +153,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 		anyClusterPending = true
 	}
 
-	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
+	glog.Info("Updating Cluster resource by name in RedisGraph. ", resource.Properties["name"])
 	res, err := db.UpdateByName(resource)
 	if db.IsGraphMissing(err) || !db.IsPropertySet(res) {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
