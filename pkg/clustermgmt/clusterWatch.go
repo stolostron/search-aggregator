@@ -39,6 +39,9 @@ var anyClusterPending bool // Install/uninstall jobs might take some time to sta
 func WatchClusters() {
 
 	clusterClient, mcmClient, hiveClient, kubeClient, err := config.InitClient()
+	if err != nil {
+		glog.Info("Unable to create clientset ", err)
+	}
 	var stopper chan struct{}
 	informerRunning := false
 
@@ -155,7 +158,8 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 		return
 	} else {
 		if c.Name != cluster.Name {
-		delCluster(cluster)
+			delCluster(cluster)
+		}
 	}
 
 	// If a cluster is offline or detached we should remove the cluster objects
@@ -244,10 +248,9 @@ func chkJobActive(jobs *batch.JobList, action string) string {
 }
 
 func delCluster(cluster *clusterregistry.Cluster) {
-	var err error
 	glog.Info("Deleting Cluster resource ", cluster.Name, " from RedisGraph.")
 	uid := string(cluster.GetUID())
-	_, err = db.Delete([]string{uid})
+	_, err := db.Delete([]string{uid})
 	if err != nil {
 		glog.Error("Error deleting Cluster kind with error: ", err)
 	}
