@@ -167,9 +167,9 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 		return
 	}
 
-	// If a cluster is offline we should remove the cluster objects
-	if resource.Properties["status"] == "offline" {
-		glog.Infof("Cluster %s appears to be offline, removing cluster resources from redis", cluster.GetName())
+	// If a cluster is offline or detached we should remove the cluster objects
+	if resource.Properties["status"] == "offline" || resource.Properties["status"] == "detached" {
+		glog.Infof("Cluster %s appears to be %s, removing cluster resources from redis", cluster.GetName(), resource.Properties["status"])
 		_, err := db.DeleteCluster(cluster.GetName())
 		if err != nil {
 			glog.Error("Error deleting current resources for cluster: ", err)
@@ -275,8 +275,9 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 		}
 		// else {
 		if clusterdeploymentStatus == "" {
-			if len(cd.Status.Conditions) > 0 {
-				for _, condition := range cd.Status.Conditions {
+			glog.Info("cd.Status.ClusterVersionStatus.Conditions: ", cd.Status.ClusterVersionStatus.Conditions)
+			if len(cd.Status.ClusterVersionStatus.Conditions) > 0 {
+				for _, condition := range cd.Status.ClusterVersionStatus.Conditions {
 					if condition.Type == "Available" {
 						if condition.Status == "True" {
 							clusterdeploymentStatus = "detached"
@@ -287,7 +288,7 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 					}
 				}
 			} else {
-				glog.Info("len(cd.Status.Conditions) is zero ")
+				glog.Info("len(cd.Status.ClusterVersionStatus.Conditions) is zero ")
 			}
 		}
 		// }

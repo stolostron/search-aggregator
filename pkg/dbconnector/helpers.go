@@ -54,6 +54,7 @@ func IsGraphMissing(err error) bool {
 
 func IsPropertySet(res QueryResult) bool {
 	if len(res.Statistics) >= 1 {
+		glog.Info("res.Stats: ", res.Statistics)
 		glog.Info("In IsPropertySet? ", strings.Contains(res.Statistics[0], "Properties set") || strings.Contains(res.Statistics[0], "Update Not Required"))
 		return strings.Contains(res.Statistics[0], "Properties set") || strings.Contains(res.Statistics[0], "Update Not Required")
 	}
