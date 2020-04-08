@@ -28,6 +28,8 @@ import (
 	informers "k8s.io/cluster-registry/pkg/client/informers/externalversions"
 )
 
+var CurrClusterName string
+
 const HIVE_DOMAIN = "hive.openshift.io"
 const UNINSTALL_LABEL = HIVE_DOMAIN + "/uninstall"
 const INSTALL_LABEL = HIVE_DOMAIN + "/install"
@@ -104,25 +106,32 @@ func WatchClusters() {
 }
 
 func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hiveClient *hiveClientset.Clientset, kubeClient *kubeClientset.Clientset) {
+	var err error
+	var cluster *clusterregistry.Cluster
+	var clusterStatus *mcm.ClusterStatus
+	var clusterDeployment *hive.ClusterDeployment
+	var ok bool
+	var installJobs, uninstallJobs *batch.JobList
+
 	glog.Info("In processClusterUpsert")
 	clusterCopy := *obj.(*clusterregistry.Cluster)
 	glog.Info("In processClusterUpsert, c: ", clusterCopy.Name)
 
-	cluster, ok := obj.(*clusterregistry.Cluster)
+	cluster, ok = obj.(*clusterregistry.Cluster)
 	glog.Info("In processClusterUpsert, cluster: ", cluster.Name)
 
+	CurrClusterName = cluster.Name
 	if !ok {
 		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
 		return
 	}
-	clusterStatus, err := mcmClient.McmV1alpha1().
-		ClusterStatuses(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
+	clusterStatus, err = mcmClient.McmV1alpha1().ClusterStatuses(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
 	if err != nil {
 		glog.Error("Failed to fetch cluster status: ", err)
 	}
 
 	//get the clusterDeployment if it exists
-	clusterDeployment, err := hiveClient.HiveV1().ClusterDeployments(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
+	clusterDeployment, err = hiveClient.HiveV1().ClusterDeployments(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
 	if err != nil {
 		glog.Error("Failed to fetch cluster deployment: ", err)
 	}
@@ -132,16 +141,19 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 	installLabel := CLUSTER_LABEL + "=" + cluster.Name + "," + INSTALL_LABEL + "=true"
 	listOptions := v1.ListOptions{}
 	listOptions.LabelSelector = uninstallLabel //"hive.openshift.io/cluster-deployment-name=test-cluster2, hive.openshift.io/install: "true""
-	uninstallJobs, err := jobs.List(listOptions)
+	uninstallJobs, err = jobs.List(listOptions)
 	if err != nil {
 		glog.Error("Failed to fetch uninstall jobs: ", err)
 	}
 	listOptions.LabelSelector = installLabel //"hive.openshift.io/cluster-deployment-name=test-cluster2, hive.openshift.io/install: "true""
-	installJobs, err := jobs.List(listOptions)
+	installJobs, err = jobs.List(listOptions)
 	if err != nil {
 		glog.Error("Failed to fetch install jobs: ", err)
 	}
+	glog.Info("Calling transformcluster for ", cluster.Name, " currCluster: ", CurrClusterName)
 	resource := transformCluster(cluster, clusterStatus)
+	glog.Info("Calling getStatus for ", cluster.Name, " currCluster: ", CurrClusterName)
+
 	status := getStatus(&clusterCopy, clusterStatus, uninstallJobs, installJobs, clusterDeployment)
 	glog.Info("status for clusterCopy: ", status, " for cluster: ", clusterCopy.Name)
 
@@ -282,7 +294,14 @@ func delCluster(cluster *clusterregistry.Cluster) {
 
 //Similar to console-ui's cluster status - https://github.com/open-cluster-management/console-api/blob/98a3a58bed402930c557c0e9c854deab8f84cf38/src/v2/models/cluster.js#L30
 func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus, uninstallJobs *batch.JobList, installJobs *batch.JobList, cd *hive.ClusterDeployment) string {
-	glog.Info("status for cluster: for cluster: ", cluster.Name)
+	glog.Info("In getstatus for cluster: ", cluster.Name)
+	glog.Info("In getstatus, cluster.Name: ", cluster.Name)
+	glog.Info("In getstatus, CurrClusterName: ", CurrClusterName)
+
+	if cluster.Name != CurrClusterName {
+		glog.Fatal("Cluster names do not match")
+	}
+
 	// we are using a combination of conditions to determine cluster status
 	var clusterdeploymentStatus = ""
 	var status = ""
