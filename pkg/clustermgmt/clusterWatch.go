@@ -146,6 +146,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 	glog.Info("status for clusterCopy: ", status, " for cluster: ", clusterCopy.Name)
 
 	resource.Properties["status"] = getStatus(cluster, clusterStatus, uninstallJobs, installJobs, clusterDeployment)
+	glog.Info("status for real cluster: ", resource.Properties["status"])
 	if resource.Properties["status"] != "ok" && resource.Properties["status"] != "offline" && resource.Properties["status"] != "detached" {
 		// Install/uninstall jobs might take some time to start - if cluster is pending, we use anyClusterPending bool to restart the clusterInformer in order to update cluster status -
 		//TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
