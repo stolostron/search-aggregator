@@ -49,14 +49,20 @@ func WatchClusters() {
 	clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			glog.Info("In Add")
 			processClusterUpsert(obj, mcmClient, hiveClient, kubeClient)
 
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
+			glog.Info("In Update")
+
 			processClusterUpsert(next, mcmClient, hiveClient, kubeClient)
 		},
 		DeleteFunc: func(obj interface{}) {
+
 			cluster, ok := obj.(*clusterregistry.Cluster)
+			glog.Info("In Delete for cluster, ", cluster.Name)
+
 			if !ok {
 				glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
 				return
@@ -98,7 +104,13 @@ func WatchClusters() {
 }
 
 func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hiveClient *hiveClientset.Clientset, kubeClient *kubeClientset.Clientset) {
+	glog.Info("In processClusterUpsert")
+	clusterCopy := *obj.(*clusterregistry.Cluster)
+	glog.Info("In processClusterUpsert, c: ", clusterCopy.Name)
+
 	cluster, ok := obj.(*clusterregistry.Cluster)
+	glog.Info("In processClusterUpsert, cluster: ", cluster.Name)
+
 	if !ok {
 		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
 		return
@@ -130,6 +142,8 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 		glog.Error("Failed to fetch install jobs: ", err)
 	}
 	resource := transformCluster(cluster, clusterStatus)
+	status := getStatus(&clusterCopy, clusterStatus, uninstallJobs, installJobs, clusterDeployment)
+	glog.Info("status for clusterCopy: ", status, " for cluster: ", clusterCopy.Name)
 
 	resource.Properties["status"] = getStatus(cluster, clusterStatus, uninstallJobs, installJobs, clusterDeployment)
 	if resource.Properties["status"] != "ok" && resource.Properties["status"] != "offline" && resource.Properties["status"] != "detached" {
@@ -141,10 +155,10 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 	//Ensure that the cluster resource is still present before inserting into Redisgraph. Race conditions are seen between add and delete resources
 	c, err := config.ClusterClient.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
 	if err != nil {
-		glog.Infof("The cluster %s to add/update is not present anymore", cluster.Name)
+		glog.Warningf("The cluster %s to add/update is not present anymore", cluster.Name)
 	}
 
-	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
+	glog.Info("Updating Cluster resource by name in RedisGraph. ", resource)
 	res, err := db.UpdateByName(resource)
 	if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
@@ -172,6 +186,9 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 			db.DeleteClustersCache(resource.UID)
 		}
 	}
+	glog.Info("Leaving processClusterUpsert")
+	glog.Info("\n")
+
 }
 
 func isClusterMissing(err error) bool {
@@ -264,6 +281,7 @@ func delCluster(cluster *clusterregistry.Cluster) {
 
 //Similar to console-ui's cluster status - https://github.com/open-cluster-management/console-api/blob/98a3a58bed402930c557c0e9c854deab8f84cf38/src/v2/models/cluster.js#L30
 func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus, uninstallJobs *batch.JobList, installJobs *batch.JobList, cd *hive.ClusterDeployment) string {
+	glog.Info("status for cluster: for cluster: ", cluster.Name)
 	// we are using a combination of conditions to determine cluster status
 	var clusterdeploymentStatus = ""
 	var status = ""
@@ -299,6 +317,7 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 
 		// we are pulling the status from the cluster object and cluster info from the clusterStatus object :(
 		if len(cluster.Status.Conditions) > 0 {
+			glog.Info("cluster.Status.Conditions: ", cluster.Status.Conditions)
 			if cluster.Status.Conditions[0].Type != "" {
 				status = string(cluster.Status.Conditions[0].Type)
 			} else {

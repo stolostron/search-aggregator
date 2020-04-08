@@ -42,13 +42,13 @@ func InitClient() (*clientset.Clientset, *mcmClientset.Clientset, *hiveClientset
 
 	kubeClient, err := kubeClientset.NewForConfig(clientConfig)
 	if err != nil {
-		glog.Fatal("Cannot Construct kube Client From Config: ", err)
+		glog.Error("Cannot Construct kube Client From Config: ", err)
 	}
 
 	// Initialize the hive client, used for ClusterDeployment resource
 	hiveClient, err := hiveClientset.NewForConfig(clientConfig)
 	if err != nil {
-		glog.Fatal("Cannot Construct Hive Client From Config: ", err)
+		glog.Error("Cannot Construct Hive Client From Config: ", err)
 	}
 
 	// Initialize the cluster client, used for Cluster resource

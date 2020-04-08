@@ -18,12 +18,12 @@
         },
         "name": "xav-cluster",
         "namespace": "xav-cluster",
-        "resourceVersion": "2134689",
+        "resourceVersion": "2134680",
         "selfLink": "/apis/hive.openshift.io/v1/namespaces/xav-cluster/clusterdeployments/xav-cluster",
         "uid": "913dada2-cf7b-4709-9daf-005072cfeeac"
     },
     "spec": {
-        "baseDomain": "dev07.red-chesterfield.com",
+        "baseDomain": "test.baseDomain.com",
         "clusterMetadata": {
             "adminKubeconfigSecretRef": {
                 "name": "xav-cluster-0-wnw2j-admin-kubeconfig"
@@ -63,7 +63,7 @@
         }
     },
     "status": {
-        "cliImage": "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:284d01ca7e20fab2f576fa3a011047dbd80e880d62ba86963b4131e9b1b45761",
+        "cliImage": "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:284d01ca7e20fab2f576fa3a011047dbd80e880d62",
         "clusterVersionStatus": {
             "availableUpdates": [],
             "desired": {
@@ -74,7 +74,7 @@
             "observedGeneration": 0,
             "versionHash": ""
         },
-        "installerImage": "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:537bedac3c10eed6f54ec061c2f4f52af0b2eb139b89519326fa6bcd28230756",
+        "installerImage": "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:537bedac3c10eed6f54ec061c2f4f52af0b2eb139b8",
         "provisionRef": {
             "name": "xav-cluster-0-wnw2j"
         }
