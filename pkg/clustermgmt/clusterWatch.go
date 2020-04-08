@@ -46,23 +46,20 @@ func WatchClusters() {
 	clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			glog.Info("** In add")
 			processClusterUpsert(obj, mcmClient, hiveClient, kubeClient)
 
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
-			glog.Info("** In update")
 			processClusterUpsert(next, mcmClient, hiveClient, kubeClient)
 		},
 		DeleteFunc: func(obj interface{}) {
-			glog.Info("** In delete")
 			cluster, ok := obj.(*clusterregistry.Cluster)
 			if !ok {
 				glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
 				return
 			}
 
-			glog.Info("Deleting Cluster resource ***", cluster.Name, "*** in RedisGraph.")
+			glog.Info("Deleting Cluster resource ", cluster.Name, " from RedisGraph.")
 			uid := string(cluster.GetUID())
 			_, err = db.Delete([]string{uid})
 			if err != nil {
@@ -79,7 +76,6 @@ func WatchClusters() {
 
 	// periodically check if the cluster resource exists and start/stop the informer accordingly
 	for {
-		glog.Info("periodically check if the cluster resource exists and start/stop the informer accordingly")
 		_, err := clusterClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
 		// we fail to fetch for some reason other than not found
 		if err != nil && !isClusterMissing(err) {
@@ -116,7 +112,6 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
 		return
 	}
-	glog.Info("********* cluster: ", cluster.Name)
 	clusterStatus, err := mcmClient.McmV1alpha1().
 		ClusterStatuses(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
 	if err != nil {
@@ -146,7 +141,6 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 	resource := transformCluster(cluster, clusterStatus)
 
 	resource.Properties["status"] = getStatus(cluster, clusterStatus, uninstallJobs, installJobs, clusterDeployment)
-	glog.Info("**** getStatus returned *****", resource.Properties["status"], " for cluster ", cluster.Name)
 	if resource.Properties["status"] != "ok" && resource.Properties["status"] != "offline" && resource.Properties["status"] != "detached" {
 		// Install/uninstall jobs might take some time to start - if cluster is pending, we use anyClusterPending bool to restart the clusterInformer in order to update cluster status -
 		//TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
@@ -159,7 +153,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 		glog.Infof("The cluster %s to add/update is not present anymore", cluster.Name)
 	}
 
-	glog.Info("Updating Cluster resource by name in RedisGraph. ", resource.Properties["name"])
+	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
 	res, err := db.UpdateByName(resource)
 	if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
@@ -255,31 +249,21 @@ func chkJobActive(jobs *batch.JobList, action string) string {
 			}
 		}
 	}
-	glog.Info(action, " Jobs nil")
 	return ""
 }
 
 //Similar to console-ui's cluster status - https://github.com/open-cluster-management/console-api/blob/98a3a58bed402930c557c0e9c854deab8f84cf38/src/v2/models/cluster.js#L30
 func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus, uninstallJobs *batch.JobList, installJobs *batch.JobList, cd *hive.ClusterDeployment) string {
-	if cluster != nil {
-		glog.Info("Inside getstatus fn for cluster: ", cluster.Name)
-	}
-	glog.Info("len install jobs: ", len(installJobs.Items))
-	glog.Info("len uninstall jobs: ", len(uninstallJobs.Items))
-
 	// we are using a combination of conditions to determine cluster status
 	var clusterdeploymentStatus = ""
 	var status = ""
 
 	if cd != nil {
-		glog.Info("cd: ", cd)
-
 		if uninstallJobs != nil && len(uninstallJobs.Items) > 0 {
 			clusterdeploymentStatus = chkJobActive(uninstallJobs, "uninstall")
 		} else if installJobs != nil && len(installJobs.Items) > 0 {
 			clusterdeploymentStatus = chkJobActive(installJobs, "install")
 		}
-		// else {
 		if clusterdeploymentStatus == "" {
 			glog.Info("cd.Status.ClusterVersionStatus.Conditions: ", cd.Status.ClusterVersionStatus.Conditions)
 			if len(cd.Status.ClusterVersionStatus.Conditions) > 0 {
@@ -297,16 +281,9 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 				glog.Info("len(cd.Status.ClusterVersionStatus.Conditions) is zero ")
 			}
 		}
-		// }
-		glog.Info("status in cd != nil ", status)
-		glog.Info("clusterdeploymentStatus in cd != nil ", clusterdeploymentStatus)
-
 	}
 	if cluster != nil {
-		glog.Info("clusterStatus: ", clusterStatus)
 		if clusterStatus != nil && clusterStatus.Name != "" && cluster.DeletionTimestamp != nil {
-			glog.Info("Returning detaching")
-
 			return "detaching"
 		}
 
@@ -328,22 +305,9 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 		// If cluster is pending import because Hive is installing or uninstalling,
 		// show that status instead
 		if status == "pending" && clusterdeploymentStatus != "" && clusterdeploymentStatus != "detached" {
-			glog.Info("status: ", status)
-			glog.Info("clusterdeploymentStatus: ", clusterdeploymentStatus)
-			glog.Info("Returning clusterdeploymentStatus: ", clusterdeploymentStatus)
-
 			return clusterdeploymentStatus
 		}
-		glog.Info("status: ", status)
-		glog.Info("clusterdeploymentStatus: ", clusterdeploymentStatus)
-		glog.Info("Returning status1: ", status)
-
 		return status
 	}
-	glog.Info("status: ", status)
-	glog.Info("clusterdeploymentStatus: ", clusterdeploymentStatus)
-	glog.Info("Returning status2: ", status)
-
-	glog.Info("overall status is: ", status)
 	return clusterdeploymentStatus
 }
