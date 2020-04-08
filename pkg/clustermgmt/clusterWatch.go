@@ -299,7 +299,7 @@ func getStatus(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatu
 	glog.Info("In getstatus, CurrClusterName: ", CurrClusterName)
 
 	if cluster.Name != CurrClusterName {
-		glog.Fatal("Cluster names do not match")
+		glog.Warning("Cluster names do not match. Another cluster has started through the update process.")
 	}
 
 	// we are using a combination of conditions to determine cluster status
