@@ -45,7 +45,6 @@ func DeleteCluster(clusterName string) (QueryResult, error) {
 		return QueryResult{}, err
 	}
 	query := fmt.Sprintf("MATCH (n {cluster:'%s'}) DELETE n", clusterName)
-	glog.Info("Delete cluster query: ", query)
 	return Store.Query(query)
 }
 
