@@ -148,7 +148,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 	}
 
 	//Ensure that the cluster resource is still present before inserting into Redisgraph. Race conditions are seen between add and delete resources
-	c, err := config.ClusterClient.Clusterregistry().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
+	c, err := config.ClusterClient.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
 	if err != nil {
 		glog.Infof("The cluster %s to add/update is not present anymore", cluster.Name)
 	}

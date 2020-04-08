@@ -8,7 +8,6 @@ The source code for this program is not published or otherwise divested of its t
 package clustermgmt
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,11 +51,8 @@ func TestGetStatusCreating(t *testing.T) {
 	utils.UnmarshalFile("../../test-data/cluster2.json", &testcluster, t)
 	utils.UnmarshalFile("../../test-data/clusterstatus.json", &testclusterstatus, t)
 	utils.UnmarshalFile("../../test-data/clusterinstalljob.json", &testinstalljob, t)
-	//utils.UnmarshalFile("../../test-data/clusteruninstalljob.json", &testuninstalljob, t)
-
 	utils.UnmarshalFile("../../test-data/clustercd.json", &testcd, t)
 
 	result := getStatus(&testcluster, &testclusterstatus, &testuninstalljob, &testinstalljob, &testcd)
-	fmt.Print("status: ", result)
 	assert.Equal(t, result, "creating", "Test Status")
 }
