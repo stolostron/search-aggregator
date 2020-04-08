@@ -153,9 +153,15 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset, hi
 		anyClusterPending = true
 	}
 
+	//Ensure that the cluster resource is still present before inserting into Redisgraph. Race conditions are seen between add and delete resources
+	c, err := config.ClusterClient.Clusterregistry().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
+	if err != nil {
+		glog.Infof("The cluster %s to add/update is not present anymore", cluster.Name)
+	}
+
 	glog.Info("Updating Cluster resource by name in RedisGraph. ", resource.Properties["name"])
 	res, err := db.UpdateByName(resource)
-	if db.IsGraphMissing(err) || !db.IsPropertySet(res) {
+	if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
 		_, _, err = db.Insert([]*db.Resource{&resource}, "")
 		if err != nil {
