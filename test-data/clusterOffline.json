@@ -1,0 +1,44 @@
+{
+	"metadata": {
+		"name": "xav-cluster",
+		"namespace": "xav-cluster-ns",
+		"selfLink": "/apis/clusterregistry.k8s.io/v1alpha1/namespaces/xav-cluster-ns/clusters/xav-cluster",
+		"uid": "1baa5f8a-758f-11e9-9527-667a72062d69",
+		"resourceVersion": "9454",
+		"creationTimestamp": "2019-05-13T14:55:11Z",
+		"labels": {
+			"cloud": "IBM",
+			"datacenter": "toronto",
+			"environment": "Dev",
+			"name": "xav-cluster",
+			"owner": "marketing",
+			"region": "US",
+			"vendor": "ICP"
+		},
+		"annotations": {
+			"mcm.ibm.com/deployer-prefix": "md",
+			"mcm.ibm.com/secretRef": "xav-cluster-federation-secret",
+			"mcm.ibm.com/user-group": "aGNtOmNsdXN0ZXJzLHN5c3RlbTphdXRoZW50aWNhdGVk",
+			"mcm.ibm.com/user-identity": "aGNtOmNsdXN0ZXJzOnhhdi1jbHVzdGVyLW5zOnhhdi1jbHVzdGVy",
+			"seed-generation": "1"
+		},
+		"finalizers": ["propagator.finalizer.mcm.ibm.com"]
+	},
+	"spec": {
+		"kubernetesApiEndpoints": {
+			"serverEndpoints": [{
+				"clientCIDR": "0.0.0.0/0",
+				"serverAddress": "222.222.222.222:8001"
+			}]
+		},
+		"authInfo": {}
+	},
+	"status": {
+		"conditions": [{
+			"type": "",
+			"status": "",
+			"lastHeartbeatTime": "2019-05-16T14:36:51Z",
+			"lastTransitionTime": null
+		}]
+	}
+}
