@@ -17,9 +17,17 @@ import (
 	clientset "k8s.io/cluster-registry/pkg/client/clientset/versioned"
 )
 
+//ClusterClient - Client to get cluster resource
 var ClusterClient *clientset.Clientset
 
-func InitClient() (*clientset.Clientset, *mcmClientset.Clientset, *hiveClientset.Clientset, *kubeClientset.Clientset, error) {
+//KubeClient - Client to get jobs resource
+var KubeClient *kubeClientset.Clientset
+
+//HiveClient - Client to get clusterdeployment resource
+var HiveClient *hiveClientset.Clientset
+
+//InitClient - Initialize all clientsets
+func InitClient() (*clientset.Clientset, *mcmClientset.Clientset, error) {
 	var clientConfig *rest.Config
 	var err error
 	//(*clientset.Clientset, *versioned.Clientset)
@@ -40,22 +48,25 @@ func InitClient() (*clientset.Clientset, *mcmClientset.Clientset, *hiveClientset
 		glog.Fatal("Cannot Construct MCM Client From Config: ", err)
 	}
 
-	kubeClient, err := kubeClientset.NewForConfig(clientConfig)
-	if err != nil {
-		glog.Error("Cannot Construct kube Client From Config: ", err)
-	}
-
-	// Initialize the hive client, used for ClusterDeployment resource
-	hiveClient, err := hiveClientset.NewForConfig(clientConfig)
-	if err != nil {
-		glog.Error("Cannot Construct Hive Client From Config: ", err)
-	}
-
 	// Initialize the cluster client, used for Cluster resource
 	clusterClient, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
 		glog.Fatal("Cannot Construct Cluster Client From Config: ", err)
 	}
 	ClusterClient = clusterClient
-	return clusterClient, mcmClient, hiveClient, kubeClient, err
+
+	// Initialize the cluster client, used for job resource
+	kubeClient, err := kubeClientset.NewForConfig(clientConfig)
+	if err != nil {
+		glog.Error("Cannot Construct kube Client From Config: ", err)
+	}
+	KubeClient = kubeClient
+	// Initialize the hive client, used for ClusterDeployment resource
+	hiveClient, err := hiveClientset.NewForConfig(clientConfig)
+	if err != nil {
+		glog.Error("Cannot Construct Hive Client From Config: ", err)
+	}
+	HiveClient = hiveClient
+
+	return clusterClient, mcmClient, err
 }
