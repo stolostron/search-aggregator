@@ -31,7 +31,6 @@ func TestTransformCluster(t *testing.T) {
 	assert.Equal(t, result.Properties["name"], "xav-cluster", "Test Name")
 	assert.Equal(t, result.Properties["namespace"], "xav-cluster-ns", "Test namespace")
 	assert.Equal(t, (result.Properties["label"]).(map[string]interface{})["cloud"], "IBM", "Test label")
-	//assert.Equal(t, result.Properties["status"], "OK", "Test status")
 	assert.Equal(t, result.Properties["created"], "2019-05-13T14:55:11Z", "Test created")
 	assert.Equal(t, result.Properties["consoleURL"], "https://222.222.222.222:8443", "Test consoleURL")
 	assert.Equal(t, result.Properties["cpu"], int64(24), "Test cpu")

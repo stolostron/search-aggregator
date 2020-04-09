@@ -129,7 +129,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	//get the clusterDeployment if it exists
 	clusterDeployment, err = config.HiveClient.HiveV1().ClusterDeployments(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
 	if err != nil {
-		glog.Error("Failed to fetch cluster deployment: ", err)
+		glog.Info("Failed to fetch cluster deployment: ", err)
 		clusterDeployment = nil //If there is an error fetching clusterDeployment, reset it to nil
 	}
 	//get install/uninstall jobs for cluster if they exist
@@ -297,7 +297,7 @@ func delCluster(cluster *clusterregistry.Cluster) {
 	}
 }
 
-//TODO: Remove this and get cluster status from cluster object using issue (open-cluster-management/backlog#1518)
+//TODO: Remove this and get cluster status from cluster object using issue (https://github.com/open-cluster-management/backlog/issues/1518)
 //Similar to console-ui's cluster status - https://github.com/open-cluster-management/console-api/blob/98a3a58bed402930c557c0e9c854deab8f84cf38/src/v2/models/cluster.js#L30
 // If clusterdeployment resource is present and install/uninstall jobs are active - cluster is in creating/destroying status
 //If jobs are not active, status is based on clusterdeployment's status(cd.Status.ClusterVersionStatus)
@@ -312,8 +312,7 @@ func getStatus(cs ClusterStat) string {
 	cd := cs.clusterdeployment
 
 	// we are using a combination of conditions to determine cluster status
-	var clusterdeploymentStatus = ""
-	var status = ""
+	var clusterdeploymentStatus, status string
 
 	if cd != nil {
 		if cs.uninstallJobs != nil && len(cs.uninstallJobs.Items) > 0 && chkJobActive(cs.uninstallJobs, "uninstall") != "" {
