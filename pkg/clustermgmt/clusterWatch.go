@@ -266,12 +266,18 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 }
 
 func chkJobActive(jobs *batch.JobList, action string) string {
+	glog.Info("Checking for ", action, " jobs")
 	if jobs != nil && len(jobs.Items) > 0 {
+		glog.Info("Jobs != nil")
 		for _, job := range jobs.Items {
+			glog.Info("Current job: ", job)
 			if job.Status.Active == 1 {
+				glog.Info("Job active. Returning ", action)
 				if action == "uninstall" {
+					glog.Info(action, " Job active. Returning destroying")
 					return "destroying"
 				} else {
+					glog.Info(action, " Job active. Returning creating")
 					return "creating"
 				}
 			}
@@ -318,6 +324,10 @@ func getStatus(cs ClusterStat) string {
 		} else if cs.installJobs != nil && len(cs.installJobs.Items) > 0 && chkJobActive(cs.installJobs, "install") != "" {
 			clusterdeploymentStatus = chkJobActive(cs.installJobs, "install")
 		} else {
+			glog.Warning("Warning: uninstallJobs and installJobs nil or len(items) = 0")
+			glog.Info("len(cs.installJobs.Items): ", len(cs.installJobs.Items))
+			glog.Info("len(cs.uninstallJobs.Items): ", len(cs.uninstallJobs.Items))
+
 			clusterdeploymentStatus = "unknown"
 			glog.Info("cd.Status.ClusterVersionStatus.Conditions: ", cd.Status.ClusterVersionStatus.Conditions)
 			if len(cd.Status.ClusterVersionStatus.Conditions) > 0 {
