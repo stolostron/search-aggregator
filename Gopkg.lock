@@ -177,6 +177,31 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:e1344975c04aa608f40cc3060621c4e6bcb821ca3fa1e9b0747af83f90a81409"
+  name = "github.com/openshift/api"
+  packages = ["config/v1"]
+  pruneopts = "UT"
+  revision = "2cf49d05c5e272dbce4d65f4c5c1744000cb42e7"
+
+[[projects]]
+  digest = "1:df33b848632163885eaa50084ff09ad238f5ff44408b6de77d2a7c5464c43f66"
+  name = "github.com/openshift/hive"
+  packages = [
+    "pkg/apis/hive/v1",
+    "pkg/apis/hive/v1/aws",
+    "pkg/apis/hive/v1/azure",
+    "pkg/apis/hive/v1/baremetal",
+    "pkg/apis/hive/v1/gcp",
+    "pkg/client/clientset-generated/clientset",
+    "pkg/client/clientset-generated/clientset/scheme",
+    "pkg/client/clientset-generated/clientset/typed/hive/v1",
+  ]
+  pruneopts = "UT"
+  revision = "b30a64113b55e008fd7f93941a57342307ba6fdc"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
   digest = "1:89da0f0574bc94cfd0ac8b59af67bf76cdd110d503df2721006b9f0492394333"
   name = "github.com/petar/GoLLRB"
   packages = ["llrb"]
@@ -433,11 +458,44 @@
   version = "kubernetes-1.13.12"
 
 [[projects]]
-  digest = "1:19fb35119c36d2da37f653b742679e81c9cd86a6f3c8dca9ae2c104c0babb9a9"
+  digest = "1:71b5e58afddb419ff132dea9a6ca0ad2f658ae9cc58ea1d64859b2b776a14821"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
+    "kubernetes",
     "kubernetes/scheme",
+    "kubernetes/typed/admissionregistration/v1alpha1",
+    "kubernetes/typed/admissionregistration/v1beta1",
+    "kubernetes/typed/apps/v1",
+    "kubernetes/typed/apps/v1beta1",
+    "kubernetes/typed/apps/v1beta2",
+    "kubernetes/typed/auditregistration/v1alpha1",
+    "kubernetes/typed/authentication/v1",
+    "kubernetes/typed/authentication/v1beta1",
+    "kubernetes/typed/authorization/v1",
+    "kubernetes/typed/authorization/v1beta1",
+    "kubernetes/typed/autoscaling/v1",
+    "kubernetes/typed/autoscaling/v2beta1",
+    "kubernetes/typed/autoscaling/v2beta2",
+    "kubernetes/typed/batch/v1",
+    "kubernetes/typed/batch/v1beta1",
+    "kubernetes/typed/batch/v2alpha1",
+    "kubernetes/typed/certificates/v1beta1",
+    "kubernetes/typed/coordination/v1beta1",
+    "kubernetes/typed/core/v1",
+    "kubernetes/typed/events/v1beta1",
+    "kubernetes/typed/extensions/v1beta1",
+    "kubernetes/typed/networking/v1",
+    "kubernetes/typed/policy/v1beta1",
+    "kubernetes/typed/rbac/v1",
+    "kubernetes/typed/rbac/v1alpha1",
+    "kubernetes/typed/rbac/v1beta1",
+    "kubernetes/typed/scheduling/v1alpha1",
+    "kubernetes/typed/scheduling/v1beta1",
+    "kubernetes/typed/settings/v1alpha1",
+    "kubernetes/typed/storage/v1",
+    "kubernetes/typed/storage/v1alpha1",
+    "kubernetes/typed/storage/v1beta1",
     "pkg/apis/clientauthentication",
     "pkg/apis/clientauthentication/v1alpha1",
     "pkg/apis/clientauthentication/v1beta1",
@@ -453,6 +511,7 @@
     "tools/clientcmd/api/v1",
     "tools/metrics",
     "tools/pager",
+    "tools/reference",
     "transport",
     "util/buffer",
     "util/cert",
@@ -493,6 +552,17 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:68cd93696d4de06936c94bf0c510802140c2d3c956b557f3d001430d58cf676c"
+  name = "sigs.k8s.io/controller-runtime"
+  packages = [
+    "pkg/runtime/scheme",
+    "pkg/scheme",
+  ]
+  pruneopts = "UT"
+  revision = "67ee49a35456387c35b01aaaf26a6add1fe49c32"
+  version = "v0.5.2"
+
+[[projects]]
   digest = "1:36d2b2cb1fa6e4a731e38c3582c203213cdbc52c5f202af07db6dc6eeaec88dc"
   name = "sigs.k8s.io/yaml"
   packages = ["."]
@@ -509,9 +579,13 @@
     "github.com/gorilla/mux",
     "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1",
     "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset",
+    "github.com/openshift/hive/pkg/apis/hive/v1",
+    "github.com/openshift/hive/pkg/client/clientset-generated/clientset",
     "github.com/redislabs/redisgraph-go",
     "github.com/stretchr/testify/assert",
+    "k8s.io/api/batch/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/cache",
     "k8s.io/client-go/tools/clientcmd",
