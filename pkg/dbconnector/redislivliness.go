@@ -4,6 +4,7 @@ OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
 The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
 */
+// Copyright (c) 2020 Red Hat, Inc.
 
 package dbconnector
 
@@ -25,7 +26,10 @@ func RedisWatcher() {
 		if err != nil {
 			glog.Warningf("Failed to PING redis - clear in memory data ")
 			clearClusterCache()
-			conn.Close()
+			connError := conn.Close()
+			if connError != nil {
+				glog.Warning("Failed to close redis connection. Original error: ", connError)
+			}
 			break
 		}
 		time.Sleep(interval)
@@ -48,7 +52,10 @@ func createClustersCache(key string, val map[string]interface{}) {
 		//  if Redis is up start Watcher
 		conn := Pool.Get()
 		_, err := conn.Do("PING")
-		conn.Close()
+		connError := conn.Close()
+		if connError != nil {
+			glog.Warning("Failed to close redis connection. Original error: ", connError)
+		}
 		if err != nil {
 			clearClusterCache()
 		} else {
