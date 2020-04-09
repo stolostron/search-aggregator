@@ -91,7 +91,10 @@ func getRedisConnection() (redis.Conn, error) {
 		glog.V(2).Info("Authenticating Redis client using password from REDIS_PASSWORD.")
 		if _, err := redisConn.Do("AUTH", config.Cfg.RedisPassword); err != nil {
 			glog.Error("Error authenticating Redis client. Original error: ", err)
-			redisConn.Close()
+			connError := redisConn.Close()
+			if connError != nil {
+				glog.Warning("Error closing redis connection. Original error: ", connError)
+			}
 			return nil, err
 		}
 	} else {
