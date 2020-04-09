@@ -10,6 +10,7 @@ package clustermgmt
 import (
 	"encoding/json"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
@@ -26,13 +27,13 @@ import (
 )
 
 var CurrClusterName string
+var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
+var statClusterMapMutex = sync.RWMutex{}
 
 const HIVE_DOMAIN = "hive.openshift.io"
 const UNINSTALL_LABEL = HIVE_DOMAIN + "/uninstall"
 const INSTALL_LABEL = HIVE_DOMAIN + "/install"
 const CLUSTER_LABEL = HIVE_DOMAIN + "/cluster-deployment-name"
-
-var anyClusterPending bool // Install/uninstall jobs might take some time to start - if cluster is pending, we use anyClusterPending bool to restart the clusterInformer in order to update cluster status
 
 type ClusterStat struct {
 	cluster           *clusterregistry.Cluster
@@ -46,6 +47,7 @@ type ClusterStat struct {
 func WatchClusters() {
 
 	clusterClient, mcmClient, err := config.InitClient()
+	statClusterMap = map[string]bool{}
 	if err != nil {
 		glog.Info("Unable to create clientset ", err)
 	}
@@ -93,13 +95,12 @@ func WatchClusters() {
 				informerRunning = true
 				go clusterInformer.Run(stopper)
 			} else {
-				if anyClusterPending {
+				if len(statClusterMap) > 0 {
 					glog.Info("Warning: Will restart cluster informer routine for cluster watch")
-					// stopper <- struct{}{}
-					// stopper = make(chan struct{})
-					// informerRunning = true
-					// anyClusterPending = false
-					// go clusterInformer.Run(stopper)
+					stopper <- struct{}{}
+					stopper = make(chan struct{})
+					informerRunning = true
+					go clusterInformer.Run(stopper)
 				}
 			}
 		}
@@ -161,10 +162,29 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	//resource.Properties["status"] = getStatus(cluster, clusterStatus, uninstallJobs, installJobs, clusterDeployment)
 
 	glog.Info("status set for cluster: ", resource.Properties["status"])
-	if resource.Properties["status"] != "ok" && resource.Properties["status"] != "offline" && resource.Properties["status"] != "detached" {
-		// Install/uninstall jobs might take some time to start - if cluster is pending, we use anyClusterPending bool to restart the clusterInformer in order to update cluster status -
-		//TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
-		anyClusterPending = true
+	clustName, ok := resource.Properties["name"].(string)
+	// Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use statClusterMap to restart the clusterInformer in order to update cluster status -
+	//TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
+	if ok {
+		statClusterMapMutex.RLock()
+		present := statClusterMap[clustName]
+		statClusterMapMutex.RUnlock()
+
+		if present {
+			//delete the cluster from map if status is not unknown anymore
+			if resource.Properties["status"] != "unknown" {
+				statClusterMapMutex.Lock()
+				delete(statClusterMap, clustName)
+				statClusterMapMutex.Unlock()
+			}
+		} else {
+			//add the cluster to map if status is unknown
+			if resource.Properties["status"] == "unknown" {
+				statClusterMapMutex.Lock()
+				statClusterMap[clustName] = true
+				statClusterMapMutex.Unlock()
+			}
+		}
 	}
 
 	//Ensure that the cluster resource is still present before inserting into Redisgraph. Race conditions are seen between add and delete resources
