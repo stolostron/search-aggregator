@@ -61,7 +61,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	if len(duplicatedResources) > 0 {
 		glog.Warningf("RedisGraph contains duplicate records for some UIDs in cluster %s. Total uids duplicates: %d", clusterName, len(duplicatedResources))
 		for dupeUID, dupeCount := range duplicatedResources {
-			_, delError := db.Store.Query(fmt.Sprintf("MATCH (n {_uid:'%s'}) DELETE n", dupeUID))
+			_, delError := db.Store.Query(db.SanitizeQuery("MATCH (n {_uid:'%s'}) DELETE n", dupeUID))
 			if delError != nil {
 				glog.Error("Error deleting duplicates for ", dupeUID, delError)
 			}
