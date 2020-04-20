@@ -2,8 +2,10 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
 */
+// Copyright (c) 2020 Red Hat, Inc.
 
 package handlers
 
@@ -65,7 +67,7 @@ func BuildInterClusterEdges() {
 }
 
 func getUIDsForSubscriptions() (rg.QueryResult, error) {
-	query := "MATCH (n {kind: 'subscription'})  RETURN n._uid"
+	query := "MATCH (n {kind: 'subscription'}) RETURN n._uid"
 	uidResults, err := db.Store.Query(query)
 	return uidResults, err
 }
@@ -199,17 +201,17 @@ func buildSubscriptions() (rg.QueryResult, error) {
 					//TODO: For the subscription model, all intercluster edges are named as 'hostedSub {_interCluster: true}'. Change this to relevant names in future
 					//To add edges from hubSub to all resources connected to the remoteSub (bidirectional) - incoming edges and outgoing edges
 					// Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
-					query1 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})-[]->(n) WHERE n.kind != 'application' AND n.kind != 'subscription' CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance, currentAppInstance)
+					query1 := db.SanitizeQuery("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})-[]->(n) WHERE n.kind != 'application' AND n.kind != 'subscription' CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance, currentAppInstance)
 					// Add edges from hubSub to all resources that flow into remoteSub eg: pods, deployments, services, replicasets etc.
-					query2 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
+					query2 := db.SanitizeQuery("MATCH (hubSub {_uid: '%s'}), (remoteSub {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance )
 					// Connect all resources that flow into remoteSub with the hubsub's channel
-					query3 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})-[]->(chan) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE chan.kind = 'channel' CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(chan)", hubSubUID, remoteSub[0], currentAppInstance)
+					query3 := db.SanitizeQuery("MATCH (hubSub {_uid: '%s'})-[]->(chan) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE chan.kind = 'channel' CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(chan)", hubSubUID, remoteSub[0], currentAppInstance)
 					// Connect the remoteSub with the hubsub's application
-					query4 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})  WHERE app.kind = 'application' CREATE (remoteSub)-[:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
+					query4 := db.SanitizeQuery("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})  WHERE app.kind = 'application' CREATE (remoteSub)-[:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
 					// Connect all resources that flow into remoteSub with the hubsub's application
-					query5 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE app.kind = 'application' CREATE (n)-[r:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
+					query5 := db.SanitizeQuery("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})<-[]-(n)  WHERE app.kind = 'application' CREATE (n)-[r:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
 					// Connect resources that are connected to remoteSub with the hubsub's application - add check to avoid connecting application to itself
-					query6 := fmt.Sprintf("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})-[]->(n)  WHERE app.kind = 'application' AND n.kind != 'application' AND n.kind != 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
+					query6 := db.SanitizeQuery("MATCH (hubSub {_uid: '%s'})<-[]-(app) ,  (remoteSub {_uid: '%s'})-[]->(n)  WHERE app.kind = 'application' AND n.kind != 'application' AND n.kind != 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
 
 					queries := [...]string{query1, query2, query3, query4, query5, query6}
 					for _, query := range queries {
