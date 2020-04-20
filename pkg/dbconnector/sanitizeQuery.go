@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Escape or remove any characters that could break the query.
+// Escape any characters that could break the openCypher query.
 func sanitizeValue(value string) string {
 	res1 := strings.Replace(value, "\"", "\\\"", -1) // Escape all double quotes. A double quote would finalize the openCypher query.
 	res2 := strings.Replace(res1, "'", "\\'", -1)    // Escape all single quotes. A single quote would finalize the openCypher query.
