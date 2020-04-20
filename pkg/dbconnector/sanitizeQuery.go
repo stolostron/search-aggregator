@@ -1,10 +1,3 @@
-/*
-IBM Confidential
-OCO Source Materials
-(C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets,
-irrespective of what has been deposited with the U.S. Copyright Office.
-*/
 // Copyright (c) 2020 Red Hat, Inc.
 
 package dbconnector
@@ -21,9 +14,9 @@ func sanitizeValue(value string) string {
 	return res2
 }
 
-// Sanitizes openCypher query. Similar to SQL injection, an attacker could inject malicious code into the openCypher query.
+// Sanitizes openCypher query.
+// Similar to SQL injection, an attacker could inject malicious code into the openCypher query.
 func SanitizeQuery(queryTemplate string, values ...interface{}) string {
-	
 	sanitizedValues := make([]interface{}, len(values))
 	for i, value := range values {
 		switch typedVal := value.(type) {

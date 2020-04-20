@@ -47,7 +47,6 @@ func DeleteCluster(clusterName string) (QueryResult, error) {
 		return QueryResult{}, err
 	}
 	query := SanitizeQuery("MATCH (n {cluster:'%s'}) DELETE n", clusterName)
-	// query := fmt.Sprintf("MATCH (n {cluster:'%s'}) DELETE n", clusterName)
 	return Store.Query(query)
 }
 
@@ -57,7 +56,6 @@ func TotalNodes(clusterName string) (QueryResult, error) {
 		return QueryResult{}, err
 	}
 	query := SanitizeQuery("MATCH (n {cluster:'%s'}) RETURN count(n)", clusterName)
-	// query := fmt.Sprintf("MATCH (n {cluster:'%s'}) RETURN count(n)", clusterName)
 	return Store.Query(query)
 }
 
@@ -68,7 +66,6 @@ func TotalIntraEdges(clusterName string) (QueryResult, error) {
 		return QueryResult{}, err
 	}
 	query := SanitizeQuery("MATCH (s {cluster:'%s'})-[e]->(d) WHERE e._interCluster != true RETURN count(e)", clusterName)
-	// query := fmt.Sprintf("MATCH (s {cluster:'%s'})-[e]->(d) WHERE e._interCluster != true RETURN count(e)", clusterName)
 	resp, err := Store.Query(query)
 	return resp, err
 }
@@ -85,7 +82,7 @@ func MergeDummyCluster(name string) (QueryResult, error) {
 	} else {
 		glog.Error("ClusterClient not initialized")
 	}
-	query := fmt.Sprintf("MERGE (c:Cluster {name: '%s', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", name, kubeVersion)
+	query := SanitizeQuery("MERGE (c:Cluster {name: '%s', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", name, kubeVersion)
 	return Store.Query(query)
 }
 
@@ -94,6 +91,6 @@ func CheckClusterResource(clusterName string) (QueryResult, error) {
 	if err != nil {
 		return QueryResult{}, err
 	}
-	query := fmt.Sprintf("MATCH (c:Cluster {name: '%s'}) RETURN count(c)", clusterName)
+	query := SanitizeQuery("MATCH (c:Cluster {name: '%s'}) RETURN count(c)", clusterName)
 	return Store.Query(query)
 }
