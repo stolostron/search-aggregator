@@ -22,7 +22,7 @@ func SanitizeQuery(queryTemplate string, values ...interface{}) string {
 		switch typedVal := value.(type) {
 		case string:
 			sanitizedValues[i] = sanitizeValue(typedVal)
-		case default:
+		default:
 			sanitizedValues[i] = typedVal
 		}
 	}

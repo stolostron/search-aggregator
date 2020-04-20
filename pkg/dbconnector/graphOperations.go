@@ -10,8 +10,6 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 package dbconnector
 
 import (
-	"fmt"
-
 	"github.com/golang/glog"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 )
