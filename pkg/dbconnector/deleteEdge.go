@@ -95,7 +95,7 @@ func deleteEdgeQuery(edges []Edge) string {
 		deleteStrings = append(deleteStrings, fmt.Sprintf("e%d", i)) // e.g. e0
 	}
 
-	/* #nosec G201 - Input sanitized above. */
+	/* #nosec G201 - Input is sanitized above. */
 	queryString := fmt.Sprintf("MATCH %s DELETE %s", strings.Join(matchStrings, ", "), strings.Join(deleteStrings, ", "))
 
 	return queryString

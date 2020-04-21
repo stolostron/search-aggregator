@@ -87,7 +87,7 @@ func deleteQuery(uids []string) string {
 		clauseStrings = append(clauseStrings, SanitizeQuery("n._uid='%s'", uid))
 	}
 
-	/* #nosec G201 - Input sanitized above. */
+	/* #nosec G201 - Input is sanitized above. */
 	queryString := fmt.Sprintf("MATCH (n) WHERE (%s) DELETE n", strings.Join(clauseStrings, " OR ")) // e.g. MATCH (n) WHERE (n._uid='uid1' OR n._uid='uid2') DELETE n
 
 	return queryString
