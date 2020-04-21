@@ -112,7 +112,7 @@ func TestGetStatusOffline(t *testing.T) {
 
 	testcd := hive.ClusterDeployment{}
 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("clusterOffline.json", &testcluster, t)
+	utils.UnmarshalFile("cluster-offline.json", &testcluster, t)
 	utils.UnmarshalFile("cluster-cd-detached.json", &testcd, t)
 
 	result := getStatus(clustStat)
