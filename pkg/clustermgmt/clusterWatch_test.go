@@ -2,7 +2,8 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
 */
 // Copyright (c) 2020 Red Hat, Inc.
 
@@ -23,8 +24,8 @@ import (
 func TestTransformCluster(t *testing.T) {
 	testcluster := clusterregistry.Cluster{}
 	testclusterstatus := mcmapi.ClusterStatus{}
-	utils.UnmarshalFile("../../test-data/cluster.json", &testcluster, t)
-	utils.UnmarshalFile("../../test-data/clusterstatus.json", &testclusterstatus, t)
+	utils.UnmarshalFile("cluster.json", &testcluster, t)
+	utils.UnmarshalFile("clusterstatus.json", &testclusterstatus, t)
 	result := transformCluster(&testcluster, &testclusterstatus)
 	assert.Equal(t, result.Kind, "Cluster", "Test Kind")
 	assert.Equal(t, result.ResourceString, "clusters", "Test ResourceString")
@@ -49,10 +50,10 @@ func TestGetStatusCreating(t *testing.T) {
 
 	testcd := hive.ClusterDeployment{}
 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("../../test-data/cluster2.json", &testcluster, t)
-	utils.UnmarshalFile("../../test-data/clusterstatus.json", &testclusterstatus, t)
-	utils.UnmarshalFile("../../test-data/clusterinstalljob.json", &testinstalljob, t)
-	utils.UnmarshalFile("../../test-data/clustercd.json", &testcd, t)
+	utils.UnmarshalFile("cluster2.json", &testcluster, t)
+	utils.UnmarshalFile("clusterstatus.json", &testclusterstatus, t)
+	utils.UnmarshalFile("clusterinstalljob.json", &testinstalljob, t)
+	utils.UnmarshalFile("clustercd.json", &testcd, t)
 
 	result := getStatus(clustStat)
 	assert.Equal(t, result, "creating", "Test Status")
@@ -66,8 +67,8 @@ func TestGetStatusPending(t *testing.T) {
 
 	testcd := hive.ClusterDeployment{}
 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("../../test-data/cluster2.json", &testcluster, t)
-	utils.UnmarshalFile("../../test-data/clustercdDetached.json", &testcd, t)
+	utils.UnmarshalFile("cluster2.json", &testcluster, t)
+	utils.UnmarshalFile("cluster-cd-detached.json", &testcd, t)
 
 	result := getStatus(clustStat)
 	assert.Equal(t, result, "pending", "Test Status")
@@ -81,8 +82,8 @@ func TestGetStatusDetaching(t *testing.T) {
 
 	testcd := hive.ClusterDeployment{}
 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("../../test-data/clusterDetaching.json", &testcluster, t)
-	utils.UnmarshalFile("../../test-data/clustercd.json", &testcd, t)
+	utils.UnmarshalFile("cluster-detaching.json", &testcluster, t)
+	utils.UnmarshalFile("clustercd.json", &testcd, t)
 
 	result := getStatus(clustStat)
 	assert.Equal(t, result, "detaching", "Test Status")
@@ -96,8 +97,8 @@ func TestGetStatusUnknown(t *testing.T) {
 
 	testcd := hive.ClusterDeployment{}
 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("../../test-data/cluster2.json", &testcluster, t)
-	utils.UnmarshalFile("../../test-data/clustercd.json", &testcd, t)
+	utils.UnmarshalFile("cluster2.json", &testcluster, t)
+	utils.UnmarshalFile("clustercd.json", &testcd, t)
 
 	result := getStatus(clustStat)
 	assert.Equal(t, result, "unknown", "Test Status")
@@ -111,8 +112,8 @@ func TestGetStatusOffline(t *testing.T) {
 
 	testcd := hive.ClusterDeployment{}
 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("../../test-data/clusterOffline.json", &testcluster, t)
-	utils.UnmarshalFile("../../test-data/clustercdDetached.json", &testcd, t)
+	utils.UnmarshalFile("cluster-offline.json", &testcluster, t)
+	utils.UnmarshalFile("cluster-cd-detached.json", &testcd, t)
 
 	result := getStatus(clustStat)
 	assert.Equal(t, result, "offline", "Test Status")
@@ -122,7 +123,7 @@ func TestJobActive(t *testing.T) {
 
 	testjob := &batch.JobList{}
 
-	utils.UnmarshalFile("../../test-data/clusterinstalljob.json", &testjob, t)
+	utils.UnmarshalFile("clusterinstalljob.json", &testjob, t)
 	assert.Equal(t, chkJobActive(testjob, "install"), "creating", "Test Status")
 	assert.Equal(t, chkJobActive(testjob, "uninstall"), "destroying", "Test Status")
 }

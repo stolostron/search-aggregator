@@ -2,8 +2,10 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
 */
+// Copyright (c) 2020 Red Hat, Inc.
 
 package dbconnector
 
@@ -84,9 +86,10 @@ func deleteQuery(uids []string) string {
 
 	clauseStrings := []string{} // Build the clauses to filter down to only the ones we want.
 	for _, uid := range uids {
-		clauseStrings = append(clauseStrings, fmt.Sprintf("n._uid='%s'", uid))
+		clauseStrings = append(clauseStrings, SanitizeQuery("n._uid='%s'", uid))
 	}
 
+	/* #nosec G201 - Input is sanitized above. */
 	queryString := fmt.Sprintf("MATCH (n) WHERE (%s) DELETE n", strings.Join(clauseStrings, " OR ")) // e.g. MATCH (n) WHERE (n._uid='uid1' OR n._uid='uid2') DELETE n
 
 	return queryString

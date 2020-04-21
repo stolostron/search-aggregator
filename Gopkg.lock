@@ -128,6 +128,14 @@
   version = "v1.1.9"
 
 [[projects]]
+  digest = "1:e30ac47ee84d7d354e0a284cf742e3015400667e90aa3d6ae99c7a55da67c645"
+  name = "github.com/kennygrant/sanitize"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ec0d0dbcd497d01e5189b16f5263f712e61a8e"
+  version = "v1.2.4"
+
+[[projects]]
   digest = "1:eb1bffab7260bf5ddc95fc2c41d4bfee1a4f5fe18194b3946fe8a9e9121a282f"
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
@@ -257,11 +265,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:96c0696233ec0e7c9f472c53c8fa3d2c50f476341d24f101236367d80ef0ca19"
+  digest = "1:186c4ba7133ad9e5bfd0d9729abde490d6f3796cfe80ce74dcfd7b5b2753c264"
   name = "golang.org/x/net"
   packages = [
     "context",
     "context/ctxhttp",
+    "html",
+    "html/atom",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -577,6 +587,7 @@
     "github.com/golang/glog",
     "github.com/gomodule/redigo/redis",
     "github.com/gorilla/mux",
+    "github.com/kennygrant/sanitize",
     "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1",
     "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset",
     "github.com/openshift/hive/pkg/apis/hive/v1",
