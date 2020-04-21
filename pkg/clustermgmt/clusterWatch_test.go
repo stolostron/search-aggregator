@@ -68,7 +68,7 @@ func TestGetStatusPending(t *testing.T) {
 	testcd := hive.ClusterDeployment{}
 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
 	utils.UnmarshalFile("cluster2.json", &testcluster, t)
-	utils.UnmarshalFile("clustercdDetached.json", &testcd, t)
+	utils.UnmarshalFile("cluster-cd-detached.json", &testcd, t)
 
 	result := getStatus(clustStat)
 	assert.Equal(t, result, "pending", "Test Status")
@@ -82,7 +82,7 @@ func TestGetStatusDetaching(t *testing.T) {
 
 	testcd := hive.ClusterDeployment{}
 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("clusterDetaching.json", &testcluster, t)
+	utils.UnmarshalFile("cluster-detaching.json", &testcluster, t)
 	utils.UnmarshalFile("clustercd.json", &testcd, t)
 
 	result := getStatus(clustStat)
@@ -113,7 +113,7 @@ func TestGetStatusOffline(t *testing.T) {
 	testcd := hive.ClusterDeployment{}
 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
 	utils.UnmarshalFile("clusterOffline.json", &testcluster, t)
-	utils.UnmarshalFile("clustercdDetached.json", &testcd, t)
+	utils.UnmarshalFile("cluster-cd-detached.json", &testcd, t)
 
 	result := getStatus(clustStat)
 	assert.Equal(t, result, "offline", "Test Status")
