@@ -10,7 +10,6 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 package handlers
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -224,7 +223,7 @@ func buildSubscriptions() (rg.QueryResult, error) {
 			}
 		}
 		//Delete interclusters with other instance ids after all hub subscriptions are processed
-		deleteOldInstance := fmt.Sprintf("MATCH ()-[e {_interCluster:true}]->() WHERE (type(e)='hostedSub' OR type(e)='usedBy' OR type(e)='deployedBy') AND e.app_instance!=%d delete e", currentAppInstance)
+		deleteOldInstance := db.SanitizeQuery("MATCH ()-[e {_interCluster:true}]->() WHERE (type(e)='hostedSub' OR type(e)='usedBy' OR type(e)='deployedBy') AND e.app_instance!=%d DELETE e", currentAppInstance)
 		_, err = db.Store.Query(deleteOldInstance)
 		if err != nil {
 			return rg.QueryResult{}, err
