@@ -29,6 +29,10 @@
 [[constraint]]
   name = "github.com/open-cluster-management/multicloud-operators-foundation"
   branch = "master"
+  
+[[constraint]]
+  version = "v1.2.4"
+  name = "github.com/kennygrant/sanitize"
 
 [prune]
   go-tests = true
