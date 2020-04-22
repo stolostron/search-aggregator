@@ -13,6 +13,7 @@ deps:
 	# go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 	go get -u github.com/golang/dep/cmd/dep
 	dep ensure -v
+	go install ./vendor/github.com/golangci/golangci-lint/cmd/golangci-lint
 
 .PHONY: search-aggregator
 search-aggregator:
