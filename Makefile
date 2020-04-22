@@ -10,6 +10,10 @@ default::
 
 .PHONY: deps
 deps:
+    # TEMPORARILY disable linter because we are unable to install it with the current version of go 1.11.13
+	# We have been unsuccessful tracing what suddenly cause this problem. Skipping linter to unblock us from
+	# delivering code fixes while we find the solution.
+	#
 	# go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 	go get -u github.com/golang/dep/cmd/dep
 	dep ensure -v
@@ -28,7 +32,7 @@ build-linux:
 
 .PHONY: lint
 lint:
-	@echo "!!! Lint temporarily disabled because of issues getting golangci-lint !!!"
+	@echo "!!! LINTER temporarily disabled because of issues getting golangci-lint !!!"
 	# golangci-lint run --timeout=2m
 
 .PHONY: test
