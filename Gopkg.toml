@@ -40,7 +40,6 @@ required = ["github.com/golangci/golangci-lint/cmd/golangci-lint"]
   name = "github.com/golangci/golangci-lint"
   version = "v1.21.0"
 
-
 [prune]
   go-tests = true
   unused-packages = true

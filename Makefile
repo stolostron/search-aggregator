@@ -28,7 +28,8 @@ build-linux:
 
 .PHONY: lint
 lint:
-	golangci-lint run --timeout=2m
+	@echo "!!! Lint temporarily disabled because of issues getting golangci-lint !!!"
+	# golangci-lint run --timeout=2m
 
 .PHONY: test
 test:
