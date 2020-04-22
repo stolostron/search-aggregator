@@ -1,3 +1,5 @@
+required = ["github.com/golangci/golangci-lint/cmd/golangci-lint"]
+
 [[constraint]]
   branch = "master"
   name = "github.com/golang/glog"
@@ -33,6 +35,10 @@
 [[constraint]]
   version = "v1.2.4"
   name = "github.com/kennygrant/sanitize"
+  
+[[constraint]]
+  name = "github.com/golangci/golangci-lint"
+  version = "v1.21.0"
 
 [prune]
   go-tests = true
