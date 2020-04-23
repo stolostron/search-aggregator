@@ -145,7 +145,7 @@ func insertQuery(resources []*Resource, clusterName string) (string, map[string]
 
 	// need to match the cluster node so we can reference it
 	if clusterName != "" {
-		queryString = fmt.Sprintf("MATCH (c:Cluster {name: '%s'})", clusterName) + queryString
+		queryString = SanitizeQuery("MATCH (c:Cluster {name: '%s'})", clusterName) + queryString
 	}
 
 	return queryString, encodingErrors

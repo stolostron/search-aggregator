@@ -37,9 +37,9 @@ func ChunkedInsertEdge(resources []Edge) ChunkedOperationResult {
 	for i := range resources {
 		// add dest uid for each node in the group to where clause
 		if whereClause.Len() == 0 {
-			fmt.Fprintf(&whereClause, "WHERE d._uid='%s'", resources[i].DestUID)
+			fmt.Fprint(&whereClause, SanitizeQuery("WHERE d._uid='%s'", resources[i].DestUID))
 		} else {
-			fmt.Fprintf(&whereClause, " OR d._uid='%s'", resources[i].DestUID)
+			fmt.Fprint(&whereClause, SanitizeQuery(" OR d._uid='%s'", resources[i].DestUID))
 		}
 
 		currentLength++

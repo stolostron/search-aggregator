@@ -2,8 +2,10 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
 */
+// Copyright (c) 2020 Red Hat, Inc.
 
 package handlers
 
@@ -21,7 +23,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	glog.Info("Resync for cluster: ", clusterName)
 
 	// First get the existing resources from the datastore for the cluster
-	result, error := db.Store.Query(fmt.Sprintf("MATCH (n {cluster: '%s'})  RETURN n", clusterName))
+	result, error := db.Store.Query(db.SanitizeQuery("MATCH (n {cluster: '%s'}) RETURN n", clusterName))
 
 	if error != nil {
 		glog.Error("Error getting existing resources for cluster ", clusterName)
@@ -61,7 +63,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	if len(duplicatedResources) > 0 {
 		glog.Warningf("RedisGraph contains duplicate records for some UIDs in cluster %s. Total uids duplicates: %d", clusterName, len(duplicatedResources))
 		for dupeUID, dupeCount := range duplicatedResources {
-			_, delError := db.Store.Query(fmt.Sprintf("MATCH (n {_uid:'%s'}) DELETE n", dupeUID))
+			_, delError := db.Store.Query(db.SanitizeQuery("MATCH (n {_uid:'%s'}) DELETE n", dupeUID))
 			if delError != nil {
 				glog.Error("Error deleting duplicates for ", dupeUID, delError)
 			}
