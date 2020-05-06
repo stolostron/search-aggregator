@@ -183,7 +183,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	if err != nil {
 		glog.Warningf("The cluster %s to add/update is not present anymore.", cluster.Name)
 		delCluster(cluster)
-		return;
+		return
 	}
 
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
@@ -280,8 +280,9 @@ func chkJobActive(jobs *batch.JobList, action string) string {
 	return ""
 }
 
+// Deletes a cluster resource and all resourcces from the cluster.
 func delCluster(cluster *clusterregistry.Cluster) {
-	glog.Info("Deleting Cluster resource ", cluster.Name, " from data store.")
+	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", cluster.Name)
 	uid := string(cluster.GetUID())
 	_, err := db.Delete([]string{uid})
 	if err != nil {
@@ -290,8 +291,8 @@ func delCluster(cluster *clusterregistry.Cluster) {
 	delClusterResources(cluster)	
 }
 
+// Removes all the resources for a cluster, but doesn't remove the Cluster resource object.
 func delClusterResources(cluster *clusterregistry.Cluster) {
-	// When a cluster (ClusterStatus) gets deleted, we must remove all resources for that cluster from datastore.
 	_, err := db.DeleteCluster(cluster.GetName())
 	if err != nil {
 		glog.Error("Error deleting current resources for cluster: ", err)
