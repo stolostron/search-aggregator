@@ -178,10 +178,12 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 		}
 	}
 
-	//Ensure that the cluster resource is still present before inserting into Redisgraph.
+	// Ensure that the cluster resource is still present before inserting into data store.
 	c, err := config.ClusterClient.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
 	if err != nil {
-		glog.Warningf("The cluster %s to add/update is not present anymore", cluster.Name)
+		glog.Warningf("The cluster %s to add/update is not present anymore.", cluster.Name)
+		delCluster(cluster)
+		return
 	}
 
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
@@ -198,15 +200,10 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 		return
 	}
 
-	/// If a cluster is offline we should remove the cluster objects
+	// If a cluster is offline we remove the resources from that cluster, but leave the cluster resource object.
 	if resource.Properties["status"] == "offline" {
-		glog.Infof("Cluster %s appears to be offline, removing cluster resources from redis", cluster.GetName())
-		_, err := db.DeleteCluster(cluster.GetName())
-		if err != nil {
-			glog.Error("Error deleting current resources for cluster: ", err)
-		} else {
-			db.DeleteClustersCache(resource.UID)
-		}
+		glog.Infof("Cluster %s is offline, removing cluster resources from datastore.", cluster.GetName())
+		delClusterResources(cluster)
 	}
 }
 
@@ -283,18 +280,24 @@ func chkJobActive(jobs *batch.JobList, action string) string {
 	return ""
 }
 
+// Deletes a cluster resource and all resourcces from the cluster.
 func delCluster(cluster *clusterregistry.Cluster) {
-	glog.Info("Deleting Cluster resource ", cluster.Name, " from RedisGraph.")
+	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", cluster.Name)
 	uid := string(cluster.GetUID())
 	_, err := db.Delete([]string{uid})
 	if err != nil {
 		glog.Error("Error deleting Cluster kind with error: ", err)
 	}
+	delClusterResources(cluster)	
+}
 
-	// When a cluster (ClusterStatus) gets deleted, we must remove all resources for that cluster from RedisGraph.
-	_, err = db.DeleteCluster(cluster.GetName())
+// Removes all the resources for a cluster, but doesn't remove the Cluster resource object.
+func delClusterResources(cluster *clusterregistry.Cluster) {
+	_, err := db.DeleteCluster(cluster.GetName())
 	if err != nil {
 		glog.Error("Error deleting current resources for cluster: ", err)
+	} else {
+		db.DeleteClustersCache(string(cluster.GetUID()))
 	}
 }
 
