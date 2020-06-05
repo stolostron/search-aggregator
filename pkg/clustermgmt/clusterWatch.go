@@ -19,7 +19,7 @@ import (
 	mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
-	hive "github.com/openshift/hive/pkg/apis/hive/v1"
+	// hive "github.com/openshift/hive/pkg/apis/hive/v1"
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -41,7 +41,7 @@ type ClusterStat struct {
 	clusterStatus     *mcm.ClusterStatus
 	uninstallJobs     *batch.JobList
 	installJobs       *batch.JobList
-	clusterdeployment *hive.ClusterDeployment
+	// clusterdeployment *hive.ClusterDeployment
 }
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
@@ -112,7 +112,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	var err error
 	var cluster *clusterregistry.Cluster
 	var clusterStatus *mcm.ClusterStatus
-	var clusterDeployment *hive.ClusterDeployment
+	// var clusterDeployment *hive.ClusterDeployment
 	var ok bool
 	var installJobs, uninstallJobs *batch.JobList
 
@@ -128,11 +128,11 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	}
 
 	//get the clusterDeployment if it exists
-	clusterDeployment, err = config.HiveClient.HiveV1().ClusterDeployments(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
-	if err != nil {
-		glog.Info("Failed to fetch cluster deployment: ", err)
-		clusterDeployment = nil //If there is an error fetching clusterDeployment, reset it to nil
-	}
+	// clusterDeployment, err = config.HiveClient.HiveV1().ClusterDeployments(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
+	// if err != nil {
+	// 	glog.Info("Failed to fetch cluster deployment: ", err)
+	// 	clusterDeployment = nil //If there is an error fetching clusterDeployment, reset it to nil
+	// }
 	//get install/uninstall jobs for cluster if they exist
 	jobs := config.KubeClient.BatchV1().Jobs(cluster.GetNamespace())
 	uninstallLabel := CLUSTER_LABEL + "=" + cluster.Name + "," + UNINSTALL_LABEL + "=true"
@@ -151,7 +151,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 		installJobs = nil //If there is an error fetching installJobs, reset it to nil
 	}
 	resource := transformCluster(cluster, clusterStatus)
-	clusterstat := ClusterStat{cluster: cluster, clusterStatus: clusterStatus, uninstallJobs: uninstallJobs, installJobs: installJobs, clusterdeployment: clusterDeployment}
+	clusterstat := ClusterStat{cluster: cluster, clusterStatus: clusterStatus, uninstallJobs: uninstallJobs, installJobs: installJobs, /*clusterdeployment: clusterDeployment*/}
 	resource.Properties["status"] = getStatus(clusterstat)
 	clustName, ok := resource.Properties["name"].(string)
 	// Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use statClusterMap to restart the clusterInformer in order to update cluster status -
@@ -313,30 +313,30 @@ func delClusterResources(cluster *clusterregistry.Cluster) {
 // If cluster is pending import because Hive is installing or uninstalling, cluster status based on jobs will be creating/destroying
 func getStatus(cs ClusterStat) string {
 	cluster := cs.cluster
-	cd := cs.clusterdeployment
+	// cd := cs.clusterdeployment
 
 	// we are using a combination of conditions to determine cluster status
 	var clusterdeploymentStatus, status string
 
-	if cd != nil {
-		if cs.uninstallJobs != nil && len(cs.uninstallJobs.Items) > 0 && chkJobActive(cs.uninstallJobs, "uninstall") != "" {
-			clusterdeploymentStatus = chkJobActive(cs.uninstallJobs, "uninstall")
-		} else if cs.installJobs != nil && len(cs.installJobs.Items) > 0 && chkJobActive(cs.installJobs, "install") != "" {
-			clusterdeploymentStatus = chkJobActive(cs.installJobs, "install")
-		} else {
-			clusterdeploymentStatus = "unknown"
-			if len(cd.Status.ClusterVersionStatus.Conditions) > 0 {
-				for _, condition := range cd.Status.ClusterVersionStatus.Conditions {
-					if condition.Type == "Available" {
-						if condition.Status == "True" {
-							clusterdeploymentStatus = "detached"
-						}
-						break
-					}
-				}
-			}
-		}
-	}
+	// if cd != nil {
+	// 	if cs.uninstallJobs != nil && len(cs.uninstallJobs.Items) > 0 && chkJobActive(cs.uninstallJobs, "uninstall") != "" {
+	// 		clusterdeploymentStatus = chkJobActive(cs.uninstallJobs, "uninstall")
+	// 	} else if cs.installJobs != nil && len(cs.installJobs.Items) > 0 && chkJobActive(cs.installJobs, "install") != "" {
+	// 		clusterdeploymentStatus = chkJobActive(cs.installJobs, "install")
+	// 	} else {
+	// 		clusterdeploymentStatus = "unknown"
+	// 		if len(cd.Status.ClusterVersionStatus.Conditions) > 0 {
+	// 			for _, condition := range cd.Status.ClusterVersionStatus.Conditions {
+	// 				if condition.Type == "Available" {
+	// 					if condition.Status == "True" {
+	// 						clusterdeploymentStatus = "detached"
+	// 					}
+	// 					break
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 	if cluster != nil {
 		if cluster.DeletionTimestamp != nil {
 			return "detaching"
