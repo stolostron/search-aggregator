@@ -11,7 +11,6 @@ package v1alpha1
 import (
 	v1alpha1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
 	"github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset/scheme"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -19,6 +18,7 @@ type McmV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	ClusterJoinRequestsGetter
 	ClusterStatusesGetter
+	LeaderVotesGetter
 	PlacementBindingsGetter
 	PlacementPoliciesGetter
 	ResourceViewsGetter
@@ -37,6 +37,10 @@ func (c *McmV1alpha1Client) ClusterJoinRequests() ClusterJoinRequestInterface {
 
 func (c *McmV1alpha1Client) ClusterStatuses(namespace string) ClusterStatusInterface {
 	return newClusterStatuses(c, namespace)
+}
+
+func (c *McmV1alpha1Client) LeaderVotes() LeaderVoteInterface {
+	return newLeaderVotes(c)
 }
 
 func (c *McmV1alpha1Client) PlacementBindings(namespace string) PlacementBindingInterface {
@@ -91,7 +95,7 @@ func setConfigDefaults(config *rest.Config) error {
 	gv := v1alpha1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
+	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
