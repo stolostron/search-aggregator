@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	github.com/golangci/golangci-lint v1.24.0 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect

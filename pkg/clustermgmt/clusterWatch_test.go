@@ -16,7 +16,7 @@ import (
 
 	mcmapi "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
 	utils "github.com/open-cluster-management/search-aggregator/pkg/utils"
-	hive "github.com/openshift/hive/pkg/apis/hive/v1"
+	// hive "github.com/openshift/hive/pkg/apis/hive/v1"
 	batch "k8s.io/api/batch/v1"
 	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 )
@@ -42,82 +42,82 @@ func TestTransformCluster(t *testing.T) {
 
 }
 
-func TestGetStatusCreating(t *testing.T) {
-	testcluster := &clusterregistry.Cluster{}
-	testclusterstatus := &mcmapi.ClusterStatus{}
-	testinstalljob := &batch.JobList{}
-	testuninstalljob := &batch.JobList{}
+// func TestGetStatusCreating(t *testing.T) {
+// 	testcluster := &clusterregistry.Cluster{}
+// 	testclusterstatus := &mcmapi.ClusterStatus{}
+// 	testinstalljob := &batch.JobList{}
+// 	testuninstalljob := &batch.JobList{}
 
-	testcd := hive.ClusterDeployment{}
-	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("cluster2.json", &testcluster, t)
-	utils.UnmarshalFile("clusterstatus.json", &testclusterstatus, t)
-	utils.UnmarshalFile("clusterinstalljob.json", &testinstalljob, t)
-	utils.UnmarshalFile("clustercd.json", &testcd, t)
+// 	testcd := hive.ClusterDeployment{}
+// 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
+// 	utils.UnmarshalFile("cluster2.json", &testcluster, t)
+// 	utils.UnmarshalFile("clusterstatus.json", &testclusterstatus, t)
+// 	utils.UnmarshalFile("clusterinstalljob.json", &testinstalljob, t)
+// 	utils.UnmarshalFile("clustercd.json", &testcd, t)
 
-	result := getStatus(clustStat)
-	assert.Equal(t, result, "creating", "Test Status")
-}
+// 	result := getStatus(clustStat)
+// 	assert.Equal(t, result, "creating", "Test Status")
+// }
 
-func TestGetStatusPending(t *testing.T) {
-	testcluster := &clusterregistry.Cluster{}
-	testclusterstatus := &mcmapi.ClusterStatus{}
-	testinstalljob := &batch.JobList{}
-	testuninstalljob := &batch.JobList{}
+// func TestGetStatusPending(t *testing.T) {
+// 	testcluster := &clusterregistry.Cluster{}
+// 	testclusterstatus := &mcmapi.ClusterStatus{}
+// 	testinstalljob := &batch.JobList{}
+// 	testuninstalljob := &batch.JobList{}
 
-	testcd := hive.ClusterDeployment{}
-	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("cluster2.json", &testcluster, t)
-	utils.UnmarshalFile("cluster-cd-detached.json", &testcd, t)
+// 	testcd := hive.ClusterDeployment{}
+// 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
+// 	utils.UnmarshalFile("cluster2.json", &testcluster, t)
+// 	utils.UnmarshalFile("cluster-cd-detached.json", &testcd, t)
 
-	result := getStatus(clustStat)
-	assert.Equal(t, result, "pending", "Test Status")
-}
+// 	result := getStatus(clustStat)
+// 	assert.Equal(t, result, "pending", "Test Status")
+// }
 
-func TestGetStatusDetaching(t *testing.T) {
-	testcluster := &clusterregistry.Cluster{}
-	testclusterstatus := &mcmapi.ClusterStatus{}
-	testinstalljob := &batch.JobList{}
-	testuninstalljob := &batch.JobList{}
+// func TestGetStatusDetaching(t *testing.T) {
+// 	testcluster := &clusterregistry.Cluster{}
+// 	testclusterstatus := &mcmapi.ClusterStatus{}
+// 	testinstalljob := &batch.JobList{}
+// 	testuninstalljob := &batch.JobList{}
 
-	testcd := hive.ClusterDeployment{}
-	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("cluster-detaching.json", &testcluster, t)
-	utils.UnmarshalFile("clustercd.json", &testcd, t)
+// 	testcd := hive.ClusterDeployment{}
+// 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
+// 	utils.UnmarshalFile("cluster-detaching.json", &testcluster, t)
+// 	utils.UnmarshalFile("clustercd.json", &testcd, t)
 
-	result := getStatus(clustStat)
-	assert.Equal(t, result, "detaching", "Test Status")
-}
+// 	result := getStatus(clustStat)
+// 	assert.Equal(t, result, "detaching", "Test Status")
+// }
 
-func TestGetStatusUnknown(t *testing.T) {
-	testcluster := &clusterregistry.Cluster{}
-	testclusterstatus := &mcmapi.ClusterStatus{}
-	testinstalljob := &batch.JobList{}
-	testuninstalljob := &batch.JobList{}
+// func TestGetStatusUnknown(t *testing.T) {
+// 	testcluster := &clusterregistry.Cluster{}
+// 	testclusterstatus := &mcmapi.ClusterStatus{}
+// 	testinstalljob := &batch.JobList{}
+// 	testuninstalljob := &batch.JobList{}
 
-	testcd := hive.ClusterDeployment{}
-	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("cluster2.json", &testcluster, t)
-	utils.UnmarshalFile("clustercd.json", &testcd, t)
+// 	testcd := hive.ClusterDeployment{}
+// 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
+// 	utils.UnmarshalFile("cluster2.json", &testcluster, t)
+// 	utils.UnmarshalFile("clustercd.json", &testcd, t)
 
-	result := getStatus(clustStat)
-	assert.Equal(t, result, "unknown", "Test Status")
-}
+// 	result := getStatus(clustStat)
+// 	assert.Equal(t, result, "unknown", "Test Status")
+// }
 
-func TestGetStatusOffline(t *testing.T) {
-	testcluster := &clusterregistry.Cluster{}
-	testclusterstatus := &mcmapi.ClusterStatus{}
-	testinstalljob := &batch.JobList{}
-	testuninstalljob := &batch.JobList{}
+// func TestGetStatusOffline(t *testing.T) {
+// 	testcluster := &clusterregistry.Cluster{}
+// 	testclusterstatus := &mcmapi.ClusterStatus{}
+// 	testinstalljob := &batch.JobList{}
+// 	testuninstalljob := &batch.JobList{}
 
-	testcd := hive.ClusterDeployment{}
-	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
-	utils.UnmarshalFile("cluster-offline.json", &testcluster, t)
-	utils.UnmarshalFile("cluster-cd-detached.json", &testcd, t)
+// 	testcd := hive.ClusterDeployment{}
+// 	clustStat := ClusterStat{cluster: testcluster, clusterStatus: testclusterstatus, uninstallJobs: testuninstalljob, installJobs: testinstalljob, clusterdeployment: &testcd}
+// 	utils.UnmarshalFile("cluster-offline.json", &testcluster, t)
+// 	utils.UnmarshalFile("cluster-cd-detached.json", &testcd, t)
 
-	result := getStatus(clustStat)
-	assert.Equal(t, result, "offline", "Test Status")
-}
+// 	result := getStatus(clustStat)
+// 	assert.Equal(t, result, "offline", "Test Status")
+// }
 
 func TestJobActive(t *testing.T) {
 
