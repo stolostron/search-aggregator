@@ -5,7 +5,6 @@ go 1.12
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/golangci/golangci-lint v1.24.0 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
@@ -15,7 +14,6 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/open-cluster-management/multicloud-operators-foundation v1.0.0
-	github.com/openshift/hive v0.0.0-20200302220132-867d7fb189bf
 	github.com/redislabs/redisgraph-go v1.0.0
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
@@ -27,9 +25,7 @@ require (
 	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/cluster-registry v0.0.0-20180711215825-1e7f92e96c20
-	// k8s.io/cluster-registry v0.0.6
 	k8s.io/utils v0.0.0-20200229041039-0a110f9eb7ab // indirect
-	sigs.k8s.io/controller-runtime v0.5.2 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
