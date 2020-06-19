@@ -14,7 +14,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	mcmapi "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
+//	mcmapi "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
 	utils "github.com/open-cluster-management/search-aggregator/pkg/utils"
 	hive "github.com/openshift/hive/pkg/apis/hive/v1"
 	batch "k8s.io/api/batch/v1"

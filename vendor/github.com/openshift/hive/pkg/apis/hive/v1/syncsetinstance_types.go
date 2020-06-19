@@ -46,9 +46,9 @@ type SyncSetInstanceSpec struct {
 	// +optional
 	SelectorSyncSetRef *SelectorSyncSetReference `json:"selectorSyncSetRef,omitempty"`
 
-	// ResourceApplyMode indicates if the resource apply mode is "upsert" (default) or "sync".
-	// ApplyMode "upsert" indicates create and update.
-	// ApplyMode "sync" indicates create, update and delete.
+	// ResourceApplyMode indicates if the resource apply mode is "Upsert" (default) or "Sync".
+	// ApplyMode "Upsert" indicates create and update.
+	// ApplyMode "Sync" indicates create, update and delete.
 	// +optional
 	ResourceApplyMode SyncSetResourceApplyMode `json:"resourceApplyMode,omitempty"`
 
@@ -93,6 +93,7 @@ type SyncSetInstanceStatus struct {
 // SyncSetInstance is the Schema for the syncsetinstances API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Applied",type="boolean",JSONPath=".status.applied"
 // +kubebuilder:resource:path=syncsetinstances,shortName=ssi
 type SyncSetInstance struct {
 	metav1.TypeMeta   `json:",inline"`
