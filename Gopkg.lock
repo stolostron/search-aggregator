@@ -302,7 +302,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:17c1c7a89c520ab4116fef4768ab47fa654390f66fcf146e06db61b5eb7fc6bb"
+  digest = "1:edb2860e17e78ac7acf70d71bac73721226474debfca6670ff57dd5660943524"
   name = "golang.org/x/sys"
   packages = [
     "internal/unsafeheader",
@@ -310,7 +310,7 @@
     "windows",
   ]
   pruneopts = "UT"
-  revision = "981b61492c3565ea113dc1621ca30ef897df5586"
+  revision = "4b0db7f3f76bf41ab7a24511c25e99583f5c0927"
 
 [[projects]]
   digest = "1:fa940333c48808b0d86ef21f412ffcfd0e5084a82f13905c028a404803b1908f"
@@ -654,7 +654,6 @@
     "github.com/gomodule/redigo/redis",
     "github.com/gorilla/mux",
     "github.com/kennygrant/sanitize",
-    "github.com/open-cluster-management/api/cluster/v1",
     "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1",
     "github.com/openshift/hive/pkg/apis/hive/v1",
     "github.com/openshift/hive/pkg/client/clientset-generated/clientset",

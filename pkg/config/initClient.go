@@ -10,7 +10,7 @@ package config
 
 import (
 	"github.com/golang/glog"
-//	mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
+	// mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
 	hiveClientset "github.com/openshift/hive/pkg/client/clientset-generated/clientset"
 	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

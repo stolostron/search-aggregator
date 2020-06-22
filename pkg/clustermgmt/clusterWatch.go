@@ -15,24 +15,24 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	//mcm "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1" // deprecated
+	//mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset" // deprecated
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 	hive "github.com/openshift/hive/pkg/apis/hive/v1"
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
+	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	informers "k8s.io/cluster-registry/pkg/client/informers/externalversions"
 	"k8s.io/client-go/dynamic"
-	// mcm "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
-	//mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
-	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	ManagedClusterInfo "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
-	clusterv1 "github.com/open-cluster-management/api/cluster/v1" // ManagedCluster 
+	// clusterv1 "github.com/open-cluster-management/api/cluster/v1" // ManagedCluster 
 	// &clusterv1.ManagedCluster{} 
 )
 
 var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
-var statClusterMapMutex = sync.RWMutex{} 
+var statClusterMapMutex = sync.RWMutex{}
 
 const HIVE_DOMAIN = "hive.openshift.io"
 const UNINSTALL_LABEL = HIVE_DOMAIN + "/uninstall"
@@ -341,7 +341,7 @@ func initializeDynamicInformerForManagedClusterInfo(mcmClient *mcmClientset.Clie
     // factory for building dynamic informer objects used with crds and arbitrary k8s objects
     dynamicfactory := dynamic.dynamicinformer.newdynamicsharedinformerfactory(dynamicclientset, 0)
 
-	managedclusterinfo := &managedclusterinfo{}
+	managedclusterinfo := &ManagedClusterInfo{}
 
 	// create dynamic informer
 	informer := dynamicfactory.forresource(managedclusterinfo)
