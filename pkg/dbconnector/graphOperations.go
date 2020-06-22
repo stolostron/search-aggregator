@@ -9,11 +9,6 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 
 package dbconnector
 
-import (
-	"github.com/golang/glog"
-	"github.com/open-cluster-management/search-aggregator/pkg/config"
-)
-
 const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 
 // Resource - Describes a resource (node)
@@ -70,16 +65,16 @@ func TotalIntraEdges(clusterName string) (QueryResult, error) {
 
 func MergeDummyCluster(name string) (QueryResult, error) {
 	kubeVersion := ""
-	if config.ClusterClient != nil {
-		clusterClientServerVersion, verr := config.ClusterClient.ServerVersion()
-		if verr != nil {
-			glog.Error("clusterClientServerVersion not found")
-		} else {
-			kubeVersion = clusterClientServerVersion.String()
-		}
-	} else {
-		glog.Error("ClusterClient not initialized")
-	}
+	// if config.ClusterClient != nil {
+	// 	clusterClientServerVersion, verr := config.ClusterClient.ServerVersion()
+	// 	if verr != nil {
+	// 		glog.Error("clusterClientServerVersion not found")
+	// 	} else {
+	// 		kubeVersion = clusterClientServerVersion.String()
+	// 	}
+	// } else {
+	// 	glog.Error("ClusterClient not initialized")
+	// }
 	query := SanitizeQuery("MERGE (c:Cluster {name: '%s', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", name, kubeVersion)
 	return Store.Query(query)
 }

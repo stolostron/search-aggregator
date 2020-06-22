@@ -7,7 +7,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.4.0 // indirect
-	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/json-iterator/go v1.1.9 // indirect
@@ -22,8 +21,9 @@ require (
 	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 // indirect
 	k8s.io/api v0.17.4
 	k8s.io/apiextensions-apiserver v0.17.4 // indirect
-	k8s.io/apimachinery v0.17.4
+	k8s.io/apimachinery v0.18.1
 	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/cluster-registry v0.0.0-20180711215825-1e7f92e96c20
 	k8s.io/cluster-registry v0.0.0-20180711215825-1e7f92e96c20
 	k8s.io/utils v0.0.0-20200229041039-0a110f9eb7ab // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
@@ -35,7 +35,7 @@ replace (
 	github.com/terraform-providers/terraform-provider-azurerm => github.com/terraform-providers/terraform-provider-azurerm v0.0.0-20200604143437-d38893bc4f78
 	k8s.io/api => k8s.io/api v0.17.4
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.17.4
-	k8s.io/apimachinery => k8s.io/apimachinery v0.17.4
+	k8s.io/apimachinery => k8s.io/apimachinery v0.17.7
 	k8s.io/apiserver => k8s.io/apiserver v0.17.4
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.17.4
 	k8s.io/client-go => k8s.io/client-go v0.17.4
@@ -55,7 +55,7 @@ replace (
 	k8s.io/kubelet => k8s.io/kubelet v0.17.4
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.17.4
 	k8s.io/metrics => k8s.io/metrics v0.17.4
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.17.4
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.1
 	sigs.k8s.io/cluster-api-provider-aws => sigs.k8s.io/cluster-api-provider-aws v0.4.0
 	sigs.k8s.io/cluster-api-provider-azure => sigs.k8s.io/cluster-api-provider-azure v0.4.0
 	sigs.k8s.io/cluster-api-provider-openstack => sigs.k8s.io/cluster-api-provider-openstack v0.3.0
