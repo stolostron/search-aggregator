@@ -164,14 +164,14 @@ func isClusterMissing(err error) bool {
 */
 
 /*
-func transformCluster(clusterStatus *mcm.ClusterStatus) db.Resource {
+func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus) db.Resource {
 	props := make(map[string]interface{})
 
-	props["name"] = clusterStatus.GetName()
+	props["name"] = cluster.GetName()
 	props["kind"] = "Cluster"
 	props["apigroup"] = "clusterregistry.k8s.io"
-	props["selfLink"] = clusterStatus.GetSelfLink()
-	props["created"] = clusterStatus.GetCreationTimestamp().UTC().Format(time.RFC3339)
+	props["selfLink"] = cluster.GetSelfLink()
+	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
 	if cluster.GetLabels() != nil {
 		var labelMap map[string]interface{}
@@ -209,7 +209,7 @@ func transformCluster(clusterStatus *mcm.ClusterStatus) db.Resource {
 
 	return db.Resource{
 		Kind:           "Cluster",
-		UID:            string(clusterStatus.GetUID()),
+		UID:            string(cluster.GetUID()),
 		Properties:     props,
 		ResourceString: "clusters",
 	}
