@@ -19,65 +19,64 @@ type ClusterStat struct {
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
-	/*
-		mcmClient, err := config.InitClient()
-		if err != nil {
-			glog.Info("Unable to create clientset ", err)
-		}
-		statClusterMap = map[string]bool{}
-		var stopper chan struct{}
-		informerRunning := false
+	/* mcmClient, err := config.InitClient()
+	if err != nil {
+		glog.Info("Unable to create clientset ", err)
+	}
+	statClusterMap = map[string]bool{}
+	var stopper chan struct{}
+	informerRunning := false
 
-		clusterFactory := informers.NewSharedInformerFactory(clusterClient, 0)
-		clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
-		clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				processClusterUpsert(obj, mcmClient)
-			},
-			UpdateFunc: func(prev interface{}, next interface{}) {
-				processClusterUpsert(next, mcmClient)
-			},
-			DeleteFunc: func(obj interface{}) {
-				cluster, ok := obj.(*clusterregistry.Cluster)
-				if !ok {
-					glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
-					return
-				}
-				delCluster(cluster)
-			},
-		})
+	clusterFactory := informers.NewSharedInformerFactory(clusterClient, 0)
+	clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
+	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			processClusterUpsert(obj, mcmClient)
+		},
+		UpdateFunc: func(prev interface{}, next interface{}) {
+			processClusterUpsert(next, mcmClient)
+		},
+		DeleteFunc: func(obj interface{}) {
+			cluster, ok := obj.(*clusterregistry.Cluster)
+			if !ok {
+				glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
+				return
+			}
+			delCluster(cluster)
+		},
+	})
 
-		// periodically check if the cluster resource exists and start/stop the informer accordingly
-		for {
-			_, err := clusterClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
-			// we fail to fetch for some reason other than not found
-			if err != nil && !isClusterMissing(err) {
-				glog.Error("Cannot fetch resource list for clusterregistry.k8s.io/v1alpha1: ", err)
+	// periodically check if the cluster resource exists and start/stop the informer accordingly
+	for {
+		_, err := clusterClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
+		// we fail to fetch for some reason other than not found
+		if err != nil && !isClusterMissing(err) {
+			glog.Error("Cannot fetch resource list for clusterregistry.k8s.io/v1alpha1: ", err)
+		} else {
+			if isClusterMissing(err) && informerRunning {
+				glog.Info("Stopping cluster informer routine because clusterregistry resource not found")
+				stopper <- struct{}{}
+				informerRunning = false
+			} else if !isClusterMissing(err) && !informerRunning {
+				glog.Info("Starting cluster informer routine for cluster watch")
+				stopper = make(chan struct{})
+				informerRunning = true
+				go clusterInformer.Run(stopper)
 			} else {
-				if isClusterMissing(err) && informerRunning {
-					glog.Info("Stopping cluster informer routine because clusterregistry resource not found")
+				//If any clusters are in `unknown` status, restart the informers - this is a workaround instead of watching the install, uninstall jobs for a cluster
+				//TODO: Remove this and get cluster status from cluster object using issue (open-cluster-management/backlog#1518)
+				if len(statClusterMap) > 0 {
+					glog.V(2).Info("Restarting cluster informer routine for cluster watch")
 					stopper <- struct{}{}
-					informerRunning = false
-				} else if !isClusterMissing(err) && !informerRunning {
-					glog.Info("Starting cluster informer routine for cluster watch")
 					stopper = make(chan struct{})
 					informerRunning = true
 					go clusterInformer.Run(stopper)
-				} else {
-					//If any clusters are in `unknown` status, restart the informers - this is a workaround instead of watching the install, uninstall jobs for a cluster
-					//TODO: Remove this and get cluster status from cluster object using issue (open-cluster-management/backlog#1518)
-					if len(statClusterMap) > 0 {
-						glog.V(2).Info("Restarting cluster informer routine for cluster watch")
-						stopper <- struct{}{}
-						stopper = make(chan struct{})
-						informerRunning = true
-						go clusterInformer.Run(stopper)
-					}
 				}
 			}
-
-			time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
 		}
+
+		time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
+	}
 	*/
 }
 
