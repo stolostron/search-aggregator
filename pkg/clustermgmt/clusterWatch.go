@@ -8,12 +8,8 @@ The source code for this program is not published or otherwise divested of its t
 
 package clustermgmt
 
-import (
-	"sync"
-)
-
-var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
-var statClusterMapMutex = sync.RWMutex{}
+// var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
+// var statClusterMapMutex = sync.RWMutex{}
 
 //ClusterStat struct stores all resources needed to calculate status of the cluster
 type ClusterStat struct {
@@ -27,7 +23,7 @@ func WatchClusters() {
 	// if err != nil {
 	// 	glog.Info("Unable to create clientset ", err)
 	// }
-	statClusterMap = map[string]bool{}
+	// statClusterMap = map[string]bool{}
 	// var stopper chan struct{}
 	// informerRunning := false
 
