@@ -83,27 +83,27 @@ func WatchClusters() {
 /*
 func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	var err error
-	// var cluster *clusterregistry.Cluster
+	var cluster *clusterregistry.Cluster
 	var clusterStatus *mcm.ClusterStatus
 	var ok bool
 
-	// cluster, ok = obj.(*clusterregistry.Cluster)
-	// if !ok {
-	// 	glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
-	// 	return
-	// }
-	// clusterStatus, err = mcmClient.McmV1alpha1().ClusterStatuses(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
+	cluster, ok = obj.(*clusterregistry.Cluster)
+	if !ok {
+		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
+		return
+	}
+	clusterStatus, err = mcmClient.McmV1alpha1().ClusterStatuses(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
 	if err != nil {
 		glog.Error("Failed to fetch cluster status: ", err)
 		clusterStatus = nil //If there is an error fetching clusterStatus, reset it to nil
 	}
 
 	resource := transformCluster(clusterStatus)
-	// clusterstat := ClusterStat{clusterStatus: clusterStatus}
+	clusterstat := ClusterStat{clusterStatus: clusterStatus}
 	resource.Properties["status"] = "TODO" // TODO: Get the status.
 	clustName, ok := resource.Properties["name"].(string)
 	// Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use statClusterMap to restart the clusterInformer in order to update cluster status -
-	//TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
+	// TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
 	if ok {
 		statClusterMapMutex.RLock()
 		present := statClusterMap[clustName]
@@ -154,9 +154,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 		delClusterResources(cluster)
 	}
 }
-*/
 
-/*
 func isClusterMissing(err error) bool {
 	if err == nil {
 		return false
