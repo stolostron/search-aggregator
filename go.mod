@@ -17,7 +17,6 @@ require (
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 // indirect
-	k8s.io/api v0.17.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/utils v0.0.0-20200229041039-0a110f9eb7ab // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect

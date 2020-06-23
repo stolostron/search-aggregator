@@ -33,15 +33,18 @@ build-linux:
 
 .PHONY: lint
 lint:
-	golangci-lint run --timeout=2m
+	GO111MODULE=on golangci-lint run --timeout=2m
+
+run:
+	GO111MODULE=on go run main.go
 
 .PHONY: test
 test:
-	go test ./... -v -coverprofile cover.out
+	GO111MODULE=on go test ./... -v -coverprofile cover.out
 
 .PHONY: coverage
 coverage:
-	go tool cover -html=cover.out -o=cover.html
+	GO111MODULE=on go tool cover -html=cover.out -o=cover.html
 
 .PHONY: copyright-check
 copyright-check:
