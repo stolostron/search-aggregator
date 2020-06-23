@@ -5,7 +5,7 @@ OCO Source Materials
 The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
 */
 // Copyright (c) 2020 Red Hat, Inc.
-
+// begin transition
 package clustermgmt
 
 // var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
