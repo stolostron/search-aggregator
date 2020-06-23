@@ -65,6 +65,8 @@ func TotalIntraEdges(clusterName string) (QueryResult, error) {
 
 func MergeDummyCluster(name string) (QueryResult, error) {
 	kubeVersion := ""
+	// TODO: Get this from new ManagedClusterInfo
+	//
 	// if config.ClusterClient != nil {
 	// 	clusterClientServerVersion, verr := config.ClusterClient.ServerVersion()
 	// 	if verr != nil {
