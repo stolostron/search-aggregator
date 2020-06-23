@@ -9,14 +9,7 @@ The source code for this program is not published or otherwise divested of its t
 package clustermgmt
 
 import (
-	"strings"
 	"sync"
-	"time"
-
-	"github.com/golang/glog"
-	mcm "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
-	mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
-	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
 var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
@@ -25,7 +18,7 @@ var statClusterMapMutex = sync.RWMutex{}
 //ClusterStat struct stores all resources needed to calculate status of the cluster
 type ClusterStat struct {
 	// cluster       *clusterregistry.Cluster
-	clusterStatus *mcm.ClusterStatus
+	// clusterStatus *mcm.ClusterStatus
 }
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
@@ -91,6 +84,7 @@ func WatchClusters() {
 	// }
 }
 
+/*
 func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	var err error
 	// var cluster *clusterregistry.Cluster
@@ -164,14 +158,18 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	// 	delClusterResources(cluster)
 	// }
 }
+*/
 
+/*
 func isClusterMissing(err error) bool {
 	if err == nil {
 		return false
 	}
 	return strings.Contains(err.Error(), "could not find the requested resource")
 }
+*/
 
+/*
 func transformCluster(clusterStatus *mcm.ClusterStatus) db.Resource {
 	props := make(map[string]interface{})
 
@@ -223,23 +221,26 @@ func transformCluster(clusterStatus *mcm.ClusterStatus) db.Resource {
 	}
 }
 
+
 // Deletes a cluster resource and all resourcces from the cluster.
-// func delCluster(cluster *clusterregistry.Cluster) {
-// 	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", cluster.Name)
-// 	uid := string(cluster.GetUID())
-// 	_, err := db.Delete([]string{uid})
-// 	if err != nil {
-// 		glog.Error("Error deleting Cluster kind with error: ", err)
-// 	}
-// 	delClusterResources(cluster)
-// }
+func delCluster(cluster *clusterregistry.Cluster) {
+	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", cluster.Name)
+	uid := string(cluster.GetUID())
+	_, err := db.Delete([]string{uid})
+	if err != nil {
+		glog.Error("Error deleting Cluster kind with error: ", err)
+	}
+	delClusterResources(cluster)
+}
 
 // Removes all the resources for a cluster, but doesn't remove the Cluster resource object.
-// func delClusterResources(cluster *clusterregistry.Cluster) {
-// 	_, err := db.DeleteCluster(cluster.GetName())
-// 	if err != nil {
-// 		glog.Error("Error deleting current resources for cluster: ", err)
-// 	} else {
-// 		db.DeleteClustersCache(string(cluster.GetUID()))
-// 	}
-// }
+func delClusterResources(cluster *clusterregistry.Cluster) {
+	_, err := db.DeleteCluster(cluster.GetName())
+	if err != nil {
+		glog.Error("Error deleting current resources for cluster: ", err)
+	} else {
+		db.DeleteClustersCache(string(cluster.GetUID()))
+	}
+}
+
+*/
