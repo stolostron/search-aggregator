@@ -4,11 +4,9 @@ go 1.12
 
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/gorilla/mux v1.7.4
-	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
@@ -20,11 +18,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 // indirect
 	k8s.io/api v0.17.4
-	k8s.io/apiextensions-apiserver v0.17.4 // indirect
-	k8s.io/apimachinery v0.18.1
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/cluster-registry v0.0.0-20180711215825-1e7f92e96c20
-	k8s.io/cluster-registry v0.0.0-20180711215825-1e7f92e96c20
 	k8s.io/utils v0.0.0-20200229041039-0a110f9eb7ab // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
@@ -42,7 +36,6 @@ replace (
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.17.4
 	k8s.io/cloud-provides => k8s.io/cloud-provides v0.17.4
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.17.4
-	k8s.io/cluster-registry => k8s.io/cluster-registry v0.0.6
 	k8s.io/code-generator => k8s.io/code-generator v0.17.4
 	k8s.io/component-base => k8s.io/component-base v0.17.4
 	k8s.io/cri-api => k8s.io/cri-api v0.17.4

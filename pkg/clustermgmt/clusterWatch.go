@@ -15,36 +15,21 @@ import (
 
 	"github.com/golang/glog"
 	mcm "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/mcm/v1alpha1"
-
 	mcmClientset "github.com/open-cluster-management/multicloud-operators-foundation/pkg/client/clientset_generated/clientset"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
-
-	// hive "github.com/openshift/hive/pkg/apis/hive/v1"
-	batch "k8s.io/api/batch/v1"
-	// clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
-	// informers "k8s.io/cluster-registry/pkg/client/informers/externalversions"
 )
 
 var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
 var statClusterMapMutex = sync.RWMutex{}
 
-// const HIVE_DOMAIN = "hive.openshift.io"
-// const UNINSTALL_LABEL = HIVE_DOMAIN + "/uninstall"
-// const INSTALL_LABEL = HIVE_DOMAIN + "/install"
-// const CLUSTER_LABEL = HIVE_DOMAIN + "/cluster-deployment-name"
-
 //ClusterStat struct stores all resources needed to calculate status of the cluster
 type ClusterStat struct {
 	// cluster       *clusterregistry.Cluster
 	clusterStatus *mcm.ClusterStatus
-	uninstallJobs *batch.JobList
-	installJobs   *batch.JobList
-	// clusterdeployment *hive.ClusterDeployment
 }
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
-
 	// mcmClient, err := config.InitClient()
 	// if err != nil {
 	// 	glog.Info("Unable to create clientset ", err)
@@ -110,9 +95,7 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	var err error
 	// var cluster *clusterregistry.Cluster
 	var clusterStatus *mcm.ClusterStatus
-	// var clusterDeployment *hive.ClusterDeployment
 	var ok bool
-	// var installJobs, uninstallJobs *batch.JobList
 
 	// cluster, ok = obj.(*clusterregistry.Cluster)
 	// if !ok {
@@ -125,33 +108,9 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 		clusterStatus = nil //If there is an error fetching clusterStatus, reset it to nil
 	}
 
-	//get the clusterDeployment if it exists
-	// clusterDeployment, err = config.HiveClient.HiveV1().ClusterDeployments(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
-	// if err != nil {
-	// 	glog.Info("Failed to fetch cluster deployment: ", err)
-	// 	clusterDeployment = nil //If there is an error fetching clusterDeployment, reset it to nil
-	// }
-	//get install/uninstall jobs for cluster if they exist
-	// jobs := config.KubeClient.BatchV1().Jobs(cluster.GetNamespace())
-	// uninstallLabel := CLUSTER_LABEL + "=" + cluster.Name + "," + UNINSTALL_LABEL + "=true"
-	// installLabel := CLUSTER_LABEL + "=" + cluster.Name + "," + INSTALL_LABEL + "=true"
-	// listOptions := v1.ListOptions{}
-	// listOptions.LabelSelector = uninstallLabel //"hive.openshift.io/cluster-deployment-name=test-cluster,hive.openshift.io/uninstall="true""
-	// uninstallJobs, err = jobs.List(listOptions)
-	// if err != nil {
-	// 	glog.Error("Failed to fetch uninstall jobs: ", err)
-	// 	uninstallJobs = nil //If there is an error fetching uninstallJobs, reset it to nil
-	// }
-	// listOptions.LabelSelector = installLabel //"hive.openshift.io/cluster-deployment-name=test-cluster,hive.openshift.io/install="true""
-	// installJobs, err = jobs.List(listOptions)
-	// if err != nil {
-	// 	glog.Error("Failed to fetch install jobs: ", err)
-	// 	installJobs = nil //If there is an error fetching installJobs, reset it to nil
-	// }
-
 	resource := transformCluster(clusterStatus)
-	clusterstat := ClusterStat{clusterStatus: clusterStatus /*clusterdeployment: clusterDeployment*/}
-	resource.Properties["status"] = getStatus(clusterstat)
+	// clusterstat := ClusterStat{clusterStatus: clusterStatus}
+	resource.Properties["status"] = "TODO" // TODO: Get the status.
 	clustName, ok := resource.Properties["name"].(string)
 	// Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use statClusterMap to restart the clusterInformer in order to update cluster status -
 	//TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
@@ -264,21 +223,6 @@ func transformCluster(clusterStatus *mcm.ClusterStatus) db.Resource {
 	}
 }
 
-func chkJobActive(jobs *batch.JobList, action string) string {
-	if jobs != nil && len(jobs.Items) > 0 {
-		for _, job := range jobs.Items {
-			if job.Status.Active == 1 {
-				if action == "uninstall" {
-					return "destroying"
-				} else {
-					return "creating"
-				}
-			}
-		}
-	}
-	return ""
-}
-
 // Deletes a cluster resource and all resourcces from the cluster.
 // func delCluster(cluster *clusterregistry.Cluster) {
 // 	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", cluster.Name)
@@ -299,62 +243,3 @@ func chkJobActive(jobs *batch.JobList, action string) string {
 // 		db.DeleteClustersCache(string(cluster.GetUID()))
 // 	}
 // }
-
-//TODO: Remove this and get cluster status from cluster object using issue (https://github.com/open-cluster-management/backlog/issues/1518)
-//Similar to console-ui's cluster status - https://github.com/open-cluster-management/console-api/blob/98a3a58bed402930c557c0e9c854deab8f84cf38/src/v2/models/cluster.js#L30
-// If clusterdeployment resource is present and install/uninstall jobs are active - cluster is in creating/destroying status
-//If jobs are not active, status is based on clusterdeployment's status(cd.Status.ClusterVersionStatus)
-// if status.conditions.type is `Available` and status.conditions.status is `True`, then the cluster is detached
-
-// If cluster resource is present with a deletionTimestamp, cluster is in detaching mode
-// cluster with status with conditions[0].type === '' indicates cluster is offline
-// Empty status indicates cluster has not been imported - is in pending mode
-// If cluster is pending import because Hive is installing or uninstalling, cluster status based on jobs will be creating/destroying
-func getStatus(cs ClusterStat) string {
-	// cluster := cs.cluster
-	// cd := cs.clusterdeployment
-
-	// we are using a combination of conditions to determine cluster status
-	var clusterdeploymentStatus string //, status string
-
-	// if cd != nil {
-	// 	if cs.uninstallJobs != nil && len(cs.uninstallJobs.Items) > 0 && chkJobActive(cs.uninstallJobs, "uninstall") != "" {
-	// 		clusterdeploymentStatus = chkJobActive(cs.uninstallJobs, "uninstall")
-	// 	} else if cs.installJobs != nil && len(cs.installJobs.Items) > 0 && chkJobActive(cs.installJobs, "install") != "" {
-	// 		clusterdeploymentStatus = chkJobActive(cs.installJobs, "install")
-	// 	} else {
-	// 		clusterdeploymentStatus = "unknown"
-	// 		if len(cd.Status.ClusterVersionStatus.Conditions) > 0 {
-	// 			for _, condition := range cd.Status.ClusterVersionStatus.Conditions {
-	// 				if condition.Type == "Available" {
-	// 					if condition.Status == "True" {
-	// 						clusterdeploymentStatus = "detached"
-	// 					}
-	// 					break
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// if cluster != nil {
-	// 	if cluster.DeletionTimestamp != nil {
-	// 		return "detaching"
-	// 	}
-	// 	// Empty status indicates cluster has not been imported
-	// 	status = "pending"
-	// 	// we are pulling the status from the cluster object and cluster info from the clusterStatus object :(
-	// 	if len(cluster.Status.Conditions) > 0 {
-	// 		status = string(cluster.Status.Conditions[0].Type)
-	// 	}
-	// 	if status == "" { // status with conditions[0].type === '' indicates cluster is offline
-	// 		status = "offline"
-	// 	}
-	// 	// If cluster is pending import because Hive is installing or uninstalling,
-	// 	// show that status instead
-	// 	if status == "pending" && clusterdeploymentStatus != "" && clusterdeploymentStatus != "detached" {
-	// 		return clusterdeploymentStatus
-	// 	}
-	// 	return status
-	// }
-	return clusterdeploymentStatus
-}
