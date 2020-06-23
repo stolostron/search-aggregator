@@ -18,12 +18,11 @@ default::
 .PHONY: deps
 deps:
 	GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.24.0
-	GO111MODULE=off go get -u github.com/golang/dep/cmd/dep
-	dep ensure -v
+	GO111MODULE=on go mod tidy
 
 .PHONY: search-aggregator
 search-aggregator:
-	CGO_ENABLED=0 go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
+	GO111MODULE=on CGO_ENABLED=0 go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
 
 .PHONY: build
 build: search-aggregator
@@ -34,15 +33,18 @@ build-linux:
 
 .PHONY: lint
 lint:
-	golangci-lint run --timeout=2m
+	GO111MODULE=on golangci-lint run --timeout=2m
+
+run:
+	GO111MODULE=on go run main.go
 
 .PHONY: test
 test:
-	go test ./... -v -coverprofile cover.out
+	GO111MODULE=on go test ./... -v -coverprofile cover.out
 
 .PHONY: coverage
 coverage:
-	go tool cover -html=cover.out -o=cover.html
+	GO111MODULE=on go tool cover -html=cover.out -o=cover.html
 
 .PHONY: copyright-check
 copyright-check:

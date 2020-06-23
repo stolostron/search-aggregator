@@ -8,8 +8,6 @@ The source code for this program is not published or otherwise divested of its t
 package config
 
 import (
-	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -49,16 +47,6 @@ type Config struct {
 var Cfg = Config{}
 
 func init() {
-	// parse flags
-	flag.Parse()
-	err := flag.Lookup("logtostderr").Value.Set("true") // Glog is weird in that by default it logs to a file. Change it so that by default it all goes to stderr. (no option for stdout).
-	if err != nil {
-		fmt.Println("Error setting default flag:", err) // Uses fmt.Println in case something is wrong with glog args
-		os.Exit(1)
-		glog.Fatal("Error setting default flag: ", err)
-	}
-	defer glog.Flush() // This should ensure that everything makes it out on to the console if the program crashes.
-
 	// If environment variables are set, use those values constants
 	// Simply put, the order of preference is env -> default constants (from left to right)
 	setDefault(&Cfg.AggregatorAddress, "AGGREGATOR_ADDRESS", DEFAULT_AGGREGATOR_ADDRESS)

@@ -10,6 +10,8 @@ package main
 
 import (
 	"crypto/tls"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -24,6 +26,16 @@ import (
 )
 
 func main() {
+	// parse flags
+	flag.Parse()
+	err := flag.Lookup("logtostderr").Value.Set("true") // Glog is weird in that by default it logs to a file. Change it so that by default it all goes to stderr. (no option for stdout).
+	if err != nil {
+		fmt.Println("Error setting default flag:", err) // Uses fmt.Println in case something is wrong with glog args
+		os.Exit(1)
+		glog.Fatal("Error setting default flag: ", err)
+	}
+	defer glog.Flush() // This should ensure that everything makes it out on to the console if the program crashes.
+
 	glog.Info("Starting search-aggregator")
 	if commit, ok := os.LookupEnv("VCS_REF"); ok {
 		glog.Info("Built from git commit: ", commit)
