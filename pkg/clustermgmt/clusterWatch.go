@@ -19,65 +19,66 @@ type ClusterStat struct {
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
-	// mcmClient, err := config.InitClient()
-	// if err != nil {
-	// 	glog.Info("Unable to create clientset ", err)
-	// }
-	// statClusterMap = map[string]bool{}
-	// var stopper chan struct{}
-	// informerRunning := false
+	/*
+		mcmClient, err := config.InitClient()
+		if err != nil {
+			glog.Info("Unable to create clientset ", err)
+		}
+		statClusterMap = map[string]bool{}
+		var stopper chan struct{}
+		informerRunning := false
 
-	// clusterFactory := informers.NewSharedInformerFactory(clusterClient, 0)
-	// clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
-	// clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-	// 	AddFunc: func(obj interface{}) {
-	// 		processClusterUpsert(obj, mcmClient)
+		clusterFactory := informers.NewSharedInformerFactory(clusterClient, 0)
+		clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
+		clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				processClusterUpsert(obj, mcmClient)
+			},
+			UpdateFunc: func(prev interface{}, next interface{}) {
+				processClusterUpsert(next, mcmClient)
+			},
+			DeleteFunc: func(obj interface{}) {
+				cluster, ok := obj.(*clusterregistry.Cluster)
+				if !ok {
+					glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
+					return
+				}
+				delCluster(cluster)
+			},
+		})
 
-	// 	},
-	// 	UpdateFunc: func(prev interface{}, next interface{}) {
-	// 		processClusterUpsert(next, mcmClient)
-	// 	},
-	// 	DeleteFunc: func(obj interface{}) {
-	// 		cluster, ok := obj.(*clusterregistry.Cluster)
-	// 		if !ok {
-	// 			glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
-	// 			return
-	// 		}
-	// 		delCluster(cluster)
-	// 	},
-	// })
+		// periodically check if the cluster resource exists and start/stop the informer accordingly
+		for {
+			_, err := clusterClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
+			// we fail to fetch for some reason other than not found
+			if err != nil && !isClusterMissing(err) {
+				glog.Error("Cannot fetch resource list for clusterregistry.k8s.io/v1alpha1: ", err)
+			} else {
+				if isClusterMissing(err) && informerRunning {
+					glog.Info("Stopping cluster informer routine because clusterregistry resource not found")
+					stopper <- struct{}{}
+					informerRunning = false
+				} else if !isClusterMissing(err) && !informerRunning {
+					glog.Info("Starting cluster informer routine for cluster watch")
+					stopper = make(chan struct{})
+					informerRunning = true
+					go clusterInformer.Run(stopper)
+				} else {
+					//If any clusters are in `unknown` status, restart the informers - this is a workaround instead of watching the install, uninstall jobs for a cluster
+					//TODO: Remove this and get cluster status from cluster object using issue (open-cluster-management/backlog#1518)
+					if len(statClusterMap) > 0 {
+						glog.V(2).Info("Restarting cluster informer routine for cluster watch")
+						stopper <- struct{}{}
+						stopper = make(chan struct{})
+						informerRunning = true
+						go clusterInformer.Run(stopper)
+					}
+				}
+			}
 
-	// periodically check if the cluster resource exists and start/stop the informer accordingly
-	// for {
-	// 	_, err := clusterClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
-	// 	// we fail to fetch for some reason other than not found
-	// 	if err != nil && !isClusterMissing(err) {
-	// 		glog.Error("Cannot fetch resource list for clusterregistry.k8s.io/v1alpha1: ", err)
-	// 	} else {
-	// 		if isClusterMissing(err) && informerRunning {
-	// 			glog.Info("Stopping cluster informer routine because clusterregistry resource not found")
-	// 			stopper <- struct{}{}
-	// 			informerRunning = false
-	// 		} else if !isClusterMissing(err) && !informerRunning {
-	// 			glog.Info("Starting cluster informer routine for cluster watch")
-	// 			stopper = make(chan struct{})
-	// 			informerRunning = true
-	// 			go clusterInformer.Run(stopper)
-	// 		} else {
-	// 			//If any clusters are in `unknown` status, restart the informers - this is a workaround instead of watching the install, uninstall jobs for a cluster
-	// 			//TODO: Remove this and get cluster status from cluster object using issue (open-cluster-management/backlog#1518)
-	// 			if len(statClusterMap) > 0 {
-	// 				glog.V(2).Info("Restarting cluster informer routine for cluster watch")
-	// 				stopper <- struct{}{}
-	// 				stopper = make(chan struct{})
-	// 				informerRunning = true
-	// 				go clusterInformer.Run(stopper)
-	// 			}
-	// 		}
-	// 	}
-
-	// 	time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
-	// }
+			time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
+		}
+	*/
 }
 
 /*
@@ -127,32 +128,32 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	}
 
 	// Ensure that the cluster resource is still present before inserting into data store.
-	// c, err := config.ClusterClient.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
-	// if err != nil {
-	// 	glog.Warningf("The cluster %s to add/update is not present anymore.", cluster.Name)
-	// 	delCluster(cluster)
-	// 	return
-	// }
+	c, err := config.ClusterClient.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
+	if err != nil {
+		glog.Warningf("The cluster %s to add/update is not present anymore.", cluster.Name)
+		delCluster(cluster)
+		return
+	}
 
-	// glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
-	// res, err := db.UpdateByName(resource)
-	// if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
-	// 	glog.Info("Cluster graph/key object does not exist, inserting new object")
-	// 	_, _, err = db.Insert([]*db.Resource{&resource}, "")
-	// 	if err != nil {
-	// 		glog.Error("Error adding Cluster kind with error: ", err)
-	// 		return
-	// 	}
-	// } else if err != nil { // generic error not known above
-	// 	glog.Error("Error updating Cluster kind with errors: ", err)
-	// 	return
-	// }
+	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
+	res, err := db.UpdateByName(resource)
+	if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
+		glog.Info("Cluster graph/key object does not exist, inserting new object")
+		_, _, err = db.Insert([]*db.Resource{&resource}, "")
+		if err != nil {
+			glog.Error("Error adding Cluster kind with error: ", err)
+			return
+		}
+	} else if err != nil { // generic error not known above
+		glog.Error("Error updating Cluster kind with errors: ", err)
+		return
+	}
 
 	// If a cluster is offline we remove the resources from that cluster, but leave the cluster resource object.
-	// if resource.Properties["status"] == "offline" {
-	// 	glog.Infof("Cluster %s is offline, removing cluster resources from datastore.", cluster.GetName())
-	// 	delClusterResources(cluster)
-	// }
+	if resource.Properties["status"] == "offline" {
+		glog.Infof("Cluster %s is offline, removing cluster resources from datastore.", cluster.GetName())
+		delClusterResources(cluster)
+	}
 }
 */
 
@@ -175,19 +176,19 @@ func transformCluster(clusterStatus *mcm.ClusterStatus) db.Resource {
 	props["selfLink"] = clusterStatus.GetSelfLink()
 	props["created"] = clusterStatus.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
-	// if cluster.GetLabels() != nil {
-	// 	var labelMap map[string]interface{}
-	// 	clusterLabels, _ := json.Marshal(cluster.GetLabels())
-	// 	err := json.Unmarshal(clusterLabels, &labelMap)
-	// 	// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
-	// 	// This was getting skipped before as map[string]string was not handled in switch case encode#77
-	// 	if err == nil {
-	// 		props["label"] = labelMap
-	// 	}
-	// }
-	// if cluster.GetNamespace() != "" {
-	// 	props["namespace"] = cluster.GetNamespace()
-	// }
+	if cluster.GetLabels() != nil {
+		var labelMap map[string]interface{}
+		clusterLabels, _ := json.Marshal(cluster.GetLabels())
+		err := json.Unmarshal(clusterLabels, &labelMap)
+		// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
+		// This was getting skipped before as map[string]string was not handled in switch case encode#77
+		if err == nil {
+			props["label"] = labelMap
+		}
+	}
+	if cluster.GetNamespace() != "" {
+		props["namespace"] = cluster.GetNamespace()
+	}
 
 	if clusterStatus != nil {
 		props["consoleURL"] = clusterStatus.Spec.ConsoleURL
