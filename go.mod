@@ -11,7 +11,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/open-cluster-management/multicloud-operators-foundation v1.0.0
-	github.com/redislabs/redisgraph-go v1.0.0
+	github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
