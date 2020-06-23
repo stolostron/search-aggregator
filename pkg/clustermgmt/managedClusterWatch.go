@@ -41,11 +41,11 @@ const CLUSTER_LABEL = HIVE_DOMAIN + "/cluster-deployment-name"
 
 //ClusterStat struct stores all resources needed to calculate status of the cluster
 type ClusterStat struct {
-	cluster           *clusterregistry.Cluster
-	clusterStatus     *mcm.ClusterStatus // deprecated
-	// uninstallJobs     *batch.JobList
-	// installJobs       *batch.JobList
-	// clusterdeployment *hive.ClusterDeployment
+	cluster           *clusterregistry.Cluster // deprecated
+	// clusterStatus     *mcm.ClusterStatus // deprecated
+	uninstallJobs     *batch.JobList
+	installJobs       *batch.JobList
+	clusterdeployment *hive.ClusterDeployment
 }
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
@@ -81,7 +81,7 @@ func WatchClusters() {
 	*/
 
 	// create informer to watch changes to the ManagedClusterInfo custom resource 
-	managedClusterInfoInformer := initializeDynamicInformer(mcmClient)
+	clusterInformer := initializeDynamicInformer(clusterClient)
 
 	// periodically check if the cluster resource exists and start/stop the informer accordingly
 	for {
@@ -116,106 +116,6 @@ func WatchClusters() {
 	}
 }
 
-func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
-	var err error
-	var cluster *clusterregistry.Cluster
-	var clusterStatus *mcm.ClusterStatus
-	var clusterDeployment *hive.ClusterDeployment
-	var ok bool
-	var installJobs, uninstallJobs *batch.JobList
-
-	cluster, ok = obj.(*clusterregistry.Cluster)
-	if !ok {
-		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
-		return
-	}
-	//clusterStatus, err = mcmClient.McmV1alpha1().ClusterStatuses(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
-	if err != nil {
-		glog.Error("Failed to fetch cluster status: ", err)
-		//clusterStatus = nil //If there is an error fetching clusterStatus, reset it to nil
-	}
-
-	//get the clusterDeployment if it exists
-	clusterDeployment, err = config.HiveClient.HiveV1().ClusterDeployments(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
-	if err != nil {
-		glog.Info("Failed to fetch cluster deployment: ", err)
-		clusterDeployment = nil //If there is an error fetching clusterDeployment, reset it to nil
-	}
-	//get install/uninstall jobs for cluster if they exist
-	jobs := config.KubeClient.BatchV1().Jobs(cluster.GetNamespace())
-	uninstallLabel := CLUSTER_LABEL + "=" + cluster.Name + "," + UNINSTALL_LABEL + "=true"
-	installLabel := CLUSTER_LABEL + "=" + cluster.Name + "," + INSTALL_LABEL + "=true"
-	listOptions := v1.ListOptions{}
-	listOptions.LabelSelector = uninstallLabel //"hive.openshift.io/cluster-deployment-name=test-cluster,hive.openshift.io/uninstall="true""
-	uninstallJobs, err = jobs.List(listOptions)
-	if err != nil {
-		glog.Error("Failed to fetch uninstall jobs: ", err)
-		uninstallJobs = nil //If there is an error fetching uninstallJobs, reset it to nil
-	}
-	listOptions.LabelSelector = installLabel //"hive.openshift.io/cluster-deployment-name=test-cluster,hive.openshift.io/install="true""
-	installJobs, err = jobs.List(listOptions)
-	if err != nil {
-		glog.Error("Failed to fetch install jobs: ", err)
-		installJobs = nil //If there is an error fetching installJobs, reset it to nil
-	}
-
-	resource := transformCluster(cluster, clusterStatus)
-	clusterstat := ClusterStat{cluster: cluster, clusterStatus: clusterStatus, uninstallJobs: uninstallJobs, installJobs: installJobs, clusterdeployment: clusterDeployment}
-	resource.Properties["status"] = getStatus(clusterstat) // new method 
-	clustName, ok := resource.Properties["name"].(string)
-	// Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use statClusterMap to restart the clusterInformer in order to update cluster status -
-	//TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
-	if ok {
-		statClusterMapMutex.RLock()
-		present := statClusterMap[clustName]
-		statClusterMapMutex.RUnlock()
-
-		if present {
-			//delete the cluster from map if status is not unknown anymore
-			if resource.Properties["status"] != "unknown" {
-				statClusterMapMutex.Lock()
-				delete(statClusterMap, clustName)
-				statClusterMapMutex.Unlock()
-			}
-		} else {
-			//add the cluster to map if status is unknown
-			if resource.Properties["status"] == "unknown" {
-				statClusterMapMutex.Lock()
-				statClusterMap[clustName] = true
-				statClusterMapMutex.Unlock()
-			}
-		}
-	}
-
-	// Ensure that the cluster resource is still present before inserting into data store.
-	c, err := config.ClusterClient.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
-	if err != nil {
-		glog.Warningf("The cluster %s to add/update is not present anymore.", cluster.Name)
-		delCluster(cluster)
-		return
-	}
-
-	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
-	res, err := db.UpdateByName(resource)
-	if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
-		glog.Info("Cluster graph/key object does not exist, inserting new object")
-		_, _, err = db.Insert([]*db.Resource{&resource}, "")
-		if err != nil {
-			glog.Error("Error adding Cluster kind with error: ", err)
-			return
-		}
-	} else if err != nil { // generic error not known above
-		glog.Error("Error updating Cluster kind with errors: ", err)
-		return
-	}
-
-	// If a cluster is offline we remove the resources from that cluster, but leave the cluster resource object.
-	if resource.Properties["status"] == "offline" {
-		glog.Infof("Cluster %s is offline, removing cluster resources from datastore.", cluster.GetName())
-		delClusterResources(cluster)
-	}
-}
-
 func isClusterMissing(err error) bool {
 	if err == nil {
 		return false
@@ -246,7 +146,7 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 		props["namespace"] = cluster.GetNamespace()
 	}
 
-	if clusterStatus != nil {
+	if clusterStatus != nil { // TODO: confirm managed cluster has all of these properties
 		props["consoleURL"] = clusterStatus.Spec.ConsoleURL
 		props["cpu"], _ = clusterStatus.Spec.Capacity.Cpu().AsInt64()
 		props["memory"] = clusterStatus.Spec.Capacity.Memory().String()
@@ -320,19 +220,12 @@ func delClusterResources(cluster *clusterregistry.Cluster) {
 // cluster with status with conditions[0].type === '' indicates cluster is offline
 // Empty status indicates cluster has not been imported - is in pending mode
 // If cluster is pending import because Hive is installing or uninstalling, cluster status based on jobs will be creating/destroying
-func getStatusFromManagedClusterInfo(mcmClient *mcmClientset.Clientset) {
-
-	// create dynamic informer for managedClusterInfo
-	informer := initializeDynamicInformer(mcmClient)
-
-	// no return, let's handle this in handler
-}
 
 // initializes a dynamic informer specifically to watch ManagedClusterInfo type
 func initializeDynamicInformerForManagedClusterInfo(mcmClient *mcmClientset.Clientset) dynamic.dynamicinformer {
 
     // Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources
-    dynamicclientset, err := dynamic.newforconfig(mcmclient)
+    dynamicclientset, err := dynamic.newforconfig()
     if err != nil {
         // not fatal glog.fatal("cannot construct dynamic client from config: ", err)
     }
@@ -381,7 +274,7 @@ func managedClusterProcessClusterUpsert(obj interface{}, mcmClient *mcmClientset
 
 	var err error
 	var cluster *clusterregistry.Cluster
-	var clusterStatus *mcm.ClusterStatus
+	var clusterStatus *mcm.ClusterStatus // mci.status
 	var clusterDeployment *hive.ClusterDeployment
 	var ok bool
 	var installJobs, uninstallJobs *batch.JobList
