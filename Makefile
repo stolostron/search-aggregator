@@ -22,7 +22,7 @@ deps:
 
 .PHONY: search-aggregator
 search-aggregator:
-	CGO_ENABLED=0 go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
+	GO111MODULE=on CGO_ENABLED=0 go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
 
 .PHONY: build
 build: search-aggregator
