@@ -4,14 +4,21 @@ go 1.13
 
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.4
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
-	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200623154102-bb468f299408
+	github.com/onsi/ginkgo v1.11.0 // indirect
+	github.com/onsi/gomega v1.8.1 // indirect
+	// github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200623154102-bb468f299408
 	github.com/redislabs/redisgraph-go v1.0.0
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
+	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69 // indirect
+	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898 // indirect
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v13.0.0+incompatible
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )

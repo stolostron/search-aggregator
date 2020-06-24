@@ -14,8 +14,10 @@ import (
     "github.com/open-cluster-management/search-aggregator/pkg/config"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/rest" 
-	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
+	"k8s.io/client-go/rest"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"github.com/golang/glog"
+	// clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
 
 )
 
@@ -105,8 +107,8 @@ func initializeDynamicInformerForManagedClusterInfo(clientConfig *rest.Config) {
 
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
 
-	managedclusterinfo := &clusterv1beta1.ManagedClusterInfo{}
-	informer := dynamicFactory.ForResource(managedclusterinfo)
+	gvr, _ := schema.ParseResourceArg("managedclusterinfos.cluster.open-cluster-management.io") 
+	informer := dynamicFactory.ForResource(*gvr)
 
 }
 
