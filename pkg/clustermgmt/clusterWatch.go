@@ -135,15 +135,22 @@ func WatchClusters() {
 
 func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 
+	j, err := json.Marshal(obj.(*unstructured.Unstructured))
+	if err != nil {
+		panic(err) // Will be caught by handleRoutineExit
+	}
+
+
 	// read get managedClusterInfo Object
-	typedResource := &clusterv1beta1.ManagedClusterInfo{}
-	err := json.Unmarshal(obj.(*unstructured.Unstructured), &typedResource)
+	managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
+	err = json.Unmarshal(j, &managedClusterInfo)
 	if err != nil {
 		panic(err) // Will be caught by handleRoutineExit
 		// don't panic... maybe panic?	
 	}
-	managedClusterInfo := &clusterv1beta1.ManagedClusterInfo{&typedResource} //managedClusterInfo.Status 
 	glog.Infof("Processing Cluster Upsert; Managed Cluster Info Status:  %s, \n", managedClusterInfo.Status)
+	// managedClusterInfo := clusterv1beta1.ManagedClusterInfo{&typedResource} //managedClusterInfo.Status 
+	// glog.Infof("Processing Cluster Upsert; Managed Cluster Info Status:  %s, \n", managedClusterInfo.Status)
 
 /*
 	var err error
