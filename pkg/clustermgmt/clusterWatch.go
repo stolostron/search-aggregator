@@ -59,12 +59,14 @@ func WatchClusters() {
     }
 
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
-	gvr, _ := schema.ParseResourceArg("managedclusterinfos.cluster.open-cluster-management.io")
+	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.cluster.open-cluster-management.io")
+	//gvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")	
+	gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")	
 	clusterInformer := dynamicFactory.ForResource(*gvr).Informer()
 
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			glog.Info("received add event ", err)
+			glog.Info("received add event ")
 			processClusterUpsert(obj, config.KubeClient)
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
@@ -147,7 +149,9 @@ func WatchClusters() {
 }
 
 func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
-	var err error
+
+	glog.Infof("Processing Cluster Upsert")
+
 
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
@@ -155,17 +159,27 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	}
 
 
+	typedResource :=  clusterv1beta1.ManagedClusterInfo{}
+	err = json.Unmarshal(j, &typedResource)
+	if err != nil {
+		panic(err) // Will be caught by handleRoutineExit
+	}
+	glog.Infof("Processing Cluster Upsert; Managed Cluster Info Status:  %s, \n", typedResource.Status)
+//	trans := clusterv1beta1.ManagedClusterInfo{&typedResource}
+
+
+
+/* 
 	// read get managedClusterInfo Object
-	managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
 	err = json.Unmarshal(j, &managedClusterInfo)
 	if err != nil {
 		panic(err) // Will be caught by handleRoutineExit
 		// don't panic... maybe panic?	
 	}
-	glog.Infof("Processing Cluster Upsert; Managed Cluster Info Status:  %s, \n", managedClusterInfo.Status)
-
+*/
 /*
 
+	var err error
 	var cluster *clusterregistry.Cluster
 	var clusterStatus *mcm.ClusterStatus
 	var ok bool
