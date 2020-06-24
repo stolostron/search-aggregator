@@ -8,10 +8,12 @@ The source code for this program is not published or otherwise divested of its t
 // begin transition
 package clustermgmt
 
-// var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
-// var statClusterMapMutex = sync.RWMutex{}
-
 import (
+	"strings"
+	"sync"
+	"time"
+
+
 	"encoding/json"
     "github.com/open-cluster-management/search-aggregator/pkg/config"
 	"k8s.io/client-go/dynamic"
@@ -25,6 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+
+var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
+var statClusterMapMutex = sync.RWMutex{}
+
 //ClusterStat struct stores all resources needed to calculate status of the cluster
 type ClusterStat struct {
 	// cluster       *clusterregistry.Cluster
@@ -33,12 +39,18 @@ type ClusterStat struct {
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
-
+	glog.Info("Begin Watch Clusters Routine")
 	// first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset 
 	hubClientConfig, err := config.InitClient()
 	if err != nil {
 		glog.Info("Unable to create clientset ", err)
 	}
+
+
+	statClusterMap = map[string]bool{}
+	var stopper chan struct{}
+	informerRunning := false
+
 
     // Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources
 	dynamicClientset, err := dynamic.NewForConfig(hubClientConfig)
@@ -48,9 +60,9 @@ func WatchClusters() {
 
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
 	gvr, _ := schema.ParseResourceArg("managedclusterinfos.cluster.open-cluster-management.io")
-	informer := dynamicFactory.ForResource(*gvr).Informer()
+	clusterInformer := dynamicFactory.ForResource(*gvr).Informer()
 
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			glog.Info("received add event ", err)
 			processClusterUpsert(obj, config.KubeClient)
@@ -69,6 +81,7 @@ func WatchClusters() {
 			delCluster(cluster)*/
 		},
 	})
+
 
 
 
@@ -98,10 +111,10 @@ func WatchClusters() {
 			delCluster(cluster)
 		},
 	})
-
+	*/
 	// periodically check if the cluster resource exists and start/stop the informer accordingly
 	for {
-		_, err := clusterClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
+		_, err := config.KubeClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
 		// we fail to fetch for some reason other than not found
 		if err != nil && !isClusterMissing(err) {
 			glog.Error("Cannot fetch resource list for clusterregistry.k8s.io/v1alpha1: ", err)
@@ -130,7 +143,7 @@ func WatchClusters() {
 
 		time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
 	}
-	*/
+	/**/
 }
 
 func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
@@ -226,14 +239,14 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 */
 }
 
-/*
+
 func isClusterMissing(err error) bool {
 	if err == nil {
 		return false
 	}
 	return strings.Contains(err.Error(), "could not find the requested resource")
 }
-*/
+
 
 /*
 func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus) db.Resource {
