@@ -3,22 +3,23 @@ module github.com/open-cluster-management/search-aggregator
 go 1.13
 
 require (
+	github.com/Azure/go-autorest/autorest v0.10.0 // indirect
+	github.com/OpenAPITools/openapi-generator v4.2.3+incompatible // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.4.0 // indirect
+	github.com/gophercloud/gophercloud v0.8.0 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
-	github.com/open-cluster-management/multicloud-operators-foundation v1.0.0
-	github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5
+	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200623154102-bb468f299408
+	github.com/redislabs/redisgraph-go v2.0.2+incompatible
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
-	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 // indirect
-	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/utils v0.0.0-20200229041039-0a110f9eb7ab // indirect
+	k8s.io/client-go v13.0.0+incompatible
+	k8s.io/kubernetes v1.17.3 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 

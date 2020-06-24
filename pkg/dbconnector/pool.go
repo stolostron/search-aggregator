@@ -31,7 +31,7 @@ const (
 // Initializes the pool using functions in this file.
 // Also initializes the Store interface.
 func init() {
-
+	glog.Info("In pool init")
 	Pool = &redis.Pool{
 		MaxIdle:      10, // TODO: Expose with ENV. Idle connections are connections that have been returned to the pool.
 		MaxActive:    20, // TODO: Expose with ENV. Active connections = connections in-use + idle connections
@@ -39,15 +39,14 @@ func init() {
 		TestOnBorrow: testRedisConnection,
 		Wait:         true,
 	}
-
-	Store = RedisGraphStoreV1{}
+	Store = RedisGraphStoreV2{}
 
 }
 
 func getRedisConnection() (redis.Conn, error) {
 	var redisConn redis.Conn
 	if config.Cfg.RedisSSHPort != "" {
-		glog.V(2).Info("Initializing new Redis SSH client with redisHost: ", config.Cfg.RedisHost, " redisSSHPort: ", config.Cfg.RedisSSHPort)
+		glog.Info("Initializing new Redis SSH client with redisHost: ", config.Cfg.RedisHost, " redisSSHPort: ", config.Cfg.RedisSSHPort)
 		caCert, err := ioutil.ReadFile("./rediscert/redis.crt")
 		if err != nil {
 			glog.Error("Error loading TLS certificate. Redis Certificate must be mounted at ./sslcert/redis.crt: ", err)
@@ -75,18 +74,21 @@ func getRedisConnection() (redis.Conn, error) {
 
 	} else {
 		var err error
-		glog.V(2).Info("Initializing new Redis client with redisHost: ", config.Cfg.RedisHost, " redisPort: ", config.Cfg.RedisPort)
+		glog.Info("Initializing new Redis client with redisHost: ", config.Cfg.RedisHost, " redisPort: ", config.Cfg.RedisPort)
 
 		redisConn, err = redis.Dial("tcp", net.JoinHostPort(config.Cfg.RedisHost, config.Cfg.RedisPort))
 		if err != nil {
 			glog.Error("Error connecting redis host.")
 			return nil, err
+		} else {
+			glog.Info("No Error connecting redis host.")
+
 		}
 	}
 
 	// If a password is provided, then use it to authenticate the Redis connection.
 	if config.Cfg.RedisPassword != "" {
-		glog.V(2).Info("Authenticating Redis client using password from REDIS_PASSWORD.")
+		glog.Info("Authenticating Redis client using password from REDIS_PASSWORD.")
 		if _, err := redisConn.Do("AUTH", config.Cfg.RedisPassword); err != nil {
 			glog.Error("Error authenticating Redis client. Original error: ", err)
 			connError := redisConn.Close()
@@ -108,5 +110,6 @@ func testRedisConnection(c redis.Conn, t time.Time) error {
 		return nil
 	}
 	_, err := c.Do("PING")
+	glog.Info("PING Error: ", err)
 	return err
 }

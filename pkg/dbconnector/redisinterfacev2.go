@@ -7,12 +7,25 @@ The source code for this program is not published or otherwise divested of its t
 
 package dbconnector
 
-/*import (
+import (
 	"fmt"
+	"strconv"
 
 	"github.com/golang/glog"
-	rg2 "github.ibm.com/xrdharma/rg-2.0"
+	rg2 "github.com/redislabs/redisgraph-go"
 )
+
+var Store DBStore
+
+// Interface for the DB dependency. Used for mocking rg.
+type DBStore interface {
+	Query(q string) (QueryResult, error)
+}
+
+type QueryResult struct {
+	Results    [][]string
+	Statistics []string
+}
 
 type RedisGraphStoreV2 struct{}
 
@@ -23,7 +36,7 @@ func (RedisGraphStoreV2) Query(q string) (QueryResult, error) {
 	// Get connection from the pool
 	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
 	defer conn.Close()
-	glog.V(4).Infof("Query %s", q)
+	glog.Infof("Query %s", q)
 	qr := QueryResult{}
 	var err error
 
@@ -32,7 +45,47 @@ func (RedisGraphStoreV2) Query(q string) (QueryResult, error) {
 		Id:   GRAPH_NAME,
 	}
 	result, err2 := g.Query(q)
-	glog.V(4).Infof("Result Len %d", len(result.Results))
+	if err2 == nil {
+		glog.Info("Result: ", result.LabelsAdded())
+	} else {
+		glog.Error("Error fetching results: ", err2)
+	}
+	// fmt.Printf("Result: %+v\n", result)
+	statStr := "Query internal execution time:" + strconv.Itoa(result.RunTime())
+	qr.Statistics = append(qr.Statistics, statStr)
+	keys := map[string][][]string{}
+	for result.Next() {
+		for _, key := range result.Record().Keys() {
+			//glog.Info(i, " key: ", key)
+			var values [][]string
+
+			if _, ok := keys[key]; !ok {
+				keys[key] = [][]string{}
+			}
+			// print("values: ", values)
+			//values = append(values, key)
+			for _, val := range result.Record().Values() {
+				if valStr, ok := val.(string); ok {
+					values = append(values, []string{valStr})
+				}
+			}
+			if value, ok := keys[key]; ok {
+				value = append(value, values...)
+				keys[key] = value
+
+			} else {
+				glog.Info("key not in map")
+			}
+
+		}
+	}
+	for key, val := range keys {
+		val = append([][]string{{key}}, val...)
+		qr.Results = append(qr.Results, val...)
+	}
+	fmt.Printf("qr: %+v\n", qr)
+
+	/*glog.V(4).Infof("Result Len %d", len(result.Results))
 	glog.V(4).Infof("Head Len %d", len(result.Header.Column_names))
 	glog.V(4).Infof("Stat Len %d", len(result.Statistics))
 	for k, v := range result.Statistics {
@@ -63,7 +116,7 @@ func (RedisGraphStoreV2) Query(q string) (QueryResult, error) {
 		glog.V(4).Infof("QR2Result Len %d", len(qr.Results))
 		glog.V(4).Infof("QR2Stat Len %d", len(qr.Statistics))
 		err = err2
-	}
+	}*/
 	return qr, err
 
-} */
+}

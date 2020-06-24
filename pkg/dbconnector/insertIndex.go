@@ -16,19 +16,20 @@ func GetIndexes() {
 	resp, err := Store.Query("MATCH (n) RETURN distinct labels(n)")
 	if err == nil {
 		var ExistingIndexMapMutex = sync.RWMutex{}
-		for _, kind := range resp.Results[1:] {
-			//if the label is not present add to map and set to true
-			ExistingIndexMapMutex.RLock()
-			exists := ExistingIndexMap[kind[0]]
-			ExistingIndexMapMutex.RUnlock()
+		if resp.Results != nil {
+			for _, kind := range resp.Results[1:] {
+				//if the label is not present add to map and set to true
+				ExistingIndexMapMutex.RLock()
+				exists := ExistingIndexMap[kind[0]]
+				ExistingIndexMapMutex.RUnlock()
 
-			if !exists {
-				ExistingIndexMapMutex.Lock() // Lock map before writing
-				ExistingIndexMap[kind[0]] = true
-				ExistingIndexMapMutex.Unlock() // Unlock map after writing
+				if !exists {
+					ExistingIndexMapMutex.Lock() // Lock map before writing
+					ExistingIndexMap[kind[0]] = true
+					ExistingIndexMapMutex.Unlock() // Unlock map after writing
+				}
 			}
 		}
-
 	} else {
 		glog.Error("Error retrieving node labels from redisgraph while creating indices.")
 	}
