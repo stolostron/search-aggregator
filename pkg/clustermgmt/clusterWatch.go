@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"github.com/golang/glog"
 	"k8s.io/client-go/tools/cache"
-	// clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
+//	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
 	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -134,6 +134,7 @@ func WatchClusters() {
 }
 
 func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
+	var err error
 
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
@@ -149,11 +150,9 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 		// don't panic... maybe panic?	
 	}
 	glog.Infof("Processing Cluster Upsert; Managed Cluster Info Status:  %s, \n", managedClusterInfo.Status)
-	// managedClusterInfo := clusterv1beta1.ManagedClusterInfo{&typedResource} //managedClusterInfo.Status 
-	// glog.Infof("Processing Cluster Upsert; Managed Cluster Info Status:  %s, \n", managedClusterInfo.Status)
 
 /*
-	var err error
+
 	var cluster *clusterregistry.Cluster
 	var clusterStatus *mcm.ClusterStatus
 	var ok bool
