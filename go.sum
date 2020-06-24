@@ -653,6 +653,8 @@ github.com/quobyte/api v0.1.2/go.mod h1:jL7lIHrmqQ7yh05OJ+eEEdHr0u/kmT1Ff9iHd+4H
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/redislabs/redisgraph-go v1.0.0 h1:XQ/hs/0pxYXDJTM/lp9S+3XcGIrZmSOGqR8rhac6HuA=
 github.com/redislabs/redisgraph-go v1.0.0/go.mod h1:GYn4oUFkbkHx49xm2H4G8jZziqKDKdRtDUuTBZTmqBE=
+github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5 h1:llkMnUoZi1d5vUD4EC4GhMmANVJRO9A3LyeKhyW55XQ=
+github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5/go.mod h1:GYn4oUFkbkHx49xm2H4G8jZziqKDKdRtDUuTBZTmqBE=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/robfig/cron v0.0.0-20170526150127-736158dc09e1/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
 github.com/robfig/cron v1.1.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
