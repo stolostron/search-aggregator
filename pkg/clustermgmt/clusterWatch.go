@@ -10,15 +10,17 @@ package clustermgmt
 
 // var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
 // var statClusterMapMutex = sync.RWMutex{}
+
 import (
     "github.com/open-cluster-management/search-aggregator/pkg/config"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/rest"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"github.com/golang/glog"
+	"k8s.io/client-go/tools/cache"
+	// clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	// clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
-
+	kubeClientset "k8s.io/client-go/kubernetes"
 )
 
 //ClusterStat struct stores all resources needed to calculate status of the cluster
@@ -30,11 +32,40 @@ type ClusterStat struct {
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
 
-	clientConfig, err := config.InitClient() // first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset 
+	hubClientConfig, err := config.InitClient() // first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset 
 	if err != nil {
 		glog.Info("Unable to create clientset ", err)
 	}
-	initializeDynamicInformerForManagedClusterInfo(clientConfig)
+
+    // Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources
+	dynamicClientset, err := dynamic.NewForConfig(hubClientConfig)
+    if err != nil {
+        // not fatal glog.fatal("cannot construct dynamic client from config: ", err)
+    }
+
+	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
+
+	gvr, _ := schema.ParseResourceArg("managedclusterinfos.cluster.open-cluster-management.io")
+	informer := dynamicFactory.ForResource(*gvr).Informer()
+
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			processClusterUpsert(obj, config.KubeClient)
+		},
+		UpdateFunc: func(prev interface{}, next interface{}) {
+			processClusterUpsert(next, config.KubeClient)
+		},
+		DeleteFunc: func(obj interface{}) {
+			/*cluster, ok := obj.(*clusterregistry.Cluster)
+			if !ok {
+				glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
+				return
+			}
+			delCluster(cluster)*/
+		},
+	})
+
+
 
 	/* mcmClient, err := config.InitClient()
 	if err != nil {
@@ -97,24 +128,11 @@ func WatchClusters() {
 	*/
 }
 
-func initializeDynamicInformerForManagedClusterInfo(clientConfig *rest.Config) {
+func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 
-    // Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources
-	dynamicClientset, err := dynamic.NewForConfig(clientConfig)
-    if err != nil {
-        // not fatal glog.fatal("cannot construct dynamic client from config: ", err)
-    }
-
-	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
-
-	gvr, _ := schema.ParseResourceArg("managedclusterinfos.cluster.open-cluster-management.io") 
-	informer := dynamicFactory.ForResource(*gvr)
-
-}
 
 
 /*
-func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 	var err error
 	var cluster *clusterregistry.Cluster
 	var clusterStatus *mcm.ClusterStatus
@@ -186,8 +204,10 @@ func processClusterUpsert(obj interface{}, mcmClient *mcmClientset.Clientset) {
 		glog.Infof("Cluster %s is offline, removing cluster resources from datastore.", cluster.GetName())
 		delClusterResources(cluster)
 	}
+*/
 }
 
+/*
 func isClusterMissing(err error) bool {
 	if err == nil {
 		return false
