@@ -12,6 +12,7 @@ package clustermgmt
 // var statClusterMapMutex = sync.RWMutex{}
 
 import (
+	"encoding/json"
     "github.com/open-cluster-management/search-aggregator/pkg/config"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
@@ -19,8 +20,9 @@ import (
 	"github.com/golang/glog"
 	"k8s.io/client-go/tools/cache"
 	// clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
-	// clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
+	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
 	kubeClientset "k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 //ClusterStat struct stores all resources needed to calculate status of the cluster
@@ -32,7 +34,8 @@ type ClusterStat struct {
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
 
-	hubClientConfig, err := config.InitClient() // first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset 
+	// first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset 
+	hubClientConfig, err := config.InitClient()
 	if err != nil {
 		glog.Info("Unable to create clientset ", err)
 	}
@@ -44,18 +47,20 @@ func WatchClusters() {
     }
 
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
-
 	gvr, _ := schema.ParseResourceArg("managedclusterinfos.cluster.open-cluster-management.io")
 	informer := dynamicFactory.ForResource(*gvr).Informer()
 
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			glog.Info("received add event ", err)
 			processClusterUpsert(obj, config.KubeClient)
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
+			glog.Info("received update event", err)
 			processClusterUpsert(next, config.KubeClient)
 		},
 		DeleteFunc: func(obj interface{}) {
+			glog.Info("received delete event")
 			/*cluster, ok := obj.(*clusterregistry.Cluster)
 			if !ok {
 				glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
@@ -130,7 +135,15 @@ func WatchClusters() {
 
 func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 
-
+	// read get managedClusterInfo Object
+	typedResource := &clusterv1beta1.ManagedClusterInfo{}
+	err := json.Unmarshal(obj.(*unstructured.Unstructured), &typedResource)
+	if err != nil {
+		panic(err) // Will be caught by handleRoutineExit
+		// don't panic... maybe panic?	
+	}
+	managedClusterInfo := &clusterv1beta1.ManagedClusterInfo{&typedResource} //managedClusterInfo.Status 
+	glog.Infof("Processing Cluster Upsert; Managed Cluster Info Status:  %s, \n", managedClusterInfo.Status)
 
 /*
 	var err error
