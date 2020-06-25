@@ -3,6 +3,8 @@
 package dbconnector
 
 import (
+	"sync"
+
 	"github.com/golang/glog"
 )
 
@@ -14,12 +16,28 @@ func GetIndexes() {
 	resp, err := Store.Query("MATCH (n) RETURN distinct labels(n)")
 	if err == nil {
 
-		/*RG3 var ExistingIndexMapMutex = sync.RWMutex{} RG3*/
+		var ExistingIndexMapMutex = sync.RWMutex{}
 		if !resp.Empty() {
 			for resp.Next() {
 				record := resp.Record()
 
 				glog.Info("RG3", record.Values())
+				for _, kindVal := range record.Values() {
+					if kind, ok := kindVal.(string); ok {
+						glog.Info("Kind: ", kind)
+
+						//if the label is not present add to map and set to true
+						ExistingIndexMapMutex.RLock()
+						exists := ExistingIndexMap[kind]
+						ExistingIndexMapMutex.RUnlock()
+
+						if !exists {
+							ExistingIndexMapMutex.Lock() // Lock map before writing
+							ExistingIndexMap[kind] = true
+							ExistingIndexMapMutex.Unlock() // Unlock map after writing
+						}
+					}
+				}
 				/*RG3
 				//if the label is not present add to map and set to true
 				ExistingIndexMapMutex.RLock()
