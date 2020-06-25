@@ -17,12 +17,24 @@ func computeNodeCount(clusterName string) int {
 	resp, err := db.TotalNodes(clusterName)
 	if err != nil {
 		glog.Errorf("Error node count for cluster %s: %s", clusterName, err)
+		return 0
 	}
 
 	if resp.Empty() { // Just 1 would be just the header
 		glog.Info("Cluster ", clusterName, " doesn't have any nodes")
 		return 0
 	}
+	//Iterating to next record to get count - count is in the first index(0) of the first record
+	for resp.Next() {
+		record := resp.Record()
+		countInterface := record.GetByIndex(0)
+		if count, ok := countInterface.(int); ok {
+			return count
+		} else {
+			glog.Errorf("Could not parse node count results for cluster %s", clusterName)
+		}
+	}
+
 	/*RG3
 	// headers are at the top of table - count is in second row
 	countString := resp.Results[1][0]
@@ -42,12 +54,24 @@ func computeIntraEdges(clusterName string) int {
 	resp, err := db.TotalIntraEdges(clusterName)
 	if err != nil {
 		glog.Errorf("Error fetching edge count for cluster %s: %s", clusterName, err)
+		return 0
 	}
 
 	if resp.Empty() { // Just 1 would be just the header
 		glog.Info("Cluster ", clusterName, " doesn't have any edges")
 		return 0
 	}
+	//Iterating to next record to get count - count is in the first index(0) of the first record
+	for resp.Next() {
+		record := resp.Record()
+		countInterface := record.GetByIndex(0)
+		if count, ok := countInterface.(int); ok {
+			return count
+		} else {
+			glog.Errorf("Could not parse edge count results for cluster %s", clusterName)
+		}
+	}
+
 	/*RG3
 	// headers are at the top of table - count is in second row
 	countString := resp.Results[1][0]
@@ -70,6 +94,25 @@ func assertClusterNode(clusterName string) bool {
 			return false
 		}
 	} else {
+		resp, err := db.CheckClusterResource(clusterName)
+		if err != nil {
+			glog.Error("Could not check cluster resource by name: ", err)
+			return false
+		}
+		//Iterating to next record to get count - count is in the first index(0) of the first record
+		for resp.Next() {
+			record := resp.Record()
+			countInterface := record.GetByIndex(0)
+			if count, ok := countInterface.(int); ok {
+				if count <= 0 {
+					return false
+				}
+			} else {
+				glog.Errorf("Could not parse Cluster count results for cluster %s", clusterName)
+			}
+		}
+		// headers are at the top of table - count is in second row
+
 		/*RG3
 		resp, err := db.CheckClusterResource(clusterName)
 		if err != nil {
