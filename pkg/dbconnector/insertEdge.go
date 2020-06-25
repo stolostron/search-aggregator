@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	rg2 "github.com/redislabs/redisgraph-go"
 )
 
 // Inserts the given edges grouped by source
@@ -74,7 +76,7 @@ func ChunkedInsertEdge(resources []Edge) ChunkedOperationResult {
 }
 
 // e.g. MATCH (s:{_uid:'abc'}), (d) WHERE d._uid='def' OR d._uid='ghi' CREATE (s)-[:Type]>(d)
-func insertEdge(edge Edge, whereClause string) (QueryResult, error) {
+func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	query := fmt.Sprintf("MATCH (s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)", edge.SourceUID, whereClause, edge.EdgeType)
 	//Insert with node labels if only one edge is inserted at a time.
 	//If there are multiple edges being inserted, the edge destkinds might be different

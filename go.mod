@@ -6,18 +6,17 @@ require (
 	github.com/Azure/go-autorest/autorest v0.10.0 // indirect
 	github.com/OpenAPITools/openapi-generator v4.2.3+incompatible // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golangci/golangci-lint v1.24.0 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/gophercloud/gophercloud v0.8.0 // indirect
 	github.com/gorilla/mux v1.7.4
-	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200623154102-bb468f299408
 	github.com/redislabs/redisgraph-go v2.0.2+incompatible
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
+	golang.org/x/tools/gopls v0.4.1 // indirect
 	k8s.io/client-go v13.0.0+incompatible
 	k8s.io/kubernetes v1.17.3 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect

@@ -148,6 +148,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// let us store the Current Subscription Uids in a map [String] -> boolean
+	/*RG3
 	uidresults, uiderr := getUIDsForSubscriptions()
 	if uiderr == nil {
 		if len(uidresults.Results) > 1 {
@@ -159,6 +160,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	} else {
 		glog.Warningf("Error Fetching Subscriptions %s", uiderr)
 	}
+	RG3*/
 
 	// This usually indicates that something has gone wrong, basically that the collector detected we are out of sync and wants us to resync.
 	if syncEvent.ClearAll {
@@ -301,10 +303,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
+	/*RG3
 	if subscriptionUpdated {
 		ApplicationLastUpdated = time.Now()
 	}
+	RG3*/
 }
 
 // internal function to inline the errors

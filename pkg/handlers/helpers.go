@@ -7,8 +7,6 @@ The source code for this program is not published or otherwise divested of its t
 package handlers
 
 import (
-	"strconv"
-
 	"github.com/golang/glog"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
@@ -21,11 +19,11 @@ func computeNodeCount(clusterName string) int {
 		glog.Errorf("Error node count for cluster %s: %s", clusterName, err)
 	}
 
-	if len(resp.Results) <= 1 { // Just 1 would be just the header
+	if resp.Empty() { // Just 1 would be just the header
 		glog.Info("Cluster ", clusterName, " doesn't have any nodes")
 		return 0
 	}
-
+	/*RG3
 	// headers are at the top of table - count is in second row
 	countString := resp.Results[1][0]
 	count, err := strconv.Atoi(countString)
@@ -35,6 +33,8 @@ func computeNodeCount(clusterName string) int {
 	}
 
 	return count
+	RG3*/
+	return 0
 }
 
 // computeIntraEdges counts the nubmer of intra edges returned form db
@@ -44,11 +44,11 @@ func computeIntraEdges(clusterName string) int {
 		glog.Errorf("Error fetching edge count for cluster %s: %s", clusterName, err)
 	}
 
-	if len(resp.Results) <= 1 { // Just 1 would be just the header
+	if resp.Empty() { // Just 1 would be just the header
 		glog.Info("Cluster ", clusterName, " doesn't have any edges")
 		return 0
 	}
-
+	/*RG3
 	// headers are at the top of table - count is in second row
 	countString := resp.Results[1][0]
 	count, err := strconv.Atoi(countString)
@@ -58,6 +58,8 @@ func computeIntraEdges(clusterName string) int {
 	}
 
 	return count
+	RG3*/
+	return 0
 }
 
 func assertClusterNode(clusterName string) bool {
@@ -68,6 +70,7 @@ func assertClusterNode(clusterName string) bool {
 			return false
 		}
 	} else {
+		/*RG3
 		resp, err := db.CheckClusterResource(clusterName)
 		if err != nil {
 			glog.Error("Could not check cluster resource by name: ", err)
@@ -86,6 +89,7 @@ func assertClusterNode(clusterName string) bool {
 		if count <= 0 {
 			return false
 		}
+		RG3*/
 	}
 
 	return true

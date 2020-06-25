@@ -9,7 +9,6 @@ package handlers
 import (
 	"testing"
 
-	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 	rg "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,8 +22,8 @@ func (mc MockCache) Query(input string) (rg.QueryResult, error) {
 }
 
 func TestNodeCount(t *testing.T) {
-	fakeCache := MockCache{}
-	db.Store = fakeCache
+	//fakeCache := MockCache{}
+	//db.Store = fakeCache
 	count := computeNodeCount("anyinput")
 	assert.Equal(t, 100, count)
 }

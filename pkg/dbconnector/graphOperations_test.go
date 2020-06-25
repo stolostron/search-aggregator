@@ -29,7 +29,7 @@ func TestDeleteCluster(t *testing.T) {
 
 	mc := MockCache{}                                                 // Construct mock cache using type defined above
 	mc.goodQuery = "MATCH (n {cluster:'good-cluster-name'}) DELETE n" // Dictate what the next input to mocked Query
-	Store = mc
+	//Store = mc
 	resp, err := DeleteCluster("good-cluster-name")
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
@@ -39,7 +39,7 @@ func TestBadDeleteCluster(t *testing.T) {
 
 	mc := MockCache{}                                                 // Construct mock cache using type defined above
 	mc.goodQuery = "MATCH (n {cluster:'good-cluster-name'}) DELETE n" // Dictate what the next input to mocked Query
-	Store = mc
+	//Store = mc
 	_, err := DeleteCluster("bad-cluster=name")
 	assert.Error(t, err)
 }

@@ -9,17 +9,7 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 
 package handlers
 
-import (
-	"math/rand"
-	"time"
-
-	"github.com/golang/glog"
-
-	"github.com/open-cluster-management/search-aggregator/pkg/config"
-	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
-	rg "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
-)
-
+/*RG3
 var ApplicationLastUpdated time.Time
 var previousAppInstance int
 
@@ -65,11 +55,12 @@ func BuildInterClusterEdges() {
 	}
 }
 
-func getUIDsForSubscriptions() (rg.QueryResult, error) {
+func getUIDsForSubscriptions() (*rg2.QueryResult, error) {
 	query := "MATCH (n {kind: 'subscription'}) RETURN n._uid"
 	uidResults, err := db.Store.Query(query)
 	return uidResults, err
 }
+RG3*/
 
 /*func buildPolicyEdges() (rg.QueryResult, error) {
 	// Record start time
@@ -160,7 +151,7 @@ func getUIDsForSubscriptions() (rg.QueryResult, error) {
 	return rg.QueryResult{}, nil
 
 }*/
-
+/*RG3
 func buildSubscriptions() (rg.QueryResult, error) {
 	// Record start time
 	start := time.Now()
@@ -241,3 +232,4 @@ func buildSubscriptions() (rg.QueryResult, error) {
 
 	return rg.QueryResult{}, nil
 }
+RG3*/
