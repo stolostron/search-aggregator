@@ -71,12 +71,19 @@ func WatchClusters() {
 		},
 		DeleteFunc: func(obj interface{}) {
 			glog.Info("received delete event")
-			/*cluster, ok := obj.(*clusterregistry.Cluster)
-			if !ok {
-				glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
-				return
+
+			j, err := json.Marshal(obj.(*unstructured.Unstructured))
+			if err != nil {
+				glog.Error("Failed to marshall on cluster watch DeleteFunc")
 			}
-			delCluster(cluster)*/
+
+			managedCluster := clusterv1.ManagedCluster{}
+			err = json.Unmarshal(j, &managedCluster)
+			if err != nil {
+				glog.Error("Failed to unmarshall on cluster watch DeleteFunc")
+			}
+
+			delCluster(managedCluster.GetName(), string(managedCluster.GetUID()))
 		},
 	})
 
@@ -125,7 +132,6 @@ func WatchClusters() {
 				go clusterInformer.Run(stopper)
 			}
 		}
-
 		time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
 	}
 }
@@ -160,7 +166,8 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	resource := transformCluster(&managedCluster, &managedCluster.Status)
 	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
 	resource.Properties["status"] = "" // TODO: Get the status.
-	clustName, ok := resource.Properties["name"].(string)
+	clustName, _ := resource.Properties["name"].(string)
+	resource.Properties["name"] = clustName
 
 	// Ensure that the cluster resource is still present before inserting into data store.
 	/* assuming it's still there
@@ -264,22 +271,21 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 }
 
 // Deletes a cluster resource and all resourcces from the cluster.
-// func delCluster(cluster *clusterregistry.Cluster) {
-// 	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", cluster.Name)
-// 	uid := string(cluster.GetUID())
-// 	_, err := db.Delete([]string{uid})
-// 	if err != nil {
-// 		glog.Error("Error deleting Cluster kind with error: ", err)
-// 	}
-// 	delClusterResources(cluster)
-// }
+func delCluster(clusterUID string, clusterName string) {
+	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", clusterName)
+	_, err := db.Delete([]string{clusterUID})
+	if err != nil {
+		glog.Error("Error deleting Cluster kind with error: ", err)
+	}
+	delClusterResources(clusterUID, clusterName)
+}
 
 // Removes all the resources for a cluster, but doesn't remove the Cluster resource object.
-// func delClusterResources(cluster *clusterregistry.Cluster) {
-// 	_, err := db.DeleteCluster(cluster.GetName())
-// 	if err != nil {
-// 		glog.Error("Error deleting current resources for cluster: ", err)
-// 	} else {
-// 		db.DeleteClustersCache(string(cluster.GetUID()))
-// 	}
-// }
+func delClusterResources(clusterUID string, clusterName string) {
+	_, err := db.DeleteCluster(clusterName)
+	if err != nil {
+		glog.Error("Error deleting current resources for cluster: ", err)
+	} else {
+		db.DeleteClustersCache(clusterUID)
+	}
+}
