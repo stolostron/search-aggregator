@@ -256,7 +256,7 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 	// get these fields from object
 	props["name"] = cluster.GetName()
 
-	props["kind"] = "ManagedCluster"
+	props["kind"] = "Cluster"
 	/*props["apigroup"] = "clusterregistry.k8s.io"
 	props["selfLink"] = cluster.GetSelfLink()
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
@@ -326,5 +326,4 @@ func delClusterResources(cluster *clusterregistry.Cluster) {
 		db.DeleteClustersCache(string(cluster.GetUID()))
 	}
 }
-
 
