@@ -15,15 +15,17 @@ import (
 
 	//v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"encoding/json"
-    "github.com/open-cluster-management/search-aggregator/pkg/config"
+
+	"github.com/golang/glog"
+	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"github.com/golang/glog"
+	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
-	kubeClientset "k8s.io/client-go/kubernetes"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	//clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
 	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
@@ -41,26 +43,24 @@ type ClusterStat struct {
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
 	glog.Info("Begin Watch Clusters Routine")
-	// first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset 
+	// first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset
 	hubClientConfig, err := config.InitClient()
 	if err != nil {
 		glog.Info("Unable to create clientset ", err)
 	}
 
-
 	statClusterMap = map[string]bool{}
 	var stopper chan struct{}
 	informerRunning := false
 
-
-    // Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources
+	// Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources
 	dynamicClientset, err := dynamic.NewForConfig(hubClientConfig)
-    if err != nil {
-        // not fatal glog.fatal("cannot construct dynamic client from config: ", err)
-    }
+	if err != nil {
+		// not fatal glog.fatal("cannot construct dynamic client from config: ", err)
+	}
 
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
-	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")	
+	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")
 	gvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
 	clusterInformer := dynamicFactory.ForResource(*gvr).Informer() // for ManagedCluster
 
@@ -83,9 +83,6 @@ func WatchClusters() {
 			delCluster(cluster)*/
 		},
 	})
-
-
-
 
 	/* mcmClient, err := config.InitClient()
 	if err != nil {
@@ -158,12 +155,12 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 		panic(err) // Will be caught by handleRoutineExit
 	}
 
-	managedCluster :=  clusterv1.ManagedCluster{}
+	managedCluster := clusterv1.ManagedCluster{}
 	err = json.Unmarshal(j, &managedCluster)
 	if err != nil {
 		panic(err) // Will be caught by handleRoutineExit
 	}
-	glog.Infof("Managed Cluster Info as string: %s \n", managedCluster) 
+	glog.Infof("Managed Cluster Info as string: %s \n", managedCluster)
 
 	/*cluster, ok = obj.(*clusterregistry.Cluster) // ManagedClusterInfo will not assert as cluster ..
 	if !ok {
@@ -173,7 +170,7 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	// clusterStatus from ManagedCluster or ManagedClusterInfo?
 	// https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/cluster/v1beta1/clusterinfo_types.go
 	// https://github.com/open-cluster-management/api/blob/master/cluster/v1/types.go#L78
-    // Old Definition https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/mcm/v1alpha1/clusterstatus_types.go	
+	// Old Definition https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/mcm/v1alpha1/clusterstatus_types.go
 
 	resource := transformCluster(&managedCluster, &managedCluster.Status)
 	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
@@ -205,7 +202,7 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	}
 
 	// Ensure that the cluster resource is still present before inserting into data store.
-	/* assuming it's still there 
+	/* assuming it's still there
 	c, err := cluster.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
 	if err != nil {
 		glog.Warningf("The cluster %s to add/update is not present anymore.", cluster.Name)
@@ -215,21 +212,21 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	*/
 
 	_, _, err = db.Insert([]*db.Resource{&resource}, "")
-/*
-	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
-	_, err = db.UpdateByName(resource)
-	if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
-		glog.Info("Cluster graph/key object does not exist, inserting new object")
-		_, _, err = db.Insert([]*db.Resource{&resource}, "")
-		if err != nil {
-			glog.Error("Error adding Cluster kind with error: ", err)
+	/*
+		glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
+		_, err = db.UpdateByName(resource)
+		if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
+			glog.Info("Cluster graph/key object does not exist, inserting new object")
+			_, _, err = db.Insert([]*db.Resource{&resource}, "")
+			if err != nil {
+				glog.Error("Error adding Cluster kind with error: ", err)
+				return
+			}
+		} else if err != nil { // generic error not known above
+			glog.Error("Error updating Cluster kind with errors: ", err)
 			return
 		}
-	} else if err != nil { // generic error not known above
-		glog.Error("Error updating Cluster kind with errors: ", err)
-		return
-	}
-*/
+	*/
 	// If a cluster is offline we remove the resources from that cluster, but leave the cluster resource object.
 	/*if resource.Properties["status"] == "offline" {
 		glog.Infof("Cluster %s is offline, removing cluster resources from datastore.", cluster.GetName())
@@ -238,7 +235,6 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 
 }
 
-
 func isClusterMissing(err error) bool {
 	if err == nil {
 		return false
@@ -246,12 +242,9 @@ func isClusterMissing(err error) bool {
 	return strings.Contains(err.Error(), "could not find the requested resource")
 }
 
-
-
 func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv1.ManagedClusterStatus) db.Resource {
 
 	props := make(map[string]interface{})
-
 
 	// get these fields from object
 	props["name"] = cluster.GetName()
@@ -294,17 +287,16 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 			props["storage"] = storage.String()
 		}
 	}
-*/
+	*/
 
 	return db.Resource{
-		Kind:           "Cluster"
+		Kind:           "Cluster",
 		UID:            string(cluster.GetUID()),
 		Properties:     props,
 		ResourceString: "managedclusters",
 	}
 
 }
-
 
 // Deletes a cluster resource and all resourcces from the cluster.
 func delCluster(cluster *clusterregistry.Cluster) {
@@ -326,4 +318,3 @@ func delClusterResources(cluster *clusterregistry.Cluster) {
 		db.DeleteClustersCache(string(cluster.GetUID()))
 	}
 }
-
