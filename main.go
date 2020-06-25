@@ -48,8 +48,6 @@ func main() {
 	go clustermgmt.WatchClusters()
 
 	// Run routine to build intercluster edges
-
-
 	go handlers.BuildInterClusterEdges()
 
 	router := mux.NewRouter()

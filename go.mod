@@ -22,10 +22,8 @@ require (
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
-	k8s.io/apiextensions-apiserver v0.17.2 // indirect
 	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v13.0.0+incompatible
-	k8s.io/cluster-registry v0.0.6
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 

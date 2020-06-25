@@ -24,7 +24,6 @@ import (
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 
 	//clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
 	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
@@ -35,10 +34,10 @@ var statClusterMap map[string]bool // Install/uninstall jobs might take some tim
 var statClusterMapMutex = sync.RWMutex{}
 
 //ClusterStat struct stores all resources needed to calculate status of the cluster
-type ClusterStat struct {
-	cluster       *clusterregistry.Cluster
-	clusterStatus *clusterv1.ManagedClusterStatus
-}
+// type ClusterStat struct {
+// 	cluster       *clusterregistry.Cluster
+// 	clusterStatus *clusterv1.ManagedClusterStatus
+// }
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
 func WatchClusters() {
@@ -56,7 +55,7 @@ func WatchClusters() {
 	// Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources
 	dynamicClientset, err := dynamic.NewForConfig(hubClientConfig)
 	if err != nil {
-		// not fatal glog.fatal("cannot construct dynamic client from config: ", err)
+		glog.Warning("cannot construct dynamic client for cluster watch from config: ", err)
 	}
 
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
@@ -113,13 +112,13 @@ func WatchClusters() {
 	*/
 	// periodically check if the cluster resource exists and start/stop the informer accordingly
 	for {
-		_, err := config.KubeClient.ServerResourcesForGroupVersion("clusterregistry.k8s.io/v1alpha1")
+		_, err := config.KubeClient.ServerResourcesForGroupVersion("cluster.open-cluster-management.io/v1")
 		// we fail to fetch for some reason other than not found
 		if err != nil && !isClusterMissing(err) {
-			glog.Error("Cannot fetch resource list for clusterregistry.k8s.io/v1alpha1: ", err)
+			glog.Error("Cannot fetch resource list for cluster.open-cluster-management.io/v1: ", err)
 		} else {
 			if isClusterMissing(err) && informerRunning {
-				glog.Info("Stopping cluster informer routine because clusterregistry resource not found")
+				glog.Info("Stopping cluster informer routine because ManagedCluster resource not found.")
 				stopper <- struct{}{}
 				informerRunning = false
 			} else if !isClusterMissing(err) && !informerRunning {
@@ -160,7 +159,7 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	if err != nil {
 		panic(err) // Will be caught by handleRoutineExit
 	}
-	glog.Infof("Managed Cluster Info as string: %s \n", managedCluster)
+	glog.Info("Managed Cluster Info as string: ", managedCluster)
 
 	/*cluster, ok = obj.(*clusterregistry.Cluster) // ManagedClusterInfo will not assert as cluster ..
 	if !ok {
@@ -174,7 +173,7 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 
 	resource := transformCluster(&managedCluster, &managedCluster.Status)
 	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
-	resource.Properties["status"] = "TODO" // TODO: Get the status.
+	resource.Properties["status"] = "" // TODO: Get the status.
 	clustName, ok := resource.Properties["name"].(string)
 	// Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use statClusterMap to restart the clusterInformer in order to update cluster status -
 	// TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
@@ -212,6 +211,10 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	*/
 
 	_, _, err = db.Insert([]*db.Resource{&resource}, "")
+	if err != nil {
+		glog.Error("Error adding Cluster kind with error: ", err)
+		return
+	}
 	/*
 		glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
 		_, err = db.UpdateByName(resource)
@@ -299,22 +302,22 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 }
 
 // Deletes a cluster resource and all resourcces from the cluster.
-func delCluster(cluster *clusterregistry.Cluster) {
-	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", cluster.Name)
-	uid := string(cluster.GetUID())
-	_, err := db.Delete([]string{uid})
-	if err != nil {
-		glog.Error("Error deleting Cluster kind with error: ", err)
-	}
-	delClusterResources(cluster)
-}
+// func delCluster(cluster *clusterregistry.Cluster) {
+// 	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", cluster.Name)
+// 	uid := string(cluster.GetUID())
+// 	_, err := db.Delete([]string{uid})
+// 	if err != nil {
+// 		glog.Error("Error deleting Cluster kind with error: ", err)
+// 	}
+// 	delClusterResources(cluster)
+// }
 
 // Removes all the resources for a cluster, but doesn't remove the Cluster resource object.
-func delClusterResources(cluster *clusterregistry.Cluster) {
-	_, err := db.DeleteCluster(cluster.GetName())
-	if err != nil {
-		glog.Error("Error deleting current resources for cluster: ", err)
-	} else {
-		db.DeleteClustersCache(string(cluster.GetUID()))
-	}
-}
+// func delClusterResources(cluster *clusterregistry.Cluster) {
+// 	_, err := db.DeleteCluster(cluster.GetName())
+// 	if err != nil {
+// 		glog.Error("Error deleting current resources for cluster: ", err)
+// 	} else {
+// 		db.DeleteClustersCache(string(cluster.GetUID()))
+// 	}
+// }
