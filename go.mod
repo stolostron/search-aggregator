@@ -3,16 +3,26 @@ module github.com/open-cluster-management/search-aggregator
 go 1.13
 
 require (
+	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
+	github.com/google/gofuzz v1.1.0 // indirect
+	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.4
+	github.com/hashicorp/golang-lru v0.5.3 // indirect
+	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
+	github.com/onsi/ginkgo v1.13.0 // indirect
 	github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a
-	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200623154102-bb468f299408
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
+	google.golang.org/appengine v1.6.5 // indirect
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	k8s.io/apiextensions-apiserver v0.17.2 // indirect
 	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v13.0.0+incompatible
 	k8s.io/cluster-registry v0.0.6
