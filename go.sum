@@ -575,6 +575,8 @@ github.com/onsi/gomega v1.10.1 h1:o0+MgICZLuZ7xjH7Vx6zS/zcu93/BEp1VwkIW1mEXCE=
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
 github.com/open-cluster-management/api v0.0.0-20200602195039-a516cac2e038 h1:ZpSgcQERvBBvfwqhdPbxIami9gZpX+RwjNPqwx4+axY=
 github.com/open-cluster-management/api v0.0.0-20200602195039-a516cac2e038/go.mod h1:+vUECYB7WkfCb52r0J7rxgD1mseSGAqGi8rTLLRcbgw=
+github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a h1:pn5A3eBIYfORnOaZ6POYZWVG28VybNcmK6mRPqrdPgo=
+github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a/go.mod h1:+vUECYB7WkfCb52r0J7rxgD1mseSGAqGi8rTLLRcbgw=
 github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200623154102-bb468f299408 h1:QqVhaTy8PF4eRxy5ALNIEwpMEpfxY7lltZ/O8sp5qTg=
 github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200623154102-bb468f299408/go.mod h1:xGILCxP/UfrhQrWqIdVw0mhQ83D4ARFavSzWB7FKSOc=
 github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
@@ -651,8 +653,6 @@ github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40T
 github.com/prometheus/tsdb v0.8.0/go.mod h1:fSI0j+IUQrDd7+ZtR9WKIGtoYAYAJUKcKhYLG25tN4g=
 github.com/quobyte/api v0.1.2/go.mod h1:jL7lIHrmqQ7yh05OJ+eEEdHr0u/kmT1Ff9iHd+4H6VI=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
-github.com/redislabs/redisgraph-go v1.0.0 h1:XQ/hs/0pxYXDJTM/lp9S+3XcGIrZmSOGqR8rhac6HuA=
-github.com/redislabs/redisgraph-go v1.0.0/go.mod h1:GYn4oUFkbkHx49xm2H4G8jZziqKDKdRtDUuTBZTmqBE=
 github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5 h1:llkMnUoZi1d5vUD4EC4GhMmANVJRO9A3LyeKhyW55XQ=
 github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5/go.mod h1:GYn4oUFkbkHx49xm2H4G8jZziqKDKdRtDUuTBZTmqBE=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=

@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-
+	//v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"encoding/json"
     "github.com/open-cluster-management/search-aggregator/pkg/config"
 	"k8s.io/client-go/dynamic"
@@ -21,20 +21,21 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"github.com/golang/glog"
 	"k8s.io/client-go/tools/cache"
-//	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
-	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
+	clusterregistry "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	//clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
+	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
+	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
-
 
 var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
 var statClusterMapMutex = sync.RWMutex{}
 
 //ClusterStat struct stores all resources needed to calculate status of the cluster
 type ClusterStat struct {
-	// cluster       *clusterregistry.Cluster
-	// clusterStatus *mcm.ClusterStatus
+	cluster       *clusterregistry.Cluster
+	clusterStatus *clusterv1.ManagedClusterStatus
 }
 
 // WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
@@ -59,10 +60,9 @@ func WatchClusters() {
     }
 
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
-	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.cluster.open-cluster-management.io")
-	//gvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")	
-	gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")	
-	clusterInformer := dynamicFactory.ForResource(*gvr).Informer()
+	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")	
+	gvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
+	clusterInformer := dynamicFactory.ForResource(*gvr).Informer() // for ManagedCluster
 
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -149,58 +149,39 @@ func WatchClusters() {
 }
 
 func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
-
 	glog.Infof("Processing Cluster Upsert")
 
+	var err error
 
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
 		panic(err) // Will be caught by handleRoutineExit
 	}
 
-
-	typedResource :=  clusterv1beta1.ManagedClusterInfo{}
-	err = json.Unmarshal(j, &typedResource)
+	managedCluster :=  clusterv1.ManagedCluster{}
+	err = json.Unmarshal(j, &managedCluster)
 	if err != nil {
 		panic(err) // Will be caught by handleRoutineExit
 	}
-	glog.Infof("Processing Cluster Upsert; Managed Cluster Info Status:  %s, \n", typedResource.Status)
-//	trans := clusterv1beta1.ManagedClusterInfo{&typedResource}
+	glog.Infof("Managed Cluster Info as string: %s \n", managedCluster) 
 
-
-
-/* 
-	// read get managedClusterInfo Object
-	err = json.Unmarshal(j, &managedClusterInfo)
-	if err != nil {
-		panic(err) // Will be caught by handleRoutineExit
-		// don't panic... maybe panic?	
-	}
-*/
-/*
-
-	var err error
-	var cluster *clusterregistry.Cluster
-	var clusterStatus *mcm.ClusterStatus
-	var ok bool
-
-	cluster, ok = obj.(*clusterregistry.Cluster)
+	/*cluster, ok = obj.(*clusterregistry.Cluster) // ManagedClusterInfo will not assert as cluster ..
 	if !ok {
 		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
 		return
-	}
-	clusterStatus, err = mcmClient.McmV1alpha1().ClusterStatuses(cluster.GetNamespace()).Get(cluster.GetName(), v1.GetOptions{})
-	if err != nil {
-		glog.Error("Failed to fetch cluster status: ", err)
-		clusterStatus = nil //If there is an error fetching clusterStatus, reset it to nil
-	}
+	}*/
+	// clusterStatus from ManagedCluster or ManagedClusterInfo?
+	// https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/cluster/v1beta1/clusterinfo_types.go
+	// https://github.com/open-cluster-management/api/blob/master/cluster/v1/types.go#L78
+    // Old Definition https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/mcm/v1alpha1/clusterstatus_types.go	
 
-	resource := transformCluster(clusterStatus)
-	clusterstat := ClusterStat{clusterStatus: clusterStatus}
+	resource := transformCluster(&managedCluster, &managedCluster.Status)
+	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
 	resource.Properties["status"] = "TODO" // TODO: Get the status.
 	clustName, ok := resource.Properties["name"].(string)
 	// Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use statClusterMap to restart the clusterInformer in order to update cluster status -
 	// TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
+	// Use cluster, clusterstatus
 	if ok {
 		statClusterMapMutex.RLock()
 		present := statClusterMap[clustName]
@@ -224,15 +205,19 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	}
 
 	// Ensure that the cluster resource is still present before inserting into data store.
-	c, err := config.ClusterClient.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
+	/* assuming it's still there 
+	c, err := cluster.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
 	if err != nil {
 		glog.Warningf("The cluster %s to add/update is not present anymore.", cluster.Name)
 		delCluster(cluster)
 		return
 	}
+	*/
 
+	_, _, err = db.Insert([]*db.Resource{&resource}, "")
+/*
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
-	res, err := db.UpdateByName(resource)
+	_, err = db.UpdateByName(resource)
 	if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
 		_, _, err = db.Insert([]*db.Resource{&resource}, "")
@@ -244,13 +229,13 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 		glog.Error("Error updating Cluster kind with errors: ", err)
 		return
 	}
-
+*/
 	// If a cluster is offline we remove the resources from that cluster, but leave the cluster resource object.
-	if resource.Properties["status"] == "offline" {
+	/*if resource.Properties["status"] == "offline" {
 		glog.Infof("Cluster %s is offline, removing cluster resources from datastore.", cluster.GetName())
 		delClusterResources(cluster)
-	}
-*/
+	}*/
+
 }
 
 
@@ -262,13 +247,17 @@ func isClusterMissing(err error) bool {
 }
 
 
-/*
-func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.ClusterStatus) db.Resource {
+
+func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv1.ManagedClusterStatus) db.Resource {
+
 	props := make(map[string]interface{})
 
+
+	// get these fields from object
 	props["name"] = cluster.GetName()
-	props["kind"] = "Cluster"
-	props["apigroup"] = "clusterregistry.k8s.io"
+
+	props["kind"] = "ManagedCluster"
+	/*props["apigroup"] = "clusterregistry.k8s.io"
 	props["selfLink"] = cluster.GetSelfLink()
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
@@ -305,13 +294,15 @@ func transformCluster(cluster *clusterregistry.Cluster, clusterStatus *mcm.Clust
 			props["storage"] = storage.String()
 		}
 	}
+*/
 
 	return db.Resource{
-		Kind:           "Cluster",
+		Kind:           "ManagedCluster",
 		UID:            string(cluster.GetUID()),
 		Properties:     props,
-		ResourceString: "clusters",
+		ResourceString: "managedclusters",
 	}
+
 }
 
 
@@ -336,4 +327,4 @@ func delClusterResources(cluster *clusterregistry.Cluster) {
 	}
 }
 
-*/
+
