@@ -2,18 +2,18 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
+
+Copyright (c) 2020 Red Hat, Inc.
 */
-// Copyright (c) 2020 Red Hat, Inc.
-// begin transition
+
 package clustermgmt
 
 import (
 	"strings"
-	"sync"
 	"time"
 
-	//v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"encoding/json"
 
 	"github.com/golang/glog"
@@ -30,9 +30,6 @@ import (
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
-var statClusterMap map[string]bool // Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use this map to restart the clusterInformer in order to update cluster status
-var statClusterMapMutex = sync.RWMutex{}
-
 //ClusterStat struct stores all resources needed to calculate status of the cluster
 // type ClusterStat struct {
 // 	cluster       *clusterregistry.Cluster
@@ -48,7 +45,7 @@ func WatchClusters() {
 		glog.Info("Unable to create clientset ", err)
 	}
 
-	statClusterMap = map[string]bool{}
+	// statClusterMap = map[string]bool{}
 	var stopper chan struct{}
 	informerRunning := false
 
@@ -126,22 +123,11 @@ func WatchClusters() {
 				stopper = make(chan struct{})
 				informerRunning = true
 				go clusterInformer.Run(stopper)
-			} else {
-				//If any clusters are in `unknown` status, restart the informers - this is a workaround instead of watching the install, uninstall jobs for a cluster
-				//TODO: Remove this and get cluster status from cluster object using issue (open-cluster-management/backlog#1518)
-				if len(statClusterMap) > 0 {
-					glog.V(2).Info("Restarting cluster informer routine for cluster watch")
-					stopper <- struct{}{}
-					stopper = make(chan struct{})
-					informerRunning = true
-					go clusterInformer.Run(stopper)
-				}
 			}
 		}
 
 		time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
 	}
-	/**/
 }
 
 func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
@@ -175,30 +161,6 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
 	resource.Properties["status"] = "" // TODO: Get the status.
 	clustName, ok := resource.Properties["name"].(string)
-	// Install/uninstall jobs might take some time to start - if cluster is in unknown status, we use statClusterMap to restart the clusterInformer in order to update cluster status -
-	// TODO: Remove this workaround and get a cluster status variable from mcm with each cluster resource
-	// Use cluster, clusterstatus
-	if ok {
-		statClusterMapMutex.RLock()
-		present := statClusterMap[clustName]
-		statClusterMapMutex.RUnlock()
-
-		if present {
-			//delete the cluster from map if status is not unknown anymore
-			if resource.Properties["status"] != "unknown" {
-				statClusterMapMutex.Lock()
-				delete(statClusterMap, clustName)
-				statClusterMapMutex.Unlock()
-			}
-		} else {
-			//add the cluster to map if status is unknown
-			if resource.Properties["status"] == "unknown" {
-				statClusterMapMutex.Lock()
-				statClusterMap[clustName] = true
-				statClusterMapMutex.Unlock()
-			}
-		}
-	}
 
 	// Ensure that the cluster resource is still present before inserting into data store.
 	/* assuming it's still there
