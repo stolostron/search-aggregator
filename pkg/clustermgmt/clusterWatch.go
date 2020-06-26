@@ -42,7 +42,7 @@ func WatchClusters() {
 	// first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset
 	hubClientConfig, err := config.InitClient()
 	if err != nil {
-		glog.Info("Unable to create clientset ", err)
+		glog.Info("Unable to create ClusterWatch clientset ", err)
 	}
 
 	// statClusterMap = map[string]bool{}
@@ -55,7 +55,7 @@ func WatchClusters() {
 		glog.Warning("cannot construct dynamic client for cluster watch from config: ", err)
 	}
 
-	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 0)
+	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 60*time.Second)
 	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")
 	gvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
 	clusterInformer := dynamicFactory.ForResource(*gvr).Informer() // for ManagedCluster
