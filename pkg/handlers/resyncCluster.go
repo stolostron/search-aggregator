@@ -167,7 +167,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		glog.Info("EdgeType: ", valueToString(e.GetByIndex(1)))
 		glog.Info("DestUID: ", valueToString(e.GetByIndex(2)))
 
-		existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(0)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
+		existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
 		glog.Info("len existingEdges: ", len(existingEdges))
 	}
 
