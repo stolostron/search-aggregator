@@ -33,7 +33,7 @@ func computeNodeCount(clusterName string) int {
 		glog.Info("Cluster ", clusterName, " doesn't have any nodes.")
 		glog.Info("Exit computeNodeCount - 1")
 		return 0
-	} else if len(resp.Results[1]) <= 1 { // Just 1 would be just the header
+	} else if len(resp.Results[1]) == 0 { // Query had no results.
 		glog.Info("Recieved unexpected result from query.  Cluster ", clusterName)
 		glog.Info("Exit computeNodeCount - 2")
 		return 0
