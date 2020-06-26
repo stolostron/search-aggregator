@@ -145,7 +145,7 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 
 	resource := transformCluster(&managedCluster, &managedCluster.Status)
 	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
-	resource.Properties["status"] = "" // TODO: Get the status.
+	resource.Properties["status"] = "unknown" // TODO: Get the status.
 
 	glog.Info("Transformed resource: ", resource)
 	// Ensure that the cluster resource is still present before inserting into data store.
@@ -160,8 +160,11 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
 	res, err := db.UpdateByName(resource)
+	if err != nil {
+		glog.Warning("Error on UpdateByName", err)
+	}
+	glog.Info("db.UpdateByName() result: ", res)
 
-	glog.Info("db.UpdateByName(resource) -> ", res, "  ", err)
 	if db.IsGraphMissing(err) || !db.IsPropertySet(res) /*&& (c.Name == cluster.Name)*/ {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
 		_, _, err = db.Insert([]*db.Resource{&resource}, "")
