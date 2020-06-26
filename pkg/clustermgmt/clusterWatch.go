@@ -216,7 +216,7 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 
 	// get these fields from ManagedCluster object
 	props["name"] = cluster.GetName()
-	props["kind"] = "Cluster"
+	props["kind"] = "cluster"
 	props["apigroup"] = "cluster.open-cluster-management.io"
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 

@@ -21,13 +21,18 @@ func computeNodeCount(clusterName string) int {
 		glog.Errorf("Error node count for cluster %s: %s", clusterName, err)
 	}
 
-	if len(resp.Results[0]) <= 1 { // Just 1 would be just the header
+	glog.Info("Cluster: ", clusterName, "total resp: ", resp)
+
+	if len(resp.Results) <= 1 { // Just 1 would be just the header
 		glog.Info("Cluster ", clusterName, " doesn't have any nodes")
+		return 0
+	} else if len(resp.Results[0]) <= 1 { // Just 1 would be just the header
+		glog.Info("Recieved unexpected result from query", resp.Results)
 		return 0
 	}
 
 	// headers are at the top of table - count is in second row
-	countString := resp.Results[0][1]
+	countString := resp.Results[1][0]
 	count, err := strconv.Atoi(countString)
 
 	if err != nil {
