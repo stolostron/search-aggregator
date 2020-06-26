@@ -74,6 +74,7 @@ func assertClusterNode(clusterName string) bool {
 			return false
 		}
 
+		glog.Info("CheckClusterResource response:", resp)
 		// headers are at the top of table - count is in second row
 		countString := resp.Results[1][0]
 		count, err := strconv.Atoi(countString)

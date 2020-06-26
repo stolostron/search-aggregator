@@ -11,10 +11,10 @@ Copyright (c) 2020 Red Hat, Inc.
 package clustermgmt
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
-	"fmt"
-	"encoding/json"
 
 	"github.com/golang/glog"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
@@ -165,9 +165,9 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 
 	resource := transformCluster(&managedCluster, &managedCluster.Status)
 	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
-	resource.Properties["status"] = managedCluster.Status // TODO: Get the status.
-	clustName, _ := resource.Properties["name"].(string)
-	resource.Properties["name"] = clustName
+	resource.Properties["status"] = "" // TODO: Get the status.
+	// clustName, _ := resource.Properties["name"].(string)
+	// resource.Properties["name"] = clustName
 
 	// Ensure that the cluster resource is still present before inserting into data store.
 	/* assuming it's still there
@@ -187,7 +187,7 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
 	res, err := db.UpdateByName(resource)
-	if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) /*&& (c.Name == cluster.Name)*/ {
+	if db.IsGraphMissing(err) || !db.IsPropertySet(res) /*&& (c.Name == cluster.Name)*/ {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
 		_, _, err = db.Insert([]*db.Resource{&resource}, "")
 		if err != nil {
@@ -225,40 +225,40 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 	props["apigroup"] = "clusterregistry.k8s.io"
 	props["selfLink"] = cluster.GetSelfLink()
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
-/*
-	if cluster.GetLabels() != nil {
-		var labelMap map[string]interface{}
-		clusterLabels, _ := json.Marshal(cluster.GetLabels())
-		err := json.Unmarshal(clusterLabels, &labelMap)
-		// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
-		// This was getting skipped before as map[string]string was not handled in switch case encode#77
-		if err == nil {
-			props["label"] = labelMap
+	/*
+		if cluster.GetLabels() != nil {
+			var labelMap map[string]interface{}
+			clusterLabels, _ := json.Marshal(cluster.GetLabels())
+			err := json.Unmarshal(clusterLabels, &labelMap)
+			// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
+			// This was getting skipped before as map[string]string was not handled in switch case encode#77
+			if err == nil {
+				props["label"] = labelMap
+			}
 		}
-	}
-*/	if cluster.GetNamespace() != "" {
+	*/if cluster.GetNamespace() != "" {
 		props["namespace"] = cluster.GetNamespace()
 	}
-/*
-	if clusterStatus != nil {
-		props["consoleURL"] = clusterStatus.Spec.ConsoleURL
-		props["cpu"], _ = clusterStatus.Spec.Capacity.Cpu().AsInt64()
-		props["memory"] = clusterStatus.Spec.Capacity.Memory().String()
-		props["klusterletVersion"] = clusterStatus.Spec.KlusterletVersion
-		props["kubernetesVersion"] = clusterStatus.Spec.Version
+	/*
+		if clusterStatus != nil {
+			props["consoleURL"] = clusterStatus.Spec.ConsoleURL
+			props["cpu"], _ = clusterStatus.Spec.Capacity.Cpu().AsInt64()
+			props["memory"] = clusterStatus.Spec.Capacity.Memory().String()
+			props["klusterletVersion"] = clusterStatus.Spec.KlusterletVersion
+			props["kubernetesVersion"] = clusterStatus.Spec.Version
 
-		props["nodes"] = int64(0)
-		nodes, ok := clusterStatus.Spec.Capacity["nodes"]
-		if ok {
-			props["nodes"], _ = nodes.AsInt64()
-		}
+			props["nodes"] = int64(0)
+			nodes, ok := clusterStatus.Spec.Capacity["nodes"]
+			if ok {
+				props["nodes"], _ = nodes.AsInt64()
+			}
 
-		props["storage"] = ""
-		storage, ok := clusterStatus.Spec.Capacity["storage"]
-		if ok {
-			props["storage"] = storage.String()
+			props["storage"] = ""
+			storage, ok := clusterStatus.Spec.Capacity["storage"]
+			if ok {
+				props["storage"] = storage.String()
+			}
 		}
-	}
 	*/
 
 	return db.Resource{
