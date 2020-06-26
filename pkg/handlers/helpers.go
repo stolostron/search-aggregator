@@ -32,7 +32,7 @@ func computeNodeCount(clusterName string) int {
 	}
 
 	// headers are at the top of table - count is in second row
-	countString := resp.Results[1][0]
+	countString := resp.Results[0][1]
 	count, err := strconv.Atoi(countString)
 
 	if err != nil {
