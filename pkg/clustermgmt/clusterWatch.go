@@ -31,7 +31,7 @@ import (
 
 // Watches ManagedCluster and ManagedClusterInfo objects and updates the search cache.
 func WatchClusters() {
-	glog.Info("Begin Watch Clusters Routine")
+	glog.Info("Begin ClusterWatch routine")
 	// first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset
 	hubClientConfig, err := config.InitClient()
 	if err != nil {

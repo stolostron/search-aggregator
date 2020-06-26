@@ -44,7 +44,6 @@ func main() {
 	dbconnector.GetIndexes()
 	go dbconnector.RedisWatcher()
 	// Watch clusters and sync status to Redis.
-	glog.Info("Starting Watch Cluster")
 	go clustermgmt.WatchClusters()
 
 	// Run routine to build intercluster edges
