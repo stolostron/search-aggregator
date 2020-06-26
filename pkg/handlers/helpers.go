@@ -21,13 +21,13 @@ func computeNodeCount(clusterName string) int {
 		glog.Errorf("Error node count for cluster %s: %s", clusterName, err)
 	}
 
-	if len(resp.Results) <= 1 { // Just 1 would be just the header
+	if len(resp.Results[0]) <= 1 { // Just 1 would be just the header
 		glog.Info("Cluster ", clusterName, " doesn't have any nodes")
 		return 0
 	}
 
 	// headers are at the top of table - count is in second row
-	countString := resp.Results[1][0]
+	countString := resp.Results[0][1]
 	count, err := strconv.Atoi(countString)
 
 	if err != nil {
@@ -61,6 +61,7 @@ func computeIntraEdges(clusterName string) int {
 }
 
 func assertClusterNode(clusterName string) bool {
+	glog.Info("Asserting cluster ", clusterName)
 	if clusterName == "local-cluster" || config.Cfg.SkipClusterValidation == "true" {
 		_, err := db.MergeDummyCluster(clusterName)
 		if err != nil {
