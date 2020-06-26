@@ -143,6 +143,75 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	metrics.NodeSyncEnd = time.Now()
 
+	// RE-SYNC Edges
+
+	metrics.EdgeSyncStart = time.Now()
+	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
+	fmt.Printf("currEdges: %+v\n", currEdges)
+
+	if edgesError != nil {
+		glog.Warning("Error getting all existing edges for cluster ", clusterName, edgesError)
+		err = edgesError
+	}
+	var existingEdges = make(map[string]db.Edge)
+	var edgesToAdd = make([]db.Edge, 0)
+
+	// Create a map with the existing edges.
+	currEdges.PrettyPrint()
+
+	for currEdges.Next() {
+		glog.Info("In currEdges Next")
+		e := currEdges.Record()
+		glog.Info("Edge: ", e)
+		glog.Info("SourceUID: ", valueToString(e.GetByIndex(0)))
+		glog.Info("EdgeType: ", valueToString(e.GetByIndex(1)))
+		glog.Info("DestUID: ", valueToString(e.GetByIndex(2)))
+
+		existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(0)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
+		glog.Info("len existingEdges: ", len(existingEdges))
+	}
+
+	//Loop through incoming new edges and decide if each edge needs to be added.
+	for _, e := range edges {
+		if _, exists := existingEdges[fmt.Sprintf("%s-%s->%s", e.SourceUID, e.EdgeType, e.DestUID)]; exists {
+			glog.Info("Edge exists")
+			delete(existingEdges, fmt.Sprintf("%s-%s->%s", e.SourceUID, e.EdgeType, e.DestUID))
+			glog.Info("len existingEdges after deletion: ", len(existingEdges))
+
+		} else {
+			glog.Info("Edge doesn't exist. Have to add")
+			edgesToAdd = append(edgesToAdd, e)
+		}
+	}
+
+	// Compute edges to delete. These are the remaining objects in existingEdges after processing all the incoming new edges.
+	var edgesToDelete = make([]db.Edge, 0)
+	for _, e := range existingEdges {
+		edgesToDelete = append(edgesToDelete, e)
+	}
+
+	// INSERT Edges
+	insertEdgeResponse := db.ChunkedInsertEdge(edgesToAdd)
+	stats.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
+	if insertEdgeResponse.ConnectionError != nil {
+		err = insertEdgeResponse.ConnectionError
+	} else if len(insertEdgeResponse.ResourceErrors) != 0 {
+		stats.AddEdgeErrors = processSyncErrors(insertEdgeResponse.ResourceErrors, "inserted by edge")
+	}
+
+	// DELETE Edges
+	deleteEdgeResponse := db.ChunkedDeleteEdge(edgesToDelete)
+	stats.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
+	if deleteEdgeResponse.ConnectionError != nil {
+		err = deleteEdgeResponse.ConnectionError
+	} else if len(deleteEdgeResponse.ResourceErrors) != 0 {
+		stats.DeleteEdgeErrors = processSyncErrors(deleteEdgeResponse.ResourceErrors, "removed by edge")
+	}
+
+	// There's no need to UPDATE edges because edges don't have properties yet.
+
+	metrics.EdgeSyncEnd = time.Now()
+
 	/*RG3
 		// First get the existing resources from the datastore for the cluster
 		result, error := db.Store.Query(db.SanitizeQuery("MATCH (n {cluster: '%s'}) RETURN n", clusterName))
