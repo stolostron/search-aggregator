@@ -26,6 +26,7 @@ func computeNodeCount(clusterName string) int {
 	glog.Info("   resp.Results         : ", resp)
 	glog.Info("   resp.Results         : ", resp.Results)
 	glog.Info("   resp.Results[0]      : ", resp.Results[0])
+	glog.Info("   len(resp.Results)    : ", len(resp.Results))
 	glog.Info("   len(resp.Results[0]) : ", len(resp.Results[0]))
 
 	if len(resp.Results) <= 1 { // Just 1 would be just the header
