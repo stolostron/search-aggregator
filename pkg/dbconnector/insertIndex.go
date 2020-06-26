@@ -20,11 +20,8 @@ func GetIndexes() {
 		if !resp.Empty() {
 			for resp.Next() {
 				record := resp.Record()
-
-				glog.Info("RG3", record.Values())
 				for _, kindVal := range record.Values() {
 					if kind, ok := kindVal.(string); ok {
-						glog.Info("Kind: ", kind)
 
 						//if the label is not present add to map and set to true
 						ExistingIndexMapMutex.RLock()

@@ -10,12 +10,139 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 package handlers
 
 import (
+	"fmt"
+	"reflect"
+	"strconv"
+	"time"
+
 	"github.com/golang/glog"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	rg2 "github.com/redislabs/redisgraph-go"
 )
 
 func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge, metrics *SyncMetrics) (stats SyncResponse, err error) {
 	glog.Info("Resync for cluster: ", clusterName)
+	// First get the existing resources from the datastore for the cluster
+	result, error := db.Store.Query(db.SanitizeQuery("MATCH (n {cluster: '%s'}) RETURN n", clusterName))
+
+	if error != nil {
+		glog.Error("Error getting existing resources for cluster ", clusterName)
+		err = error // For return value.
+	}
+	// Build a map with all the current resources by UID.
+	// Build a map of duplicated resources.
+	var existingResources = make(map[string]*rg2.Node)
+	var duplicatedResources = make(map[string]int)
+	for result.Next() {
+		record := result.Record()
+		if rgNode, ok := record.GetByIndex(0).(*rg2.Node); ok {
+			if existingResourceUID, ok := rgNode.Properties["_uid"].(string); ok {
+				if _, exists := existingResources[existingResourceUID]; exists {
+					dupeCount, dupeExists := duplicatedResources[existingResourceUID]
+					if !dupeExists {
+						duplicatedResources[existingResourceUID] = 1
+					} else {
+						duplicatedResources[existingResourceUID] = dupeCount + 1
+					}
+				} else {
+					existingResources[existingResourceUID] = rgNode
+				}
+			} else {
+				glog.Warning("NOde UID is not of string type")
+			}
+		} else {
+			glog.Info("Not of kind rg2.Node")
+			var r = reflect.TypeOf(record.GetByIndex(0))
+			fmt.Printf("Other:%v\n", r)
+			glog.Info("type: ", r)
+
+		}
+	}
+
+	// Delete duplicated records. We have to delete all records with the duplicated UID and recreate.
+	if len(duplicatedResources) > 0 {
+		glog.Warningf("RedisGraph contains duplicate records for some UIDs in cluster %s. Total uids duplicates: %d", clusterName, len(duplicatedResources))
+		for dupeUID, dupeCount := range duplicatedResources {
+			_, delError := db.Store.Query(db.SanitizeQuery("MATCH (n {_uid:'%s'}) DELETE n", dupeUID))
+			if delError != nil {
+				glog.Error("Error deleting duplicates for ", dupeUID, delError)
+			}
+			glog.Infof("Deleted %d duplicates of UID %s", dupeCount, dupeUID)
+			delete(existingResources, dupeUID) // Delete from existing resources.
+		}
+	}
+
+	// Loop through incoming resources and check if each resource exist and if it needs to be updated.
+	var resourcesToAdd = make([]*db.Resource, 0)
+	var resourcesToUpdate = make([]*db.Resource, 0)
+	for _, newResource := range resources {
+		existingResource, exist := existingResources[newResource.UID]
+
+		if !exist {
+			// Resource needs to be added.
+			resourcesToAdd = append(resourcesToAdd, newResource)
+		} else {
+			// Resource exists, but we need to check if it needs to be updated.
+			newEncodedProperties, encodeError := newResource.EncodeProperties()
+			if encodeError != nil {
+				// Assume we need to update this resource if we hit an encoding error.
+				glog.Warning("Error encoding properties of resource. ", encodeError)
+				resourcesToUpdate = append(resourcesToUpdate, newResource)
+			} else {
+				for key, value := range newEncodedProperties {
+					// Need to compare everything as strings because that's what we get from RedisGraph.
+					stringValue := valueToString(value)
+					existingProperty := valueToString(existingResource.Properties[key])
+
+					if existingProperty != stringValue {
+						glog.Error("Properties are not equal ", key)
+						resourcesToUpdate = append(resourcesToUpdate, newResource)
+						break
+					}
+				}
+			}
+			// Remove the resource because it has been proccessed. Any resources remaining when we are done will need to be deleted.
+			delete(existingResources, newResource.UID)
+		}
+	}
+
+	// INSERT Resources
+
+	metrics.NodeSyncStart = time.Now()
+	insertResponse := db.ChunkedInsert(resourcesToAdd, clusterName)
+	stats.TotalAdded = insertResponse.SuccessfulResources // could be 0
+	if insertResponse.ConnectionError != nil {
+		err = insertResponse.ConnectionError
+	} else if len(insertResponse.ResourceErrors) != 0 {
+		stats.AddErrors = processSyncErrors(insertResponse.ResourceErrors, "inserted")
+	}
+
+	// UPDATE Resources
+
+	updateResponse := db.ChunkedUpdate(resourcesToUpdate)
+	stats.TotalUpdated = updateResponse.SuccessfulResources // could be 0
+	if updateResponse.ConnectionError != nil {
+		err = updateResponse.ConnectionError
+	} else if len(updateResponse.ResourceErrors) != 0 {
+		stats.UpdateErrors = processSyncErrors(updateResponse.ResourceErrors, "updated")
+	}
+
+	// DELETE Resources
+
+	deleteUIDS := make([]string, 0, len(existingResources))
+	for _, resource := range existingResources {
+		deleteUIDS = append(deleteUIDS, resource.Properties["_uid"].(string))
+	}
+	deleteResponse := db.ChunkedDelete(deleteUIDS)
+	stats.TotalDeleted = deleteResponse.SuccessfulResources // could be 0
+	if deleteResponse.ConnectionError != nil {
+		err = deleteResponse.ConnectionError
+	} else if len(deleteResponse.ResourceErrors) != 0 {
+		stats.DeleteErrors = processSyncErrors(deleteResponse.ResourceErrors, "deleted")
+	}
+
+	metrics.NodeSyncEnd = time.Now()
+
 	/*RG3
 		// First get the existing resources from the datastore for the cluster
 		result, error := db.Store.Query(db.SanitizeQuery("MATCH (n {cluster: '%s'}) RETURN n", clusterName))
@@ -199,4 +326,17 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		metrics.EdgeSyncEnd = time.Now()
 	   RG3*/
 	return stats, err
+}
+
+func valueToString(value interface{}) string {
+	var stringValue string
+	switch typedVal := value.(type) {
+	case int64:
+		stringValue = strconv.FormatInt(typedVal, 10)
+	case int:
+		stringValue = strconv.Itoa(typedVal)
+	default:
+		stringValue = typedVal.(string)
+	}
+	return stringValue
 }
