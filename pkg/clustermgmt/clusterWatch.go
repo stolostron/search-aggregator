@@ -13,7 +13,7 @@ package clustermgmt
 import (
 	"strings"
 	"time"
-
+	"fmt"
 	"encoding/json"
 
 	"github.com/golang/glog"
@@ -151,8 +151,8 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	if err != nil {
 		panic(err) // Will be caught by handleRoutineExit
 	}
-	glog.Info("Managed Cluster Info as string: ", managedCluster)
-
+	//glog.Info("Managed Cluster Info as string: ", managedCluster)
+	fmt.Printf("\n\n%+v\n\n", managedCluster)
 	/*cluster, ok = obj.(*clusterregistry.Cluster) // ManagedClusterInfo will not assert as cluster ..
 	if !ok {
 		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
@@ -165,7 +165,7 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 
 	resource := transformCluster(&managedCluster, &managedCluster.Status)
 	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
-	resource.Properties["status"] = "" // TODO: Get the status.
+	resource.Properties["status"] = managedCluster.Status // TODO: Get the status.
 	clustName, _ := resource.Properties["name"].(string)
 	resource.Properties["name"] = clustName
 
@@ -184,21 +184,21 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 		glog.Error("Error adding Cluster kind with error: ", err)
 		return
 	}
-	/*
-		glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
-		_, err = db.UpdateByName(resource)
-		if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) && (c.Name == cluster.Name) {
-			glog.Info("Cluster graph/key object does not exist, inserting new object")
-			_, _, err = db.Insert([]*db.Resource{&resource}, "")
-			if err != nil {
-				glog.Error("Error adding Cluster kind with error: ", err)
-				return
-			}
-		} else if err != nil { // generic error not known above
-			glog.Error("Error updating Cluster kind with errors: ", err)
+
+	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
+	res, err := db.UpdateByName(resource)
+	if (db.IsGraphMissing(err) || !db.IsPropertySet(res)) /*&& (c.Name == cluster.Name)*/ {
+		glog.Info("Cluster graph/key object does not exist, inserting new object")
+		_, _, err = db.Insert([]*db.Resource{&resource}, "")
+		if err != nil {
+			glog.Error("Error adding Cluster kind with error: ", err)
 			return
 		}
-	*/
+	} else if err != nil { // generic error not known above
+		glog.Error("Error updating Cluster kind with errors: ", err)
+		return
+	}
+
 	// If a cluster is offline we remove the resources from that cluster, but leave the cluster resource object.
 	/*if resource.Properties["status"] == "offline" {
 		glog.Infof("Cluster %s is offline, removing cluster resources from datastore.", cluster.GetName())
@@ -222,10 +222,10 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 	props["name"] = cluster.GetName()
 
 	props["kind"] = "Cluster"
-	/*props["apigroup"] = "clusterregistry.k8s.io"
+	props["apigroup"] = "clusterregistry.k8s.io"
 	props["selfLink"] = cluster.GetSelfLink()
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
-
+/*
 	if cluster.GetLabels() != nil {
 		var labelMap map[string]interface{}
 		clusterLabels, _ := json.Marshal(cluster.GetLabels())
@@ -236,10 +236,10 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 			props["label"] = labelMap
 		}
 	}
-	if cluster.GetNamespace() != "" {
+*/	if cluster.GetNamespace() != "" {
 		props["namespace"] = cluster.GetNamespace()
 	}
-
+/*
 	if clusterStatus != nil {
 		props["consoleURL"] = clusterStatus.Spec.ConsoleURL
 		props["cpu"], _ = clusterStatus.Spec.Capacity.Cpu().AsInt64()
