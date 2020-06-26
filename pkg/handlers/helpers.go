@@ -22,20 +22,20 @@ func computeNodeCount(clusterName string) int {
 		glog.Errorf("Error node count for cluster %s: %s", clusterName, err)
 	}
 
-	glog.Info("Cluster: ", clusterName, "   resp: ", resp)
-	glog.Info("Cluster: ", clusterName, "   resp.Results: ", resp.Results)
+	glog.Info("Cluster: ", clusterName)
+	glog.Info("   resp.Results         : ", resp)
+	glog.Info("   resp.Results         : ", resp.Results)
+	glog.Info("   resp.Results[0]      : ", resp.Results[0])
+	glog.Info("   len(resp.Results[0]) : ", len(resp.Results[0]))
 
 	if len(resp.Results) <= 1 { // Just 1 would be just the header
 		glog.Info("Cluster ", clusterName, " doesn't have any nodes.")
-		return 0
 		glog.Info("Exit computeNodeCount - 1")
+		return 0
 	} else if len(resp.Results[0]) <= 1 { // Just 1 would be just the header
 		glog.Info("Recieved unexpected result from query.  Cluster ", clusterName)
-		glog.Info("   resp.Results         : ", resp.Results)
-		glog.Info("   resp.Results[0]      : ", resp.Results[0])
-		glog.Info("   len(resp.Results[0]) : ", len(resp.Results[0]))
-		return 0
 		glog.Info("Exit computeNodeCount - 2")
+		return 0
 	}
 
 	// headers are at the top of table - count is in second row
