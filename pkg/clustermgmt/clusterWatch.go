@@ -117,19 +117,19 @@ func WatchClusters() {
 }
 
 func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) {
-	glog.Infof("Processing Cluster Upsert")
-
-	var err error
+	glog.Info("Processing Cluster Upsert")
 
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
-		panic(err) // Will be caught by handleRoutineExit
+		glog.Warning("Error on ManagedCluster marshal.")
+		// panic(err) // Will be caught by handleRoutineExit
 	}
 
 	managedCluster := clusterv1.ManagedCluster{}
 	err = json.Unmarshal(j, &managedCluster)
 	if err != nil {
-		panic(err) // Will be caught by handleRoutineExit
+		glog.Warning("Error on ManagedCluster unmarshal.")
+		// panic(err) // Will be caught by handleRoutineExit
 	}
 	//glog.Info("Managed Cluster Info as string: ", managedCluster)
 	// fmt.Printf("\n\n%+v\n\n", managedCluster)
@@ -146,9 +146,8 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	resource := transformCluster(&managedCluster, &managedCluster.Status)
 	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
 	resource.Properties["status"] = "" // TODO: Get the status.
-	// clustName, _ := resource.Properties["name"].(string)
-	// resource.Properties["name"] = clustName
 
+	glog.Info("Transformed resource: ", resource)
 	// Ensure that the cluster resource is still present before inserting into data store.
 	/* assuming it's still there
 	c, err := cluster.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
