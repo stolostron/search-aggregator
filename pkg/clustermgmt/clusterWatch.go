@@ -12,7 +12,6 @@ package clustermgmt
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
@@ -30,13 +29,7 @@ import (
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
-//ClusterStat struct stores all resources needed to calculate status of the cluster
-// type ClusterStat struct {
-// 	cluster       *clusterregistry.Cluster
-// 	clusterStatus *clusterv1.ManagedClusterStatus
-// }
-
-// WatchClusters watches k8s cluster and clusterstatus objects and updates the search cache.
+// Watches ManagedCluster and ManagedClusterInfo objects and updates the search cache.
 func WatchClusters() {
 	glog.Info("Begin Watch Clusters Routine")
 	// first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset
@@ -45,7 +38,6 @@ func WatchClusters() {
 		glog.Info("Unable to create ClusterWatch clientset ", err)
 	}
 
-	// statClusterMap = map[string]bool{}
 	var stopper chan struct{}
 	informerRunning := false
 
@@ -66,25 +58,11 @@ func WatchClusters() {
 			processClusterUpsert(obj, config.KubeClient)
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
-			glog.Info("received ManagedCluster update event", err)
+			glog.Info("received ManagedCluster update event")
 			processClusterUpsert(next, config.KubeClient)
 		},
 		DeleteFunc: func(obj interface{}) {
 			glog.Info("received ManagedCluster delete event")
-
-			// j, err := json.Marshal(obj.(*unstructured.Unstructured))
-			// if err != nil {
-			// 	glog.Error("Failed to marshall on cluster watch DeleteFunc")
-			// }
-
-			// managedCluster := clusterv1.ManagedCluster{}
-			// err = json.Unmarshal(j, &managedCluster)
-			// if err != nil {
-			// 	glog.Error("Failed to unmarshall on cluster watch DeleteFunc")
-			// }
-
-			// glog.Info("Deleting cluster: ", managedCluster.GetName(), string(managedCluster.GetUID()))
-			// delCluster(managedCluster.GetName(), string(managedCluster.GetUID()))
 			processClusterDelete(obj)
 		},
 	})
@@ -154,7 +132,7 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 		panic(err) // Will be caught by handleRoutineExit
 	}
 	//glog.Info("Managed Cluster Info as string: ", managedCluster)
-	fmt.Printf("\n\n%+v\n\n", managedCluster)
+	// fmt.Printf("\n\n%+v\n\n", managedCluster)
 	/*cluster, ok = obj.(*clusterregistry.Cluster) // ManagedClusterInfo will not assert as cluster ..
 	if !ok {
 		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
