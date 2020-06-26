@@ -60,7 +60,7 @@ func TotalIntraEdges(clusterName string) (*rg2.QueryResult, error) {
 	if err != nil {
 		return &rg2.QueryResult{}, err
 	}
-	query := SanitizeQuery("MATCH (s {cluster:'%s'})-[e]->(d) WHERE e._interCluster <> true RETURN count(e)", clusterName)
+	query := SanitizeQuery("MATCH (s {cluster:'%s'})-[e]->(d) WHERE (e._interCluster <> true) OR (e._interCluster IS NULL) RETURN count(e)", clusterName)
 	resp, err := Store.Query(query)
 	return resp, err
 }
