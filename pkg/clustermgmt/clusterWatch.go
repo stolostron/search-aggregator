@@ -179,12 +179,6 @@ func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
 	}
 	*/
 
-	_, _, err = db.Insert([]*db.Resource{&resource}, "")
-	if err != nil {
-		glog.Error("Error adding Cluster kind with error: ", err)
-		return
-	}
-
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
 	res, err := db.UpdateByName(resource)
 	if db.IsGraphMissing(err) || !db.IsPropertySet(res) /*&& (c.Name == cluster.Name)*/ {
