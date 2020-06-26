@@ -11,7 +11,6 @@ package handlers
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 	"time"
 
@@ -47,15 +46,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 				} else {
 					existingResources[existingResourceUID] = rgNode
 				}
-			} else {
-				glog.Warning("NOde UID is not of string type")
 			}
-		} else {
-			glog.Info("Not of kind rg2.Node")
-			var r = reflect.TypeOf(record.GetByIndex(0))
-			fmt.Printf("Other:%v\n", r)
-			glog.Info("type: ", r)
-
 		}
 	}
 
@@ -144,10 +135,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	metrics.NodeSyncEnd = time.Now()
 
 	// RE-SYNC Edges
-
 	metrics.EdgeSyncStart = time.Now()
 	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
-	fmt.Printf("currEdges: %+v\n", currEdges)
 
 	if edgesError != nil {
 		glog.Warning("Error getting all existing edges for cluster ", clusterName, edgesError)
@@ -160,26 +149,15 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	currEdges.PrettyPrint()
 
 	for currEdges.Next() {
-		glog.Info("In currEdges Next")
 		e := currEdges.Record()
-		glog.Info("Edge: ", e)
-		glog.Info("SourceUID: ", valueToString(e.GetByIndex(0)))
-		glog.Info("EdgeType: ", valueToString(e.GetByIndex(1)))
-		glog.Info("DestUID: ", valueToString(e.GetByIndex(2)))
-
 		existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
-		glog.Info("len existingEdges: ", len(existingEdges))
 	}
 
 	//Loop through incoming new edges and decide if each edge needs to be added.
 	for _, e := range edges {
 		if _, exists := existingEdges[fmt.Sprintf("%s-%s->%s", e.SourceUID, e.EdgeType, e.DestUID)]; exists {
-			glog.Info("Edge exists")
 			delete(existingEdges, fmt.Sprintf("%s-%s->%s", e.SourceUID, e.EdgeType, e.DestUID))
-			glog.Info("len existingEdges after deletion: ", len(existingEdges))
-
 		} else {
-			glog.Info("Edge doesn't exist. Have to add")
 			edgesToAdd = append(edgesToAdd, e)
 		}
 	}
