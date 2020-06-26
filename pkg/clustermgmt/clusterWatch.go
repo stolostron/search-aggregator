@@ -62,28 +62,30 @@ func WatchClusters() {
 
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			glog.Info("received add event ")
+			glog.Info("received ManagedCluster add event")
 			processClusterUpsert(obj, config.KubeClient)
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
-			glog.Info("received update event", err)
+			glog.Info("received ManagedCluster update event", err)
 			processClusterUpsert(next, config.KubeClient)
 		},
 		DeleteFunc: func(obj interface{}) {
-			glog.Info("received delete event")
+			glog.Info("received ManagedCluster delete event")
 
-			j, err := json.Marshal(obj.(*unstructured.Unstructured))
-			if err != nil {
-				glog.Error("Failed to marshall on cluster watch DeleteFunc")
-			}
+			// j, err := json.Marshal(obj.(*unstructured.Unstructured))
+			// if err != nil {
+			// 	glog.Error("Failed to marshall on cluster watch DeleteFunc")
+			// }
 
-			managedCluster := clusterv1.ManagedCluster{}
-			err = json.Unmarshal(j, &managedCluster)
-			if err != nil {
-				glog.Error("Failed to unmarshall on cluster watch DeleteFunc")
-			}
+			// managedCluster := clusterv1.ManagedCluster{}
+			// err = json.Unmarshal(j, &managedCluster)
+			// if err != nil {
+			// 	glog.Error("Failed to unmarshall on cluster watch DeleteFunc")
+			// }
 
-			delCluster(managedCluster.GetName(), string(managedCluster.GetUID()))
+			// glog.Info("Deleting cluster: ", managedCluster.GetName(), string(managedCluster.GetUID()))
+			// delCluster(managedCluster.GetName(), string(managedCluster.GetUID()))
+			processClusterDelete(obj)
 		},
 	})
 
@@ -136,7 +138,7 @@ func WatchClusters() {
 	}
 }
 
-func processClusterUpsert(obj interface{}, mcmClient *kubeClientset.Clientset) {
+func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) {
 	glog.Infof("Processing Cluster Upsert")
 
 	var err error
@@ -212,13 +214,12 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 
 	props := make(map[string]interface{})
 
-	// get these fields from object
+	// get these fields from ManagedCluster object
 	props["name"] = cluster.GetName()
-
 	props["kind"] = "Cluster"
-	props["apigroup"] = "clusterregistry.k8s.io"
-	props["selfLink"] = cluster.GetSelfLink()
+	props["apigroup"] = "cluster.open-cluster-management.io"
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
+
 	/*
 		if cluster.GetLabels() != nil {
 			var labelMap map[string]interface{}
@@ -230,9 +231,13 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 				props["label"] = labelMap
 			}
 		}
-	*/if cluster.GetNamespace() != "" {
-		props["namespace"] = cluster.GetNamespace()
-	}
+	*/
+
+	// props["selfLink"] = cluster.GetSelfLink()
+	// if cluster.GetNamespace() != "" {
+	// 	props["namespace"] = cluster.GetNamespace()
+	// }
+
 	/*
 		if clusterStatus != nil {
 			props["consoleURL"] = clusterStatus.Spec.ConsoleURL
@@ -259,17 +264,31 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 		Kind:           "Cluster",
 		UID:            string(cluster.GetUID()),
 		Properties:     props,
-		ResourceString: "managedclusters",
+		ResourceString: "clusters",
 	}
 
 }
 
 // Deletes a cluster resource and all resourcces from the cluster.
-func delCluster(clusterUID string, clusterName string) {
-	glog.Infof("Deleting Cluster resource %s and all resources from the cluster.", clusterName)
-	_, err := db.Delete([]string{clusterUID})
+func processClusterDelete(obj interface{}) {
+
+	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
-		glog.Error("Error deleting Cluster kind with error: ", err)
+		glog.Error("Failed to marshall ManagedCluster on processDeleteCluster")
+	}
+
+	managedCluster := clusterv1.ManagedCluster{}
+	err = json.Unmarshal(j, &managedCluster)
+	if err != nil {
+		glog.Error("Failed to unmarshall ManagedCluster on processDeleteCluster")
+	}
+	clusterName := managedCluster.GetName()
+	clusterUID := string(managedCluster.GetUID())
+	glog.Infof("Deleting Cluster resource %s and all resources from the cluster. UID %s", clusterName, clusterUID)
+
+	_, err = db.Delete([]string{clusterUID})
+	if err != nil {
+		glog.Error("Error deleting Cluster node with error: ", err)
 	}
 	delClusterResources(clusterUID, clusterName)
 }
