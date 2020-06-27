@@ -48,7 +48,6 @@ func WatchClusters() {
 	}
 
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 60*time.Second)
-	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")
 	gvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
 	clusterInformer := dynamicFactory.ForResource(*gvr).Informer() // for ManagedCluster
 
@@ -58,7 +57,7 @@ func WatchClusters() {
 			processClusterUpsert(obj, config.KubeClient)
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
-			glog.Info("received ManagedCluster update event")
+			// glog.Info("received ManagedCluster update event")
 			processClusterUpsert(next, config.KubeClient)
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -67,32 +66,29 @@ func WatchClusters() {
 		},
 	})
 
-	/* mcmClient, err := config.InitClient()
-	if err != nil {
-		glog.Info("Unable to create clientset ", err)
-	}
-	statClusterMap = map[string]bool{}
-	var stopper chan struct{}
-	informerRunning := false
+	// TODO watch ManagedClusterInfo
 
-	clusterFactory := informers.NewSharedInformerFactory(clusterClient, 0)
-	clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
-	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			processClusterUpsert(obj, mcmClient)
-		},
-		UpdateFunc: func(prev interface{}, next interface{}) {
-			processClusterUpsert(next, mcmClient)
-		},
-		DeleteFunc: func(obj interface{}) {
-			cluster, ok := obj.(*clusterregistry.Cluster)
-			if !ok {
-				glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
-				return
-			}
-			delCluster(cluster)
-		},
-	})
+	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")
+
+	/*
+		clusterFactory := informers.NewSharedInformerFactory(clusterClient, 0)
+		clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
+		clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				processClusterUpsert(obj, mcmClient)
+			},
+			UpdateFunc: func(prev interface{}, next interface{}) {
+				processClusterUpsert(next, mcmClient)
+			},
+			DeleteFunc: func(obj interface{}) {
+				cluster, ok := obj.(*clusterregistry.Cluster)
+				if !ok {
+					glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
+					return
+				}
+				delCluster(cluster)
+			},
+		})
 	*/
 	// periodically check if the cluster resource exists and start/stop the informer accordingly
 	for {
