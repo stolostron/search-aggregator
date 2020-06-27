@@ -16,29 +16,14 @@ import (
 
 // returns the total number of nodes on cluster
 func computeNodeCount(clusterName string) int {
-	// glog.Info("Enter computeNodeCount")
 	resp, err := db.TotalNodes(clusterName)
 	if err != nil {
 		glog.Errorf("Error node count for cluster %s: %s", clusterName, err)
 	}
 
-	// glog.Info("Cluster: ", clusterName)
-	// glog.Info("   resp                 : ", resp)
-	// glog.Info("   resp.Results         : ", resp.Results)
-	// glog.Info("   resp.Results[0]      : ", resp.Results[0])
-	// glog.Info("   len(resp.Results)    : ", len(resp.Results))
-	// glog.Info("   len(resp.Results[0]) : ", len(resp.Results[0]))
-
 	if len(resp.Results) <= 1 { // Just 1 would be just the header
-		// glog.Info("Cluster ", clusterName, " doesn't have any nodes.")
-		// glog.Info("Exit computeNodeCount - 1")
 		return 0
 	}
-	// else if len(resp.Results[1]) == 0 { // Query had no results.
-	//	glog.Info("Recieved unexpected result from query.  Cluster ", clusterName)
-	// 	// glog.Info("Exit computeNodeCount - 2")
-	// 	return 0
-	// }
 
 	// headers are at the top of table - count is in second row
 	countString := resp.Results[1][0]
@@ -48,7 +33,6 @@ func computeNodeCount(clusterName string) int {
 		glog.Errorf("Could not parse node count string for cluster %s: %s", clusterName, countString)
 	}
 
-	// glog.Info("Exit computeNodeCount - 3")
 	return count
 }
 
@@ -76,7 +60,6 @@ func computeIntraEdges(clusterName string) int {
 }
 
 func assertClusterNode(clusterName string) bool {
-	glog.Info("Asserting cluster ", clusterName)
 	if clusterName == "local-cluster" || config.Cfg.SkipClusterValidation == "true" {
 		_, err := db.MergeDummyCluster(clusterName)
 		if err != nil {
@@ -90,7 +73,6 @@ func assertClusterNode(clusterName string) bool {
 			return false
 		}
 
-		glog.Info("CheckClusterResource response:", resp)
 		// headers are at the top of table - count is in second row
 		countString := resp.Results[1][0]
 		count, err := strconv.Atoi(countString)

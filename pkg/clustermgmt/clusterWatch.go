@@ -118,23 +118,20 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
 		glog.Warning("Error on ManagedCluster marshal.")
-		// panic(err) // Will be caught by handleRoutineExit
 	}
 
 	managedCluster := clusterv1.ManagedCluster{}
 	err = json.Unmarshal(j, &managedCluster)
 	if err != nil {
 		glog.Warning("Error on ManagedCluster unmarshal.")
-		// panic(err) // Will be caught by handleRoutineExit
 	}
-	//glog.Info("Managed Cluster Info as string: ", managedCluster)
-	// fmt.Printf("\n\n%+v\n\n", managedCluster)
+
 	/*cluster, ok = obj.(*clusterregistry.Cluster) // ManagedClusterInfo will not assert as cluster ..
 	if !ok {
 		glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
 		return
 	}*/
-	// clusterStatus from ManagedCluster or ManagedClusterInfo?
+
 	// https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/cluster/v1beta1/clusterinfo_types.go
 	// https://github.com/open-cluster-management/api/blob/master/cluster/v1/types.go#L78
 	// Old Definition https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/mcm/v1alpha1/clusterstatus_types.go
@@ -143,7 +140,6 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
 	resource.Properties["status"] = "unknown" // TODO: Get the status.
 
-	glog.Info("Transformed resource: ", resource)
 	// Ensure that the cluster resource is still present before inserting into data store.
 	/* assuming it's still there
 	c, err := cluster.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
@@ -157,9 +153,8 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
 	res, err := db.UpdateByName(resource)
 	if err != nil {
-		glog.Warning("Error on UpdateByName", err)
+		glog.Warning("Error on UpdateByName() ", err)
 	}
-	glog.Info("db.UpdateByName() result: ", res)
 
 	if db.IsGraphMissing(err) || !db.IsPropertySet(res) /*&& (c.Name == cluster.Name)*/ {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")

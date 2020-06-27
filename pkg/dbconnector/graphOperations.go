@@ -90,6 +90,5 @@ func CheckClusterResource(clusterName string) (QueryResult, error) {
 		return QueryResult{}, err
 	}
 	query := SanitizeQuery("MATCH (c:Cluster {name: '%s'}) RETURN count(c)", clusterName)
-	glog.Info(" Query for CheckClusterResource()", query)
 	return Store.Query(query)
 }
