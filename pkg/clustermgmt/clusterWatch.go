@@ -198,7 +198,7 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 
 	// get these fields from ManagedCluster object
 	props["name"] = cluster.GetName()
-	props["kind"] = "cluster"
+	props["kind"] = "Cluster"
 	props["apigroup"] = "cluster.open-cluster-management.io"
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
@@ -244,7 +244,7 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 
 	return db.Resource{
 		Kind:           "Cluster",
-		UID:            string("cluster/" + cluster.GetUID()),
+		UID:            string("cluster_" + cluster.GetUID()),
 		Properties:     props,
 		ResourceString: "clusters",
 	}
@@ -265,7 +265,7 @@ func processClusterDelete(obj interface{}) {
 		glog.Error("Failed to unmarshall ManagedCluster on processDeleteCluster")
 	}
 	clusterName := managedCluster.GetName()
-	clusterUID := string("cluster/" + managedCluster.GetUID())
+	clusterUID := string("cluster_" + managedCluster.GetUID())
 	glog.Infof("Deleting Cluster resource %s and all resources from the cluster. UID %s", clusterName, clusterUID)
 
 	_, err = db.Delete([]string{clusterUID})
