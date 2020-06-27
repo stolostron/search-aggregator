@@ -56,5 +56,4 @@ clean::
 	go clean
 	rm -f cover*
 	rm -rf ./$(BINDIR)
-	rm -rf ./.vendor-new
-	rm -rf ./vendor
+

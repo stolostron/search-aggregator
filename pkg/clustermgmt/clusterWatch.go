@@ -246,7 +246,7 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 		Kind:           "Cluster",
 		UID:            string("cluster_" + cluster.GetUID()),
 		Properties:     props,
-		ResourceString: "clusters",
+		ResourceString: "managedclusters", // Used for rbac
 	}
 
 }
