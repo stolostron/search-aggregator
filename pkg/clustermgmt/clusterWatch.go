@@ -53,7 +53,7 @@ func WatchClusters() {
 
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			glog.Info("received ManagedCluster add event")
+			// glog.Info("received ManagedCluster add event")
 			processClusterUpsert(obj, config.KubeClient)
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
