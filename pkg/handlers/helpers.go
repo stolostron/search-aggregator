@@ -74,7 +74,7 @@ func assertClusterNode(clusterName string) bool {
 		}
 
 		if len(resp.Results) <= 1 { // Just 1 would be just the header
-			glog.Info("Cluster %s does not exist.", clusterName)
+			glog.Infof("Cluster %s does not exist.", clusterName)
 			return false
 		}
 
