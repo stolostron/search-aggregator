@@ -9,6 +9,8 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 
 package dbconnector
 
+import "github.com/golang/glog"
+
 const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 
 // Resource - Describes a resource (node)
@@ -84,6 +86,7 @@ func MergeDummyCluster(name string) (QueryResult, error) {
 func CheckClusterResource(clusterName string) (QueryResult, error) {
 	err := ValidateClusterName(clusterName)
 	if err != nil {
+		glog.Warning("Error validating cluster:", clusterName)
 		return QueryResult{}, err
 	}
 	query := SanitizeQuery("MATCH (c:Cluster {name: '%s'}) RETURN count(c)", clusterName)

@@ -20,11 +20,11 @@ const (
 	DEFAULT_AGGREGATOR_ADDRESS      = ":3010"
 	DEFAULT_EDGE_BUILD_RATE_MS      = 10000  // 10 sec
 	DEFAULT_HTTP_TIMEOUT            = 300000 // 5 min, to fix the EOF response at the collector
-	DEFAULT_REDISCOVER_RATE_MS      = 60000  // 1 min
+	DEFAULT_REDISCOVER_RATE_MS      = 300000 // 5 min
 	DEFAULT_REDIS_HOST              = "localhost"
 	DEFAULT_REDIS_PORT              = "6379"
 	DEFAULT_REDIS_WATCH_INTERVAL    = 15000 // 15 seconds
-	DEFAULT_REQUEST_LIMIT           = 20    // Max number of concurrent requests.
+	DEFAULT_REQUEST_LIMIT           = 5     // Max number of concurrent requests.
 	DEFAULT_SKIP_CLUSTER_VALIDATION = "false"
 )
 

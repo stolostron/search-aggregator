@@ -22,7 +22,6 @@ func computeNodeCount(clusterName string) int {
 	}
 
 	if len(resp.Results) <= 1 { // Just 1 would be just the header
-		glog.Info("Cluster ", clusterName, " doesn't have any nodes")
 		return 0
 	}
 
@@ -71,6 +70,11 @@ func assertClusterNode(clusterName string) bool {
 		resp, err := db.CheckClusterResource(clusterName)
 		if err != nil {
 			glog.Error("Could not check cluster resource by name: ", err)
+			return false
+		}
+
+		if len(resp.Results) <= 1 { // Just 1 would be just the header
+			glog.Infof("Cluster %s does not exist.", clusterName)
 			return false
 		}
 
