@@ -32,41 +32,37 @@ import (
 // Watches ManagedCluster and ManagedClusterInfo objects and updates the search cache.
 func WatchClusters() {
 	glog.Info("Begin ClusterWatch routine")
-	// first time we call this // kubeclient now in var config.KubeClient *kubeClientset.Clientset
-	hubClientConfig, err := config.InitClient()
-	if err != nil {
-		glog.Info("Unable to create ClusterWatch clientset ", err)
-	}
 
 	var stopper chan struct{}
 	informerRunning := false
 
-	// Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources
+	// Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources.
+	hubClientConfig, err := config.InitClient()
+	if err != nil {
+		glog.Info("Unable to create ClusterWatch clientset ", err)
+	}
 	dynamicClientset, err := dynamic.NewForConfig(hubClientConfig)
 	if err != nil {
 		glog.Warning("cannot construct dynamic client for cluster watch from config: ", err)
 	}
-
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 60*time.Second)
-	gvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
-	clusterInformer := dynamicFactory.ForResource(*gvr).Informer() // for ManagedCluster
 
+	// Watch ManagedCluster resource
+	gvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
+	clusterInformer := dynamicFactory.ForResource(*gvr).Informer()
 	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			// glog.Info("received ManagedCluster add event")
 			processClusterUpsert(obj, config.KubeClient)
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
-			// glog.Info("received ManagedCluster update event")
 			processClusterUpsert(next, config.KubeClient)
 		},
 		DeleteFunc: func(obj interface{}) {
-			glog.Info("received ManagedCluster delete event")
 			processClusterDelete(obj)
 		},
 	})
 
-	// TODO watch ManagedClusterInfo
+	// TODO: watch ManagedClusterInfo
 
 	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")
 
@@ -90,6 +86,7 @@ func WatchClusters() {
 			},
 		})
 	*/
+
 	// periodically check if the cluster resource exists and start/stop the informer accordingly
 	for {
 		_, err := config.KubeClient.ServerResourcesForGroupVersion("cluster.open-cluster-management.io/v1")
@@ -97,11 +94,11 @@ func WatchClusters() {
 		if err != nil && !isClusterMissing(err) {
 			glog.Error("Cannot fetch resource list for cluster.open-cluster-management.io/v1: ", err)
 		} else {
-			if isClusterMissing(err) && informerRunning {
+			if informerRunning && isClusterMissing(err) {
 				glog.Info("Stopping cluster informer routine because ManagedCluster resource not found.")
 				stopper <- struct{}{}
 				informerRunning = false
-			} else if !isClusterMissing(err) && !informerRunning {
+			} else if !informerRunning && !isClusterMissing(err) {
 				glog.Info("Starting cluster informer routine for cluster watch")
 				stopper = make(chan struct{})
 				informerRunning = true
@@ -113,7 +110,7 @@ func WatchClusters() {
 }
 
 func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) {
-	glog.Info("Processing Cluster Upsert")
+	glog.Info("Processing Cluster Upsert.")
 
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
@@ -137,8 +134,7 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	// Old Definition https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/mcm/v1alpha1/clusterstatus_types.go
 
 	resource := transformCluster(&managedCluster, &managedCluster.Status)
-	//clusterstat := ClusterStat{clusterStatus: clusterStatus}
-	resource.Properties["status"] = "unknown" // TODO: Get the status.
+	resource.Properties["status"] = "" // TODO: Get the status.
 
 	// Ensure that the cluster resource is still present before inserting into data store.
 	/* assuming it's still there
@@ -204,14 +200,7 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 				props["label"] = labelMap
 			}
 		}
-	*/
 
-	// props["selfLink"] = cluster.GetSelfLink()
-	// if cluster.GetNamespace() != "" {
-	// 	props["namespace"] = cluster.GetNamespace()
-	// }
-
-	/*
 		if clusterStatus != nil {
 			props["consoleURL"] = clusterStatus.Spec.ConsoleURL
 			props["cpu"], _ = clusterStatus.Spec.Capacity.Cpu().AsInt64()
@@ -237,13 +226,14 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 		Kind:           "Cluster",
 		UID:            string("cluster_" + cluster.GetUID()),
 		Properties:     props,
-		ResourceString: "managedclusters", // Used for rbac
+		ResourceString: "managedclusters", // Needed for rbac, map to real cluster resource.
 	}
 
 }
 
 // Deletes a cluster resource and all resourcces from the cluster.
 func processClusterDelete(obj interface{}) {
+	glog.Info("Processing Cluster Delete.")
 
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
