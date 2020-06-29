@@ -138,7 +138,7 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 
 	resource := transformCluster(&managedClusterInfo)
 	resource.Properties["status"] = "" // TODO: Get the status.
-
+	glog.Info(resource)
 	// Ensure that the cluster resource is still present before inserting into data store.
 	/* assuming it's still there
 	c, err := cluster.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
@@ -221,9 +221,31 @@ func transformCluster(cluster *clusterv1beta1.ManagedClusterInfo ) db.Resource {
 	}
 	props["cpu"] = cpu_sum
 	props["memory"] = strconv.FormatInt(memory_sum,10)
-	glog.Infof("cpu %s, memory %s", props["cpu"], props["memory"])
+	glog.Info("Conditions: %s", cluster.Status.Conditions)
 
+	var stat1, stat2, stat3 string 
+	for _, condition := range cluster.Status.Conditions {
+		if condition.Type == "HubAcceptedManagedCluster" {
+			stat1 = string(condition.Status)
+		}
+		if condition.Type == "ManagedClusterConditionAvailable" {
+			stat2 = string(condition.Status)
+		}
+		if condition.Type == "ManagedClusterJoined" {
+			stat3 = string(condition.Status)
+		}
 
+	}
+
+	props["HubAcceptedManagedCluster"] = stat1
+	props["ManagedClusterConditionAvailable"] = stat2
+	props["ManagedClusterJoined"] = stat3
+
+/*
+	props["HubAcceptedManagedCluster"], _ = strconv.ParseBool(strings.ToLower(stat1))
+	props["ManagedClusterConditionAvailable"], _ = strconv.ParseBool(strings.ToLower(stat2))
+	props["ManagedClusterJoined"], _ = strconv.ParseBool(strings.ToLower(stat3))
+*/
 	glog.Info("consuleurl:", cluster.Status.ConsoleURL)
 	props["consoleURL"] = cluster.Status.ConsoleURL // not in ManagedClusterInfo
 /*	capacity := clusterStatus.Capacity["cpu"] // pointer dereference required 
@@ -244,7 +266,7 @@ func transformCluster(cluster *clusterv1beta1.ManagedClusterInfo ) db.Resource {
 		props["storage"] = storage.String()
 	}
 */
-
+	glog.Info(props) 
 
 	return db.Resource{
 		Kind:           "Cluster",
