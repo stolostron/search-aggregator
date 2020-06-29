@@ -35,18 +35,6 @@ func GetIndexes() {
 						}
 					}
 				}
-				/*RG3
-				//if the label is not present add to map and set to true
-				ExistingIndexMapMutex.RLock()
-				exists := ExistingIndexMap[kind[0]]
-				ExistingIndexMapMutex.RUnlock()
-
-				if !exists {
-					ExistingIndexMapMutex.Lock() // Lock map before writing
-					ExistingIndexMap[kind[0]] = true
-					ExistingIndexMapMutex.Unlock() // Unlock map after writing
-				}
-				RG3*/
 			}
 		}
 	} else {

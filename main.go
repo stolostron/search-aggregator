@@ -47,9 +47,9 @@ func main() {
 	go clustermgmt.WatchClusters()
 
 	// Run routine to build intercluster edges
-	/*RG3
-		go handlers.BuildInterClusterEdges()
-	    RG3*/
+
+	go handlers.BuildInterClusterEdges()
+
 	router := mux.NewRouter()
 
 	router.HandleFunc("/liveness", handlers.LivenessProbe).Methods("GET")
