@@ -20,7 +20,7 @@ import (
 var KubeClient *kubeClientset.Clientset
 
 //InitClient - Initialize all clientsets
-func InitClient() error {
+func InitClient() (*rest.Config, error) {
 	var clientConfig *rest.Config
 	var err error
 	if Cfg.KubeConfig != "" {
@@ -41,5 +41,5 @@ func InitClient() error {
 	}
 	KubeClient = kubeClient
 
-	return err
+	return clientConfig, err
 }

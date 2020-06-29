@@ -52,6 +52,6 @@ func IsGraphMissing(err error) bool {
 	return strings.Contains(err.Error(), "key doesn't contains a graph object")
 }
 
-func IsPropertySet(res rg2.QueryResult) bool {
+func IsPropertySet(res *rg2.QueryResult) bool {
 	return res.PropertiesSet() > 0
 }
