@@ -15,7 +15,6 @@ var ExistingIndexMap = make(map[string]bool)
 func GetIndexes() {
 	resp, err := Store.Query("MATCH (n) RETURN distinct labels(n)")
 	if err == nil {
-
 		var ExistingIndexMapMutex = sync.RWMutex{}
 		if !resp.Empty() {
 			for resp.Next() {

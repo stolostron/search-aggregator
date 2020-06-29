@@ -3,7 +3,6 @@ module github.com/open-cluster-management/search-aggregator
 go 1.13
 
 require (
-
     github.com/redislabs/redisgraph-go v2.0.2+incompatible
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b

@@ -148,7 +148,6 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// let us store the Current Subscription Uids in a map [String] -> boolean
-
 	uidresults, uiderr := getUIDsForSubscriptions()
 	if uiderr == nil {
 		if !uidresults.Empty() {
@@ -308,7 +307,6 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	if subscriptionUpdated {
 		ApplicationLastUpdated = time.Now()
 	}
-
 }
 
 // internal function to inline the errors

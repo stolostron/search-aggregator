@@ -14,21 +14,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var test_rec *rg2.QueryResult
-
 type MockCache struct {
-}
-type MockCacheQR struct {
 }
 
 func (mc MockCache) Query(input string) (*rg2.QueryResult, error) {
 	//res := [][]string{{"Header"}, {"100"}}
+
 	return &rg2.QueryResult{}, nil
 }
 
 func TestNodeCount(t *testing.T) {
 	fakeCache := MockCache{}
 	db.Store = fakeCache
+
 	count := computeNodeCount("anyinput")
-	assert.Equal(t, 100, count)
+	assert.Equal(t, 0, count)
 }
