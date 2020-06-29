@@ -14,8 +14,6 @@ import (
 	"encoding/json"
 	"strings"
 	"time"
-	"fmt"
-
 
 	"github.com/golang/glog"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
@@ -185,7 +183,6 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 
 	props := make(map[string]interface{})
 
-
 	// get these fields from ManagedCluster object
 	props["name"] = cluster.GetName()
 	props["kind"] = "Cluster"
@@ -193,34 +190,26 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 	props["selfLink"] = cluster.GetSelfLink()
 
-
-
-
-
-		if cluster.GetLabels() != nil {
-			var labelMap map[string]interface{}
-			clusterLabels, _ := json.Marshal(cluster.GetLabels())
-			err := json.Unmarshal(clusterLabels, &labelMap)
-			// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
-			// This was getting skipped before as map[string]string was not handled in switch case encode#77
-			if err == nil {
-				props["label"] = labelMap
-			}
+	if cluster.GetLabels() != nil {
+		var labelMap map[string]interface{}
+		clusterLabels, _ := json.Marshal(cluster.GetLabels())
+		err := json.Unmarshal(clusterLabels, &labelMap)
+		// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
+		// This was getting skipped before as map[string]string was not handled in switch case encode#77
+		if err == nil {
+			props["label"] = labelMap
 		}
+	}
 
 
-		glog.Infof("memory:\t %s", props["memory"])
-		fmt.Printf("ManagedCluster:\n%+v", cluster)
-		capacity := cluster.Status.Capacity["memory"] // pointer reference required .. "
-		props["memory"] = capacity.String()
-/*
 		if clusterStatus != nil {
-			props["consoleURL"] = clusterStatus.Spec.ConsoleURL
-			props["cpu"], _ = clusterStatus.Spec.Capacity.Cpu().AsInt64()
-			props["memory"] = clusterStatus.Spec.Capacity.Memory().String()
-			props["klusterletVersion"] = clusterStatus.Spec.KlusterletVersion
-			props["kubernetesVersion"] = clusterStatus.Spec.Version
-
+			capacity := clusterStatus.Capacity["cpu"] // pointer dereference required 
+			props["cpu"], _ = capacity.AsInt64()
+			capacity = clusterStatus.Capacity["memory"]
+			props["memory"] = capacity.String()
+			props["kubernetesVersion"] = cluster.Status.Version.Kubernetes 
+/*			props["consoleURL"] = clusterStatus.Spec.ConsoleURL // not in ManagedCluster Info
+			props["klusterletVersion"] = clusterStatus.Spec.KlusterletVersion // not in ManagedCluster object
 			props["nodes"] = int64(0)
 			nodes, ok := clusterStatus.Spec.Capacity["nodes"]
 			if ok {
@@ -232,8 +221,8 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 			if ok {
 				props["storage"] = storage.String()
 			}
-		}
-	*/
+*/		}
+
 
 	return db.Resource{
 		Kind:           "Cluster",
