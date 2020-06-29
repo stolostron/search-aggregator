@@ -153,7 +153,10 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error) {
 
 	// e.g. "MATCH (n:Cluster {name: 'abc123'}) SET n.foo=4"
 	queryString := fmt.Sprintf("MATCH (n:%s {name: '%s'}) SET %s", resource.Properties["kind"], resource.Properties["name"], strings.Join(setStrings, ", "))
+	glog.Info("SET Query ", queryString)
 	resp, err := Store.Query(queryString)
+	glog.Info("SET  resp.PropertiesSet()", resp.PropertiesSet())
+	resp.PrettyPrint()
 	//if there is no error store the Map in Global encodedPropsMap
 	if err == nil {
 		if isClustersCacheNil() {
