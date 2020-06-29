@@ -170,7 +170,7 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 	}
 
 	// list of remote subscriptions
-	query := "MATCH (n:Subscription) WHERE n.cluster != 'local-cluster' RETURN n._uid, n._hostingSubscription"
+	query := "MATCH (n:Subscription) WHERE n.cluster <> 'local-cluster' RETURN n._uid, n._hostingSubscription"
 	remoteSubscriptions, err := db.Store.Query(query)
 	if err != nil {
 		return rg2.QueryResult{}, err

@@ -31,7 +31,6 @@ const (
 // Initializes the pool using functions in this file.
 // Also initializes the Store interface.
 func init() {
-	glog.Info("In pool init")
 	Pool = &redis.Pool{
 		MaxIdle:      10, // TODO: Expose with ENV. Idle connections are connections that have been returned to the pool.
 		MaxActive:    20, // TODO: Expose with ENV. Active connections = connections in-use + idle connections
@@ -80,9 +79,6 @@ func getRedisConnection() (redis.Conn, error) {
 		if err != nil {
 			glog.Error("Error connecting redis host.")
 			return nil, err
-		} else {
-			glog.Info("No Error connecting redis host.")
-
 		}
 	}
 
@@ -110,6 +106,5 @@ func testRedisConnection(c redis.Conn, t time.Time) error {
 		return nil
 	}
 	_, err := c.Do("PING")
-	glog.Info("PING Error: ", err)
 	return err
 }

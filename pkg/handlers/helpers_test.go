@@ -14,7 +14,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var test_rec *rg2.QueryResult
+
 type MockCache struct {
+}
+type MockCacheQR struct {
 }
 
 func (mc MockCache) Query(input string) (*rg2.QueryResult, error) {
