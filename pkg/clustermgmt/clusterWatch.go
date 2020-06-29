@@ -14,6 +14,8 @@ import (
 	"encoding/json"
 	"strings"
 	"time"
+	"fmt"
+
 
 	"github.com/golang/glog"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
@@ -183,13 +185,18 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 
 	props := make(map[string]interface{})
 
+
 	// get these fields from ManagedCluster object
 	props["name"] = cluster.GetName()
 	props["kind"] = "Cluster"
 	props["apigroup"] = "cluster.open-cluster-management.io"
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
+	props["selfLink"] = cluster.GetSelfLink()
 
-	/*
+
+
+
+
 		if cluster.GetLabels() != nil {
 			var labelMap map[string]interface{}
 			clusterLabels, _ := json.Marshal(cluster.GetLabels())
@@ -201,6 +208,12 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 			}
 		}
 
+
+		glog.Infof("memory:\t %s", props["memory"])
+		fmt.Printf("ManagedCluster:\n%+v", cluster)
+		capacity := cluster.Status.Capacity["memory"] // pointer reference required .. "
+		props["memory"] = capacity.String()
+/*
 		if clusterStatus != nil {
 			props["consoleURL"] = clusterStatus.Spec.ConsoleURL
 			props["cpu"], _ = clusterStatus.Spec.Capacity.Cpu().AsInt64()
