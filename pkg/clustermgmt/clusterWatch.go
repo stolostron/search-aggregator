@@ -188,7 +188,6 @@ func transformCluster(cluster *clusterv1.ManagedCluster, clusterStatus *clusterv
 	props["kind"] = "Cluster"
 	props["apigroup"] = "cluster.open-cluster-management.io"
 	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
-	props["selfLink"] = cluster.GetSelfLink()
 
 	if cluster.GetLabels() != nil {
 		var labelMap map[string]interface{}
