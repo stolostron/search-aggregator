@@ -14,8 +14,6 @@ import (
 	"encoding/json"
 	"strings"
 	"time"
-	"fmt"
-	"strconv"
 
 	"github.com/golang/glog"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
@@ -27,7 +25,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
-	//clusterv1 "github.com/open-cluster-management/api/cluster/v1"
+	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
@@ -76,11 +74,11 @@ func WatchClusters() {
 
 	// TODO: abstract away duplicated for loop
 	// Periodically check if the Managed Cluster Info resource exists
-	//go stopAndStartInformer("cluster.open-cluster-management.io/v1", managedClusterInformer)
+	go stopAndStartInformer("cluster.open-cluster-management.io/v1", managedClusterInformer)
 	go stopAndStartInformer("internal.open-cluster-management.io/v1beta1", managedClusterInfoInformer)
 }
 
-func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInformer){ 
+func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInformer){
     var stopper chan struct{}
     informerRunning := false
 
@@ -110,16 +108,35 @@ func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInforme
 func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) {
 	glog.Info("Processing Cluster Upsert.")
 
+
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
-		glog.Warning("Error on ManagedCluster marshal.")
+		glog.Warning("Error unmarshalling object from Informer in processClusterUpsert.")
 	}
 
+	// check which object we are using
+	managedCluster := clusterv1.ManagedCluster{}
 	managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
+	var resource db.Resource
+
+	// Objects should collide on UID and update rather than duplicate insert
 	err = json.Unmarshal(j, &managedClusterInfo)
 	if err != nil {
-		glog.Warning("Error on ManagedClusterInfo unmarshal.")
+		glog.V(3).Info("Error on ManagedClusterInfo unmarshal, trying ManagedCluster unmarshal")
+		err = json.Unmarshal(j, &managedCluster)
+		if err != nil{
+			glog.Warning("Failed to Unmarshal MangedCluster or ManagedclusterInfo")
+		} else {
+			glog.V(3).Info("Successful on ManagedClusterInfo unmarshal")
+			resource = transformManagedCluster(&managedCluster)
+		}
+	} else {
+		glog.V(3).Info("Successful on ManagedCluster unmarshal")
+		resource = transformManagedClusterInfo(&managedClusterInfo)
 	}
+
+	// TODO: assert or unmarshal ?? ^^
+	// and here or in transform cluster
 
 	/*cluster, ok = obj.(*clusterregistry.Cluster) // ManagedClusterInfo will not assert as cluster ..
 	if !ok {
@@ -131,9 +148,11 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	// https://github.com/open-cluster-management/api/blob/master/cluster/v1/types.go#L78
 	// Old Definition https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/mcm/v1alpha1/clusterstatus_types.go
 
-	resource := transformCluster(&managedClusterInfo)
+
+
 	resource.Properties["status"] = "" // TODO: Get the status.
-	glog.Info(resource)
+	//glog.Info(resource)
+
 	// Ensure that the cluster resource is still present before inserting into data store.
 	/* assuming it's still there
 	c, err := cluster.ClusterregistryV1alpha1().Clusters(cluster.Namespace).Get(cluster.Name, v1.GetOptions{})
@@ -177,18 +196,47 @@ func isClusterMissing(err error) bool {
 	return strings.Contains(err.Error(), "could not find the requested resource")
 }
 
-func transformCluster(cluster *clusterv1beta1.ManagedClusterInfo ) db.Resource {
+// Get most of our properties from Managed Cluster
+// Use ManagedClusterInfo only for things that aren't available here 
+func transformManagedCluster(managedCluster *clusterv1.ManagedCluster ) db.Resource {
+	props := make(map[string]interface{})
+	// TODO: confirm UIDs are the same and will actually collide
+	// because we update by name, and the name "should be" the same, we should be good.
+
+	props["name"] = managedCluster.GetName()  // must match managedClusterInfo
+	props["kind"] = "Cluster"
+	props["apigroup"] = "cluster.open-cluster-management.io" // use ManagedCluster apigroup as "main" apigroup
+	props["created"] = managedCluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
+
+	// if cluster.Status is available
+	capacity := managedCluster.Status.Capacity["cpu"] // pointer dereference required 
+	props["cpu"], _ = capacity.AsInt64()
+	capacity = managedCluster.Status.Capacity["memory"]
+	props["memory"] = capacity.String()
+	props["kubernetesVersion"] = managedCluster.Status.Version.Kubernetes
+	// props["klusterletVersion"] = clusterStatus.Spec.KlusterletVersion // not in ManagedCluster object
+
+	return db.Resource{
+		Kind:           "Cluster",
+		UID:            string("cluster_" + managedCluster.GetUID()),
+		Properties:     props,
+		ResourceString: "managedclusters", // Needed for rbac, map to real cluster resource.
+	}
+}
+
+// get other properties from managedClusterInfo
+func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClusterInfo ) db.Resource {
 	props := make(map[string]interface{})
 
-	// get these fields from ManagedCluster object
-	props["name"] = cluster.GetName()
+	// get these fields from ManagedClusterInfo object 
+	props["name"] = managedClusterInfo.GetName()
 	props["kind"] = "Cluster"
-	props["apigroup"] = "internal.open-cluster-management.io"
-	props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
+	// props["apigroup"] = "internal.open-cluster-management.io"
+	// props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
-	if cluster.GetLabels() != nil {
+	if managedClusterInfo.GetLabels() != nil {
 		var labelMap map[string]interface{}
-		clusterLabels, _ := json.Marshal(cluster.GetLabels())
+		clusterLabels, _ := json.Marshal(managedClusterInfo.GetLabels())
 		err := json.Unmarshal(clusterLabels, &labelMap)
 		// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
 		// This was getting skipped before as map[string]string was not handled in switch case encode#77
@@ -197,10 +245,11 @@ func transformCluster(cluster *clusterv1beta1.ManagedClusterInfo ) db.Resource {
 		}
 	}
 
+	//fmt.Printf("\n\ninfo:\n\n%+v\n\n", cluster)
+	//glog.Infof("NodeList %s", cluster.Status.NodeList)
 
-	fmt.Printf("\n\ninfo:\n\n%+v\n\n", cluster)
-	glog.Infof("NodeList %s", cluster.Status.NodeList)
-
+/*
+	// get capacity from Managed Cluster instead
 	// Sum Capacity of all nodes 
 	var cpu_sum int64
 	var memory_sum int64
@@ -212,43 +261,32 @@ func transformCluster(cluster *clusterv1beta1.ManagedClusterInfo ) db.Resource {
 		memory := node.Capacity["memory"]
 		tmp, _ = memory.AsInt64()
 		memory_sum += tmp
-
 	}
+
 	props["cpu"] = cpu_sum
 	props["memory"] = strconv.FormatInt(memory_sum,10)
-	glog.Info("Conditions: %s", cluster.Status.Conditions)
-
-	var stat1, stat2, stat3 string 
-	for _, condition := range cluster.Status.Conditions {
+	//glog.Info("Conditions: %s", cluster.Status.Conditions)
+*/
+	var HubAcceptedManagedCluster, ManagedClusterConditionAvailable, ManagedClusterJoined string
+	for _, condition := range managedClusterInfo.Status.Conditions {
 		if condition.Type == "HubAcceptedManagedCluster" {
-			stat1 = string(condition.Status)
+			HubAcceptedManagedCluster = string(condition.Status)
 		}
 		if condition.Type == "ManagedClusterConditionAvailable" {
-			stat2 = string(condition.Status)
+			ManagedClusterConditionAvailable = string(condition.Status)
 		}
 		if condition.Type == "ManagedClusterJoined" {
-			stat3 = string(condition.Status)
+			ManagedClusterJoined = string(condition.Status)
 		}
 
 	}
 
-	props["HubAcceptedManagedCluster"] = stat1
-	props["ManagedClusterConditionAvailable"] = stat2
-	props["ManagedClusterJoined"] = stat3
+	props["HubAcceptedManagedCluster"] = HubAcceptedManagedCluster
+	props["ManagedClusterConditionAvailable"] = ManagedClusterConditionAvailable
+	props["ManagedClusterJoined"] = ManagedClusterJoined
 
-/*
-	props["HubAcceptedManagedCluster"], _ = strconv.ParseBool(strings.ToLower(stat1))
-	props["ManagedClusterConditionAvailable"], _ = strconv.ParseBool(strings.ToLower(stat2))
-	props["ManagedClusterJoined"], _ = strconv.ParseBool(strings.ToLower(stat3))
-*/
-	glog.Info("consuleurl:", cluster.Status.ConsoleURL)
-	props["consoleURL"] = cluster.Status.ConsoleURL // not in ManagedClusterInfo
-/*	capacity := clusterStatus.Capacity["cpu"] // pointer dereference required 
-	props["cpu"], _ = capacity.asint64()
-	capacity = clusterStatus.Capacity["memory"]
-	props["memory"] = capacity.String()
-	props["kubernetesVersion"] = cluster.Status.Version.Kubernetes
-	props["klusterletVersion"] = clusterStatus.Spec.KlusterletVersion // not in ManagedCluster object
+	props["consoleURL"] = managedClusterInfo.Status.ConsoleURL // not being populated yet 
+/* 
 	props["nodes"] = int64(0)
 	nodes, ok := clusterStatus.Spec.Capacity["nodes"]
 	if ok {
@@ -261,18 +299,18 @@ func transformCluster(cluster *clusterv1beta1.ManagedClusterInfo ) db.Resource {
 		props["storage"] = storage.String()
 	}
 */
-	glog.Info(props) 
 
-	return db.Resource{
+	resource := db.Resource{
 		Kind:           "Cluster",
-		UID:            string("cluster_" + cluster.GetUID()),
+		UID:            string("cluster_" + managedClusterInfo.GetUID()),
 		Properties:     props,
-		ResourceString: "managedclusters", // Needed for rbac, map to real cluster resource.
+		ResourceString: "managedclusterinfos", // Needed for rbac, map to real cluster resource.
 	}
-
+	// glog.Info(resource)
+	return resource
 }
 
-// Deletes a cluster resource and all resourcces from the cluster.
+// Deletes a cluster resource and all resources from the cluster.
 func processClusterDelete(obj interface{}) {
 	glog.Info("Processing Cluster Delete.")
 
