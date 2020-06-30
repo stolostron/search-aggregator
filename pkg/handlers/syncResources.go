@@ -152,7 +152,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	uidresults, uiderr := getUIDsForSubscriptions()
 	if uiderr == nil {
 		if !uidresults.Empty() {
-			for uidresults.Next() { //for _, uid := range uidresults.Results[1:] {
+			for uidresults.Next() {
 				record := uidresults.Record()
 				uid := record.GetByIndex(0).(string)
 				subscriptionUIDMap[uid] = true

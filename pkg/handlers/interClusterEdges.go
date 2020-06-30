@@ -191,7 +191,7 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 			hubSubMap[hubRecord.GetByIndex(1).(string)] = hubRecord.GetByIndex(0).(string)
 		}
 
-		for remoteSubscriptions.Next() { // for _, remoteSub := range remoteSubscriptions.Results[1:] {
+		for remoteSubscriptions.Next() {
 			remoteRecord := remoteSubscriptions.Record()
 			var remoteSub [2]string
 			remoteSub[0] = remoteRecord.GetByIndex(0).(string)

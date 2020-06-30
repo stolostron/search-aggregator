@@ -77,6 +77,10 @@ func assertClusterNode(clusterName string) bool {
 			glog.Error("Could not check cluster resource by name: ", err)
 			return false
 		}
+		if resp.Empty() {
+			glog.Infof("Cluster %s does not exist.", clusterName)
+			return false
+		}
 		//Iterating to next record to get count - count is in the first index(0) of the first record
 		for resp.Next() {
 			record := resp.Record()
