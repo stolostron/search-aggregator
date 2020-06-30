@@ -198,6 +198,7 @@ func isClusterMissing(err error) bool {
 
 // Get most of our properties from Managed Cluster
 // Use ManagedClusterInfo only for things that aren't available here 
+// https://github.com/open-cluster-management/api/blob/master/cluster/v1/types.go#L78
 func transformManagedCluster(managedCluster *clusterv1.ManagedCluster ) db.Resource {
 	props := make(map[string]interface{})
 	// TODO: confirm UIDs are the same and will actually collide
@@ -216,15 +217,19 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster ) db.Resou
 	props["kubernetesVersion"] = managedCluster.Status.Version.Kubernetes
 	// props["klusterletVersion"] = clusterStatus.Spec.KlusterletVersion // not in ManagedCluster object
 
-	return db.Resource{
+	resource := db.Resource{
 		Kind:           "Cluster",
 		UID:            string("cluster_" + managedCluster.GetUID()),
 		Properties:     props,
 		ResourceString: "managedclusters", // Needed for rbac, map to real cluster resource.
 	}
+	// glog.Info(resource)
+	return resource
+
 }
 
 // get other properties from managedClusterInfo
+// https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/cluster/v1beta1/clusterinfo_types.go#L24
 func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClusterInfo ) db.Resource {
 	props := make(map[string]interface{})
 
@@ -286,6 +291,9 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 	props["ManagedClusterJoined"] = ManagedClusterJoined
 
 	props["consoleURL"] = managedClusterInfo.Status.ConsoleURL // not being populated yet 
+	props["loggingEndpoint"] = managedClusterInfo.Status.LoggingEndpoint.String()
+	glog.Info("logging endpoint: ", props["loggingEndpoint"])
+
 /* 
 	props["nodes"] = int64(0)
 	nodes, ok := clusterStatus.Spec.Capacity["nodes"]
@@ -302,9 +310,9 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 
 	resource := db.Resource{
 		Kind:           "Cluster",
-		UID:            string("cluster_" + managedClusterInfo.GetUID()),
+		//UID:            string("cluster_" + managedClusterInfo.GetUID()),
 		Properties:     props,
-		ResourceString: "managedclusterinfos", // Needed for rbac, map to real cluster resource.
+		ResourceString: "managedclusters", // Needed for rbac, map to real cluster resource.
 	}
 	// glog.Info(resource)
 	return resource
