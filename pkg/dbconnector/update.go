@@ -117,12 +117,12 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 	return queryString, encodingErrors
 }
 
-func UpdateByName(resource Resource) (*rg2.QueryResult, error) {
+func UpdateByName(resource Resource) (*rg2.QueryResult, error, bool) {
 	resource.addRbacProperty()
 	encodedProps, err := resource.EncodeProperties()
 	if err != nil {
 		glog.Error("Cannot encode resource ", resource.UID, ", excluding it from update: ", err)
-		return &rg2.QueryResult{}, err
+		return &rg2.QueryResult{}, err, false
 	}
 
 	// we need to add the uid to the encoded props so if we update a dummy node we can attach a UID to it
@@ -137,7 +137,7 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error) {
 		if reflect.DeepEqual(mapInRG, encodedProps) {
 			glog.V(3).Infof("No updates performed as the Object values have not changed")
 			/*RG3 return QueryResult{Results: nil, Statistics: []string{"Update Not Required"}}, err RG3*/
-			return &rg2.QueryResult{}, err
+			return &rg2.QueryResult{}, err, true
 		}
 
 	}
@@ -169,5 +169,5 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error) {
 
 	}
 
-	return resp, err
+	return resp, err, false
 }
