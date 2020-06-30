@@ -57,7 +57,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 			if delError != nil {
 				glog.Error("Error deleting duplicates for ", dupeUID, delError)
 			}
-			glog.Infof("Deleted %d duplicates of UID %s", dupeCount, dupeUID)
+			glog.V(3).Infof("Deleted %d duplicates of UID %s", dupeCount, dupeUID)
 			delete(existingResources, dupeUID) // Delete from existing resources.
 		}
 	}

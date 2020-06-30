@@ -9,7 +9,10 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 
 package dbconnector
 
-import rg2 "github.com/redislabs/redisgraph-go"
+import (
+	"github.com/golang/glog"
+	rg2 "github.com/redislabs/redisgraph-go"
+)
 
 const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 
@@ -86,6 +89,7 @@ func MergeDummyCluster(name string) (*rg2.QueryResult, error) {
 func CheckClusterResource(clusterName string) (*rg2.QueryResult, error) {
 	err := ValidateClusterName(clusterName)
 	if err != nil {
+		glog.Warning("Error validating cluster:", clusterName)
 		return &rg2.QueryResult{}, err
 	}
 	query := SanitizeQuery("MATCH (c:Cluster {name: '%s'}) RETURN count(c)", clusterName)

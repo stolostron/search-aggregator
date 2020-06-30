@@ -136,7 +136,6 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error, bool) {
 		mapInRG := getClustersCache(resource.UID)
 		if reflect.DeepEqual(mapInRG, encodedProps) {
 			glog.V(3).Infof("No updates performed as the Object values have not changed")
-			/*RG3 return QueryResult{Results: nil, Statistics: []string{"Update Not Required"}}, err RG3*/
 			return &rg2.QueryResult{}, err, true
 		}
 
@@ -153,10 +152,7 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error, bool) {
 
 	// e.g. "MATCH (n:Cluster {name: 'abc123'}) SET n.foo=4"
 	queryString := fmt.Sprintf("MATCH (n:%s {name: '%s'}) SET %s", resource.Properties["kind"], resource.Properties["name"], strings.Join(setStrings, ", "))
-	glog.Info("SET Query ", queryString)
 	resp, err := Store.Query(queryString)
-	glog.Info("SET  resp.PropertiesSet()", resp.PropertiesSet())
-	resp.PrettyPrint()
 	//if there is no error store the Map in Global encodedPropsMap
 	if err == nil {
 		if isClustersCacheNil() {

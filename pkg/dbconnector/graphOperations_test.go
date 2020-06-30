@@ -10,36 +10,30 @@ import (
 	"errors"
 	"testing"
 
+	rg2 "github.com/redislabs/redisgraph-go"
 	"github.com/stretchr/testify/assert"
 )
 
 type MockCache struct {
 	goodQuery string
-	ret       QueryResult
 }
 
-func (mc MockCache) Query(input string) (QueryResult, error) {
-	if input == mc.goodQuery {
-		return mc.ret, nil
+func init() {
+	Store = MockCache{}
+}
+func (mc MockCache) Query(q string) (*rg2.QueryResult, error) {
+	if q == "MATCH (n {cluster:'good-cluster-name'}) DELETE n" {
+		return &rg2.QueryResult{}, nil
 	}
-	return QueryResult{}, errors.New("Incorrect Query formed")
+	return &rg2.QueryResult{}, errors.New("Incorrect Query formed")
 }
 
 func TestDeleteCluster(t *testing.T) {
-
-	mc := MockCache{}                                                 // Construct mock cache using type defined above
-	mc.goodQuery = "MATCH (n {cluster:'good-cluster-name'}) DELETE n" // Dictate what the next input to mocked Query
-	//Store = mc
-	resp, err := DeleteCluster("good-cluster-name")
+	_, err := DeleteCluster("good-cluster-name")
 	assert.NoError(t, err)
-	assert.NotNil(t, resp)
 
 }
 func TestBadDeleteCluster(t *testing.T) {
-
-	mc := MockCache{}                                                 // Construct mock cache using type defined above
-	mc.goodQuery = "MATCH (n {cluster:'good-cluster-name'}) DELETE n" // Dictate what the next input to mocked Query
-	//Store = mc
 	_, err := DeleteCluster("bad-cluster=name")
 	assert.Error(t, err)
 }

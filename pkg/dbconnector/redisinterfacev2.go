@@ -35,7 +35,6 @@ func (RedisGraphStoreV2) Query(q string) (*rg2.QueryResult, error) {
 	// Get connection from the pool
 	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
 	defer conn.Close()
-
 	g := rg2.Graph{
 		Conn: conn,
 		Id:   GRAPH_NAME,
