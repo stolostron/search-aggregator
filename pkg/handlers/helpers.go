@@ -3,6 +3,7 @@ IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
 The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Copyright (c) 2020 Red Hat, Inc.
 */
 package handlers
 
@@ -77,6 +78,7 @@ func assertClusterNode(clusterName string) bool {
 			return false
 		}
 		if resp.Empty() {
+			glog.Infof("Cluster %s does not exist.", clusterName)
 			return false
 		}
 		//Iterating to next record to get count - count is in the first index(0) of the first record

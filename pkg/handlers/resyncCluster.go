@@ -21,8 +21,10 @@ import (
 
 func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge, metrics *SyncMetrics) (stats SyncResponse, err error) {
 	glog.Info("Resync for cluster: ", clusterName)
+
 	// First get the existing resources from the datastore for the cluster
 	result, error := db.Store.Query(db.SanitizeQuery("MATCH (n {cluster: '%s'}) RETURN n", clusterName))
+
 	if error != nil {
 		glog.Error("Error getting existing resources for cluster ", clusterName)
 		err = error // For return value.
@@ -133,9 +135,9 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	metrics.NodeSyncEnd = time.Now()
 
 	// RE-SYNC Edges
+
 	metrics.EdgeSyncStart = time.Now()
 	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
-
 	if edgesError != nil {
 		glog.Warning("Error getting all existing edges for cluster ", clusterName, edgesError)
 		err = edgesError
