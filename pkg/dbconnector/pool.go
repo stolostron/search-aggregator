@@ -45,7 +45,7 @@ func init() {
 func getRedisConnection() (redis.Conn, error) {
 	var redisConn redis.Conn
 	if config.Cfg.RedisSSHPort != "" {
-		glog.Info("Initializing new Redis SSH client with redisHost: ", config.Cfg.RedisHost, " redisSSHPort: ", config.Cfg.RedisSSHPort)
+		glog.V(2).Info("Initializing new Redis SSH client with redisHost: ", config.Cfg.RedisHost, " redisSSHPort: ", config.Cfg.RedisSSHPort)
 		caCert, err := ioutil.ReadFile("./rediscert/redis.crt")
 		if err != nil {
 			glog.Error("Error loading TLS certificate. Redis Certificate must be mounted at ./sslcert/redis.crt: ", err)
@@ -73,7 +73,7 @@ func getRedisConnection() (redis.Conn, error) {
 
 	} else {
 		var err error
-		glog.Info("Initializing new Redis client with redisHost: ", config.Cfg.RedisHost, " redisPort: ", config.Cfg.RedisPort)
+		glog.V(2).Info("Initializing new Redis client with redisHost: ", config.Cfg.RedisHost, " redisPort: ", config.Cfg.RedisPort)
 
 		redisConn, err = redis.Dial("tcp", net.JoinHostPort(config.Cfg.RedisHost, config.Cfg.RedisPort))
 		if err != nil {
@@ -84,7 +84,7 @@ func getRedisConnection() (redis.Conn, error) {
 
 	// If a password is provided, then use it to authenticate the Redis connection.
 	if config.Cfg.RedisPassword != "" {
-		glog.Info("Authenticating Redis client using password from REDIS_PASSWORD.")
+		glog.V(2).Info("Authenticating Redis client using password from REDIS_PASSWORD.")
 		if _, err := redisConn.Do("AUTH", config.Cfg.RedisPassword); err != nil {
 			glog.Error("Error authenticating Redis client. Original error: ", err)
 			connError := redisConn.Close()
