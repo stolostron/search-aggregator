@@ -15,7 +15,6 @@ import (
 )
 
 type MockCache struct {
-	goodQuery string
 }
 
 func init() {
