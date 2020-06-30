@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
-	github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a // indirect
+	github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200629084830-3965fdd47134
 	github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5
 	github.com/stretchr/testify v1.4.0

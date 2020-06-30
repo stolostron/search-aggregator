@@ -35,9 +35,6 @@ import (
 func WatchClusters() {
 	glog.Info("Begin ClusterWatch routine")
 
-	var stopper chan struct{}
-	informerRunning := false
-
 	// Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources.
 	hubClientConfig, err := config.InitClient()
 	if err != nil {
@@ -49,11 +46,19 @@ func WatchClusters() {
 	}
 	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 60*time.Second)
 
-	// Watch ManagedCluster resource
-	 gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")
-	// gvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
-	clusterInformer := dynamicFactory.ForResource(*gvr).Informer()
-	clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+
+	// TODO: watch ManagedClusterInfo & ManagedCluster
+
+	// Create GVR for ManagedCluster and ManagedClusterInfo 
+	managedClusterGvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
+	managedClusterInfoGvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")
+
+	//Create Informers for ManagedCluster and ManagedClusterInfo
+	managedClusterInformer := dynamicFactory.ForResource(*managedClusterGvr).Informer()
+	managedClusterInfoInformer := dynamicFactory.ForResource(*managedClusterInfoGvr).Informer()
+
+	// Create handlers for events
+	handlers :=	 cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			processClusterUpsert(obj, config.KubeClient)
 		},
@@ -63,54 +68,44 @@ func WatchClusters() {
 		DeleteFunc: func(obj interface{}) {
 			processClusterDelete(obj)
 		},
-	})
-
-	// TODO: watch ManagedClusterInfo
-
-	// gvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")
-
-	/*
-		clusterFactory := informers.NewSharedInformerFactory(clusterClient, 0)
-		clusterInformer := clusterFactory.Clusterregistry().V1alpha1().Clusters().Informer()
-		clusterInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				processClusterUpsert(obj, mcmClient)
-			},
-			UpdateFunc: func(prev interface{}, next interface{}) {
-				processClusterUpsert(next, mcmClient)
-			},
-			DeleteFunc: func(obj interface{}) {
-				cluster, ok := obj.(*clusterregistry.Cluster)
-				if !ok {
-					glog.Error("Failed to assert Cluster informer obj to clusterregistry.Cluster")
-					return
-				}
-				delCluster(cluster)
-			},
-		})
-	*/
-
-	// periodically check if the cluster resource exists and start/stop the informer accordingly
-	for {
-		_, err := config.KubeClient.ServerResourcesForGroupVersion("internal.open-cluster-management.io/v1beta1")
-		// we fail to fetch for some reason other than not found
-		if err != nil && !isClusterMissing(err) {
-			glog.Error("Cannot fetch resource list for internal.open-cluster-management.io/v1beta1: ", err)
-		} else {
-			if informerRunning && isClusterMissing(err) {
-				glog.Info("Stopping cluster informer routine because ManagedClusterInfo resource not found.")
-				stopper <- struct{}{}
-				informerRunning = false
-			} else if !informerRunning && !isClusterMissing(err) {
-				glog.Info("Starting cluster informer routine for cluster watch")
-				stopper = make(chan struct{})
-				informerRunning = true
-				go clusterInformer.Run(stopper)
-			}
-		}
-		time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
 	}
+
+	// Add Handlers to both Informers
+	managedClusterInformer.AddEventHandler(handlers)
+	managedClusterInfoInformer.AddEventHandler(handlers)
+
+	// TODO: abstract away duplicated for loop
+	// Periodically check if the Managed Cluster Info resource exists
+	//go stopAndStartInformer("cluster.open-cluster-management.io/v1", managedClusterInformer)
+	go stopAndStartInformer("internal.open-cluster-management.io/v1beta1", managedClusterInfoInformer)
 }
+
+func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInformer){ 
+    var stopper chan struct{}
+    informerRunning := false
+
+    for {
+        _, err := config.KubeClient.ServerResourcesForGroupVersion(groupVersion)
+        // we fail to fetch for some reason other than not found
+        if err != nil && !isClusterMissing(err) {
+            glog.Errorf("Cannot fetch resource list for %s, error message: %s ",groupVersion, err)
+        } else {
+            if informerRunning && isClusterMissing(err) {
+                glog.Infof("Stopping cluster informer routine because %s resource not found.", groupVersion)
+                stopper <- struct{}{}
+                informerRunning = false
+            } else if !informerRunning && !isClusterMissing(err) {
+                glog.Infof("Starting cluster informer routine for cluster watch for % resource", groupVersion) // can I get resource string here?
+                stopper = make(chan struct{})
+                informerRunning = true
+                go informer.Run(stopper)
+            }
+        }
+        time.Sleep(time.Duration(config.Cfg.RediscoverRateMS) * time.Millisecond)
+    }
+}
+
+
 
 func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) {
 	glog.Info("Processing Cluster Upsert.")
