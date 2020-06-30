@@ -34,7 +34,7 @@ build-linux:
 .PHONY: lint
 lint:
 	# Flag GOGC=75 needed to avoid out of memory issue.
-	GO111MODULE=on GOGC=75 golangci-lint run --timeout=2m
+	GO111MODULE=on GOGC=100 golangci-lint run --timeout=2m
 
 run:
 	GO111MODULE=on go run main.go
