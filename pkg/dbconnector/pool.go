@@ -24,8 +24,8 @@ import (
 var Pool *redis.Pool
 
 const (
-	IDLE_TIMEOUT = 60           // ReadinessProbe runs every 30 seconds, this keeps the connection alive between probe intervals.
-	GRAPH_NAME   = "icp-search" // TODO read graph name from config
+	IDLE_TIMEOUT = 60 // ReadinessProbe runs every 30 seconds, this keeps the connection alive between probe intervals.
+	GRAPH_NAME   = "search-db"
 )
 
 // Initializes the pool using functions in this file.
