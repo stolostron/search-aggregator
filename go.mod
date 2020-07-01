@@ -3,6 +3,7 @@ module github.com/open-cluster-management/search-aggregator
 go 1.13
 
 require (
+    github.com/redislabs/redisgraph-go v2.0.2+incompatible
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
@@ -17,7 +18,6 @@ require (
 	github.com/onsi/ginkgo v1.13.0 // indirect
 	github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	google.golang.org/appengine v1.6.5 // indirect

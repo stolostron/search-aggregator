@@ -3,10 +3,12 @@ IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
 The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Copyright (c) 2020 Red Hat, Inc.
 */
 
 package dbconnector
 
+/*
 import (
 	rg "github.com/redislabs/redisgraph-go"
 )
@@ -42,3 +44,4 @@ func (RedisGraphStoreV1) Query(q string) (QueryResult, error) {
 	qr.Statistics = result.Statistics
 	return qr, err
 }
+*/

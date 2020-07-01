@@ -10,21 +10,23 @@ import (
 	"testing"
 
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
-	rg "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	rg2 "github.com/redislabs/redisgraph-go"
 	"github.com/stretchr/testify/assert"
 )
 
 type MockCache struct {
 }
 
-func (mc MockCache) Query(input string) (rg.QueryResult, error) {
-	res := [][]string{{"Header"}, {"100"}}
-	return rg.QueryResult{Results: res}, nil
+func (mc MockCache) Query(input string) (*rg2.QueryResult, error) {
+	//res := [][]string{{"Header"}, {"100"}}
+
+	return &rg2.QueryResult{}, nil
 }
 
 func TestNodeCount(t *testing.T) {
 	fakeCache := MockCache{}
 	db.Store = fakeCache
+
 	count := computeNodeCount("anyinput")
-	assert.Equal(t, 100, count)
+	assert.Equal(t, 0, count)
 }

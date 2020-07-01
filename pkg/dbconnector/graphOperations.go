@@ -9,7 +9,10 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 
 package dbconnector
 
-import "github.com/golang/glog"
+import (
+	"github.com/golang/glog"
+	rg2 "github.com/redislabs/redisgraph-go"
+)
 
 const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 
@@ -36,36 +39,36 @@ type ChunkedOperationResult struct {
 }
 
 // Deletes all resources for given cluster
-func DeleteCluster(clusterName string) (QueryResult, error) {
+func DeleteCluster(clusterName string) (*rg2.QueryResult, error) {
 	err := ValidateClusterName(clusterName)
 	if err != nil {
-		return QueryResult{}, err
+		return &rg2.QueryResult{}, err
 	}
 	query := SanitizeQuery("MATCH (n {cluster:'%s'}) DELETE n", clusterName)
 	return Store.Query(query)
 }
 
-func TotalNodes(clusterName string) (QueryResult, error) {
+func TotalNodes(clusterName string) (*rg2.QueryResult, error) {
 	err := ValidateClusterName(clusterName)
 	if err != nil {
-		return QueryResult{}, err
+		return &rg2.QueryResult{}, err
 	}
 	query := SanitizeQuery("MATCH (n {cluster:'%s'}) RETURN count(n)", clusterName)
 	return Store.Query(query)
 }
 
 // Returns a result set with all INTRA edges within the clusterName
-func TotalIntraEdges(clusterName string) (QueryResult, error) {
+func TotalIntraEdges(clusterName string) (*rg2.QueryResult, error) {
 	err := ValidateClusterName(clusterName)
 	if err != nil {
-		return QueryResult{}, err
+		return &rg2.QueryResult{}, err
 	}
-	query := SanitizeQuery("MATCH (s {cluster:'%s'})-[e]->(d) WHERE e._interCluster != true RETURN count(e)", clusterName)
+	query := SanitizeQuery("MATCH (s {cluster:'%s'})-[e]->(d) WHERE (e._interCluster <> true) OR (e._interCluster IS NULL) RETURN count(e)", clusterName)
 	resp, err := Store.Query(query)
 	return resp, err
 }
 
-func MergeDummyCluster(name string) (QueryResult, error) {
+func MergeDummyCluster(name string) (*rg2.QueryResult, error) {
 	kubeVersion := ""
 	// TODO: Get this from new ManagedClusterInfo
 	//
@@ -83,11 +86,11 @@ func MergeDummyCluster(name string) (QueryResult, error) {
 	return Store.Query(query)
 }
 
-func CheckClusterResource(clusterName string) (QueryResult, error) {
+func CheckClusterResource(clusterName string) (*rg2.QueryResult, error) {
 	err := ValidateClusterName(clusterName)
 	if err != nil {
 		glog.Warning("Error validating cluster:", clusterName)
-		return QueryResult{}, err
+		return &rg2.QueryResult{}, err
 	}
 	query := SanitizeQuery("MATCH (c:Cluster {name: '%s'}) RETURN count(c)", clusterName)
 	return Store.Query(query)
