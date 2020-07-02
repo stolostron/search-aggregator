@@ -61,7 +61,7 @@ jobs:
       script:
         # Bootstrap the build harness, pull test image, and run unit tests.  
         - make copyright-check
-        - make component/pull 
+        # - make component/pull 
         - make component/test/unit
         - make security/scans
         - make sonar/go  

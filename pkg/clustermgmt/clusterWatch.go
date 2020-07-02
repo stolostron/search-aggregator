@@ -145,10 +145,15 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 
 	// Upsert (attempt update, attempt insert on failure)
 	glog.V(2).Info("Updating Cluster resource by name in RedisGraph. ", resource)
-	res, err := db.UpdateByName(resource)
+	res, err, alreadySET := db.UpdateByName(resource)
 	if err != nil {
 		glog.Warning("Error on UpdateByName() ", err)
 	}
+
+	if alreadySET {
+		return
+	}
+
 	if db.IsGraphMissing(err) || !db.IsPropertySet(res) /*&& (c.Name == cluster.Name)*/ {
 		glog.Info("Cluster graph/key object does not exist, inserting new object")
 		_, _, err = db.Insert([]*db.Resource{&resource}, "")

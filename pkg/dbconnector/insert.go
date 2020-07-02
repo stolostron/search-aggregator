@@ -3,6 +3,7 @@ IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
 The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Copyright (c) 2020 Red Hat, Inc.
 */
 
 package dbconnector
@@ -13,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
+	rg2 "github.com/redislabs/redisgraph-go"
 )
 
 // Recursive helper for ChunkedInsert. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
@@ -98,7 +100,7 @@ func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationRe
 
 // Inserts given resources into graph, transparently builds query for you and returns the response and errors given by redisgraph.
 // Returns the result, any errors when encoding, and any error from the query itself.
-func Insert(resources []*Resource, clusterName string) (QueryResult, map[string]error, error) {
+func Insert(resources []*Resource, clusterName string) (*rg2.QueryResult, map[string]error, error) {
 	query, encodingErrors := insertQuery(resources, clusterName) // Encoding errors are recoverable, but we still report them
 	resp, err := Store.Query(query)
 	return resp, encodingErrors, err

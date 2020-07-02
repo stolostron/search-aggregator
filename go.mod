@@ -4,14 +4,13 @@ go 1.13
 
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golangci/golangci-lint v1.24.0 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.4
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200629084830-3965fdd47134
-	github.com/redislabs/redisgraph-go v1.0.1-0.20190311052811-0d6a4659a1b5
+	github.com/redislabs/redisgraph-go v2.0.2+incompatible
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	k8s.io/apimachinery v0.18.3

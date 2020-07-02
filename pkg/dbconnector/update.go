@@ -3,6 +3,7 @@ IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
 The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Copyright (c) 2020 Red Hat, Inc.
 */
 
 package dbconnector
@@ -13,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
+	rg2 "github.com/redislabs/redisgraph-go"
 )
 
 // Recursive helper for ChunkedUpdate. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
@@ -73,7 +75,7 @@ func ChunkedUpdate(resources []*Resource) ChunkedOperationResult {
 
 // Updates given resources into graph, transparently builds query for you and returns the reponse and errors given by redisgraph.
 // Returns the result, any errors when encoding, and any error from the query itself.
-func Update(resources []*Resource) (QueryResult, map[string]error, error) {
+func Update(resources []*Resource) (*rg2.QueryResult, map[string]error, error) {
 	query, encodingErrors := updateQuery(resources) // Encoding errors are recoverable, but we still report them
 	resp, err := Store.Query(query)
 	return resp, encodingErrors, err
@@ -116,12 +118,12 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 	return queryString, encodingErrors
 }
 
-func UpdateByName(resource Resource) (QueryResult, error) {
+func UpdateByName(resource Resource) (*rg2.QueryResult, error, bool) {
 	resource.addRbacProperty()
 	encodedProps, err := resource.EncodeProperties()
 	if err != nil {
 		glog.Error("Cannot encode resource ", resource.UID, ", excluding it from update: ", err)
-		return QueryResult{}, err
+		return &rg2.QueryResult{}, err, false
 	}
 
 	// we need to add the uid to the encoded props so if we update a dummy node we can attach a UID to it
@@ -135,7 +137,7 @@ func UpdateByName(resource Resource) (QueryResult, error) {
 		mapInRG := getClustersCache(resource.UID)
 		if reflect.DeepEqual(mapInRG, encodedProps) {
 			glog.V(3).Infof("No updates performed as the Object values have not changed")
-			return QueryResult{Results: nil, Statistics: []string{"Update Not Required"}}, err
+			return &rg2.QueryResult{}, err, true
 		}
 
 	}
@@ -164,5 +166,5 @@ func UpdateByName(resource Resource) (QueryResult, error) {
 
 	}
 
-	return resp, err
+	return resp, err, false
 }
