@@ -191,9 +191,9 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster ) db.Resou
 	// Properties duplicated between this and ManagedClusterInfo are taken from ManagedCluster
 	props := make(map[string]interface{})
 
-	if managedClusterInfo.GetLabels() != nil {
+	if managedCluster.GetLabels() != nil {
 		var labelMap map[string]interface{}
-		clusterLabels, _ := json.Marshal(managedClusterInfo.GetLabels())
+		clusterLabels, _ := json.Marshal(managedCluster.GetLabels())
 		err := json.Unmarshal(clusterLabels, &labelMap)
 		// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
 		// This was getting skipped before as map[string]string was not handled in switch case encode#77
