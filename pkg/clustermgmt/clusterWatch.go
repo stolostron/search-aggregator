@@ -69,11 +69,12 @@ func WatchClusters() {
 	managedClusterInformer.AddEventHandler(handlers)
 	managedClusterInfoInformer.AddEventHandler(handlers)
 
-	// Periodically check if the Managed Cluster Info resource exists
+	// Periodically check if the ManagedCluster/ManagedClusterInfo resource exists
 	go stopAndStartInformer("cluster.open-cluster-management.io/v1", managedClusterInformer)
 	go stopAndStartInformer("internal.open-cluster-management.io/v1beta1", managedClusterInfoInformer)
 }
 
+// Stop and Start informer according to Rediscover Rate
 func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInformer){
     var stopper chan struct{}
     informerRunning := false
@@ -82,14 +83,15 @@ func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInforme
         _, err := config.KubeClient.ServerResourcesForGroupVersion(groupVersion)
         // we fail to fetch for some reason other than not found
         if err != nil && !isClusterMissing(err) {
-            glog.Errorf("Cannot fetch resource list for %s, error message: %s ",groupVersion, err)
+            glog.Errorf("Cannot fetch resource list for %s, error message: %s ", groupVersion, err)
         } else {
             if informerRunning && isClusterMissing(err) {
                 glog.Infof("Stopping cluster informer routine because %s resource not found.", groupVersion)
                 stopper <- struct{}{}
                 informerRunning = false
             } else if !informerRunning && !isClusterMissing(err) {
-                glog.Infof("Starting cluster informer routine for cluster watch for % resource", groupVersion) // can I get resource string here?
+				// can I get resource string here?
+                glog.Infof("Starting cluster informer routine for cluster watch for %s resource", groupVersion)
                 stopper = make(chan struct{})
                 informerRunning = true
                 go informer.Run(stopper)
@@ -100,8 +102,6 @@ func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInforme
 }
 
 func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) {
-	glog.Info("Processing Cluster Upsert.")
-
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
 		glog.Warning("Error unmarshalling object from Informer in processClusterUpsert.")
@@ -179,6 +179,8 @@ func isClusterMissing(err error) bool {
 // Transform ManagedCluster object into db.Resource suitable for insert into redis 
 func transformManagedCluster(managedCluster *clusterv1.ManagedCluster ) db.Resource {
 	// https://github.com/open-cluster-management/api/blob/master/cluster/v1/types.go#L78
+	// We use ManagedCluster as the primary source of information
+	// Properties duplicated between this and ManagedClusterInfo are taken from ManagedCluster
 	props := make(map[string]interface{})
 
 	props["name"] = managedCluster.GetName()  // must match managedClusterInfo
@@ -186,12 +188,13 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster ) db.Resou
 	props["apigroup"] = "cluster.open-cluster-management.io" // use ManagedCluster apigroup as "main" apigroup
 	props["created"] = managedCluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
-	// TODO: if cluster.Status is available
-	capacity := managedCluster.Status.Capacity["cpu"] // pointer dereference required 
-	props["cpu"], _ = capacity.AsInt64()
-	capacity = managedCluster.Status.Capacity["memory"]
-	props["memory"] = capacity.String()
-	props["kubernetesVersion"] = managedCluster.Status.Version.Kubernetes
+	if &(managedCluster.Status) != nil { // managedCluster.Status is optional
+	    capacity := managedCluster.Status.Capacity["cpu"] // pointer dereference required 
+		props["cpu"], _ = capacity.AsInt64()
+		capacity = managedCluster.Status.Capacity["memory"]
+		props["memory"] = capacity.String()
+		props["kubernetesVersion"] = managedCluster.Status.Version.Kubernetes
+	}
 
 	resource := db.Resource{
 		Kind:           "Cluster",
@@ -224,58 +227,59 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 			props["label"] = labelMap
 		}
 	}
-/*
-	// get capacity from Managed Cluster instead
-	// Sum Capacity of all nodes 
-	var cpu_sum int64
-	var memory_sum int64
-	for _, node  := range cluster.Status.NodeList{
-		cpu := node.Capacity["cpu"]
-		tmp, _ := cpu.AsInt64()
-		cpu_sum += tmp
 
-		memory := node.Capacity["memory"]
-		tmp, _ = memory.AsInt64()
-		memory_sum += tmp
-	}
+	if &(managedClusterInfo.Status) != nil { // managedCluster.Status is optional
+		// Sum Capacity of all nodes 
+		var cpu_sum int64
+		var memory_sum int64
+		for _, node  := range managedClusterInfo.Status.NodeList{
+			cpu := node.Capacity["cpu"]
+			tmp, _ := cpu.AsInt64()
+			cpu_sum += tmp
 
-	props["cpu"] = cpu_sum
-	props["memory"] = strconv.FormatInt(memory_sum,10)
-	//glog.Info("Conditions: %s", cluster.Status.Conditions)
-*/
-/* 
-	props["nodes"] = int64(0)
-	nodes, ok := clusterStatus.Spec.Capacity["nodes"]
-	if ok {
-		props["nodes"], _ = nodes.AsInt64()
-	}
-
-	props["storage"] = ""
-	storage, ok := clusterStatus.Spec.Capacity["storage"]
-	if ok {
-		props["storage"] = storage.String()
-	}
-*/
-	var HubAcceptedManagedCluster, ManagedClusterConditionAvailable, ManagedClusterJoined string
-	for _, condition := range managedClusterInfo.Status.Conditions {
-		if condition.Type == "HubAcceptedManagedCluster" {
-			HubAcceptedManagedCluster = string(condition.Status)
-		}
-		if condition.Type == "ManagedClusterConditionAvailable" {
-			ManagedClusterConditionAvailable = string(condition.Status)
-		}
-		if condition.Type == "ManagedClusterJoined" {
-			ManagedClusterJoined = string(condition.Status)
+			memory := node.Capacity["memory"]
+			tmp, _ = memory.AsInt64()
+			memory_sum += tmp
 		}
 
+		// given that props["nodes"] was previous calculated as nodes.AsInt64() (shown below)
+		// I assume this was the cpu capacity, rather than memory 	
+		props["nodes"] = cpu_sum
+		// props["nodes"] = strconv.FormatInt(memory_sum,10) 
+
+	/*  https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/mcm/v1alpha1/clusterstatus_types.go#L45
+		props["nodes"] = int64(0)
+		nodes, ok := clusterStatus.Spec.Capacity["nodes"]
+		if ok {
+			props["nodes"], _ = nodes.AsInt64()
+		}
+
+		props["storage"] = ""
+		storage, ok := clusterStatus.Spec.Capacity["storage"]
+		if ok {
+			props["storage"] = storage.String()
+		}
+	*/
+		var HubAcceptedManagedCluster, ManagedClusterConditionAvailable, ManagedClusterJoined string
+		for _, condition := range managedClusterInfo.Status.Conditions {
+			if condition.Type == "HubAcceptedManagedCluster" {
+				HubAcceptedManagedCluster = string(condition.Status)
+			}
+			if condition.Type == "ManagedClusterConditionAvailable" {
+				ManagedClusterConditionAvailable = string(condition.Status)
+			}
+			if condition.Type == "ManagedClusterJoined" {
+				ManagedClusterJoined = string(condition.Status)
+			}
+
+		}
+
+		props["HubAcceptedManagedCluster"] = HubAcceptedManagedCluster
+		props["ManagedClusterConditionAvailable"] = ManagedClusterConditionAvailable
+		props["ManagedClusterJoined"] = ManagedClusterJoined
+
+		props["consoleURL"] = managedClusterInfo.Status.ConsoleURL // not being populated yet 
 	}
-
-	props["HubAcceptedManagedCluster"] = HubAcceptedManagedCluster
-	props["ManagedClusterConditionAvailable"] = ManagedClusterConditionAvailable
-	props["ManagedClusterJoined"] = ManagedClusterJoined
-
-	props["consoleURL"] = managedClusterInfo.Status.ConsoleURL // not being populated yet 
-	props["loggingEndpoint"] = managedClusterInfo.Status.LoggingEndpoint.String() 
 
 	resource := db.Resource{
 		Kind:           "Cluster",
