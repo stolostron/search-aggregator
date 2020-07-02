@@ -3,25 +3,16 @@ module github.com/open-cluster-management/search-aggregator
 go 1.13
 
 require (
-    github.com/redislabs/redisgraph-go v2.0.2+incompatible
-	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.4
-	github.com/hashicorp/golang-lru v0.5.3 // indirect
-	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
-	github.com/onsi/ginkgo v1.13.0 // indirect
 	github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200629084830-3965fdd47134
+	github.com/redislabs/redisgraph-go v2.0.2+incompatible
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
-	google.golang.org/appengine v1.6.5 // indirect
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v13.0.0+incompatible
 	sigs.k8s.io/yaml v1.2.0 // indirect
