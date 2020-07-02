@@ -118,10 +118,16 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	case "ManagedCluster":
 		managedCluster := clusterv1.ManagedCluster{}
 		err = json.Unmarshal(j, &managedCluster)
+		if err != nil{
+			glog.Warning("Failed to Unmarshal MangedCluster", err)
+		}
 		resource = transformManagedCluster(&managedCluster)
 	case "ManagedClusterInfo":
 		managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
 		err = json.Unmarshal(j, &managedClusterInfo)
+		if err != nil{
+			glog.Warning("Failed to Unmarshal ManagedclusterInfo", err)
+		}
 		resource = transformManagedClusterInfo(&managedClusterInfo)
 	default:
 		glog.Info("Unknown kind.", obj.(*unstructured.Unstructured).GetKind())
@@ -185,6 +191,17 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster ) db.Resou
 	// Properties duplicated between this and ManagedClusterInfo are taken from ManagedCluster
 	props := make(map[string]interface{})
 
+	if managedClusterInfo.GetLabels() != nil {
+		var labelMap map[string]interface{}
+		clusterLabels, _ := json.Marshal(managedClusterInfo.GetLabels())
+		err := json.Unmarshal(clusterLabels, &labelMap)
+		// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
+		// This was getting skipped before as map[string]string was not handled in switch case encode#77
+		if err == nil {
+			props["label"] = labelMap
+		}
+	}
+
 	props["name"] = managedCluster.GetName()  // must match managedClusterInfo
 	props["kind"] = "Cluster"
 	props["apigroup"] = "cluster.open-cluster-management.io" // use ManagedCluster apigroup as "main" apigroup
@@ -214,17 +231,6 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 	// get these fields from ManagedClusterInfo object 
 	props["name"] = managedClusterInfo.GetName()
 	props["kind"] = "Cluster"
-
-	if managedClusterInfo.GetLabels() != nil {
-		var labelMap map[string]interface{}
-		clusterLabels, _ := json.Marshal(managedClusterInfo.GetLabels())
-		err := json.Unmarshal(clusterLabels, &labelMap)
-		// Unmarshaling labels to map[string]interface{}, so that it will be accounted for while encoding properties
-		// This was getting skipped before as map[string]string was not handled in switch case encode#77
-		if err == nil {
-			props["label"] = labelMap
-		}
-	}
 
 	props["nodes"] = len(managedClusterInfo.Status.NodeList)
 	for _, condition := range managedClusterInfo.Status.Conditions {
