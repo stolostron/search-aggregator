@@ -249,7 +249,7 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 
 		// given that props["nodes"] was previous calculated as nodes.AsInt64() (shown below)
 		// I assume this was the cpu capacity, rather than memory 	
-		props["nodes"] = cpu_sum
+		props["nodes"] = len(node)
 		// props["nodes"] = strconv.FormatInt(memory_sum,10) 
 
 	/*  https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/mcm/v1alpha1/clusterstatus_types.go#L45
