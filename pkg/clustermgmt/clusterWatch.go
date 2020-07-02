@@ -234,37 +234,8 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 	}
 
 	if &managedClusterInfo.Status != nil { // managedCluster.Status is optional 
-		// Sum Capacity of all nodes 
-		var cpu_sum int64
-		var memory_sum int64
-		for _, node  := range managedClusterInfo.Status.NodeList{
-			cpu := node.Capacity["cpu"]
-			tmp, _ := cpu.AsInt64()
-			cpu_sum += tmp
+		props["nodes"] = len(managedClusterInfo.Status.NodeList)
 
-			memory := node.Capacity["memory"]
-			tmp, _ = memory.AsInt64()
-			memory_sum += tmp
-		}
-
-		// given that props["nodes"] was previous calculated as nodes.AsInt64() (shown below)
-		// I assume this was the cpu capacity, rather than memory 	
-		props["nodes"] = len(node)
-		// props["nodes"] = strconv.FormatInt(memory_sum,10) 
-
-	/*  https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/mcm/v1alpha1/clusterstatus_types.go#L45
-		props["nodes"] = int64(0)
-		nodes, ok := clusterStatus.Spec.Capacity["nodes"]
-		if ok {
-			props["nodes"], _ = nodes.AsInt64()
-		}
-
-		props["storage"] = ""
-		storage, ok := clusterStatus.Spec.Capacity["storage"]
-		if ok {
-			props["storage"] = storage.String()
-		}
-	*/
 		var HubAcceptedManagedCluster, ManagedClusterConditionAvailable, ManagedClusterJoined string
 		for _, condition := range managedClusterInfo.Status.Conditions {
 			if condition.Type == "HubAcceptedManagedCluster" {
