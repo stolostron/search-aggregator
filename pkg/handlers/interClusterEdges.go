@@ -194,8 +194,13 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 		for remoteSubscriptions.Next() {
 			remoteRecord := remoteSubscriptions.Record()
 			var remoteSub [2]string
-			remoteSub[0] = remoteRecord.GetByIndex(0).(string)
-			remoteSub[1] = remoteRecord.GetByIndex(1).(string)
+
+			if _, ok := remoteRecord.GetByIndex(0).(string); ok {
+				remoteSub[0] = remoteRecord.GetByIndex(0).(string)
+			}
+			if _, ok := remoteRecord.GetByIndex(1).(string); ok {
+				remoteSub[1] = remoteRecord.GetByIndex(1).(string)
+			}
 			// remoteSub[1] has the hosting subscription information which is in the format hosting subscription's "namespace+'/'+name"
 			if remoteSub[1] != "" {
 				//So, we look up if the hostingSubscription is in the hubSubMap. If it is there, get the UID
