@@ -193,8 +193,8 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster ) db.Resou
 	props["apigroup"] = "cluster.open-cluster-management.io" // use ManagedCluster apigroup as "main" apigroup
 	props["created"] = managedCluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
-	if &(managedCluster.Status) != nil { // managedCluster.Status is optional
-	    capacity := managedCluster.Status.Capacity["cpu"] // pointer dereference required 
+	if &managedCluster.Status != nil { // managedCluster.Status is optional 
+		capacity := managedCluster.Status.Capacity["cpu"] // pointer dereference required 
 		props["cpu"], _ = capacity.AsInt64()
 		capacity = managedCluster.Status.Capacity["memory"]
 		props["memory"] = capacity.String()
@@ -233,7 +233,7 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 		}
 	}
 
-	if &(managedClusterInfo.Status) != nil { // managedCluster.Status is optional
+	if &managedClusterInfo.Status != nil { // managedCluster.Status is optional 
 		// Sum Capacity of all nodes 
 		var cpu_sum int64
 		var memory_sum int64
