@@ -54,6 +54,7 @@ func main() {
 	router.HandleFunc("/liveness", handlers.LivenessProbe).Methods("GET")
 	router.HandleFunc("/readiness", handlers.ReadinessProbe).Methods("GET")
 	router.HandleFunc("/aggregator/clusters/{id}/sync", handlers.SyncResources).Methods("POST")
+	router.HandleFunc("/aggregator/clusters/{id}/syncrg1", handlers.SyncResources).Methods("POST")
 
 	// Configure TLS
 	cfg := &tls.Config{
