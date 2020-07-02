@@ -235,25 +235,9 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 
 	if &managedClusterInfo.Status != nil { // managedCluster.Status is optional 
 		props["nodes"] = len(managedClusterInfo.Status.NodeList)
-
-		var HubAcceptedManagedCluster, ManagedClusterConditionAvailable, ManagedClusterJoined string
 		for _, condition := range managedClusterInfo.Status.Conditions {
-			if condition.Type == "HubAcceptedManagedCluster" {
-				HubAcceptedManagedCluster = string(condition.Status)
-			}
-			if condition.Type == "ManagedClusterConditionAvailable" {
-				ManagedClusterConditionAvailable = string(condition.Status)
-			}
-			if condition.Type == "ManagedClusterJoined" {
-				ManagedClusterJoined = string(condition.Status)
-			}
-
+			props[condition.Type] = string(condition.Status)
 		}
-
-		props["HubAcceptedManagedCluster"] = HubAcceptedManagedCluster
-		props["ManagedClusterConditionAvailable"] = ManagedClusterConditionAvailable
-		props["ManagedClusterJoined"] = ManagedClusterJoined
-
 		props["consoleURL"] = managedClusterInfo.Status.ConsoleURL // not being populated yet 
 	}
 
