@@ -214,8 +214,6 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 	// get these fields from ManagedClusterInfo object 
 	props["name"] = managedClusterInfo.GetName()
 	props["kind"] = "Cluster"
-	// props["apigroup"] = "internal.open-cluster-management.io"
-	// props["created"] = cluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
 	if managedClusterInfo.GetLabels() != nil {
 		var labelMap map[string]interface{}
