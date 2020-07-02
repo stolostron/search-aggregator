@@ -107,27 +107,26 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 		glog.Warning("Error unmarshalling object from Informer in processClusterUpsert.")
 	}
 
-	// check which object we are using
-	managedCluster := clusterv1.ManagedCluster{}
-	managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
-	var resource db.Resource
 
 	// We update by name, and the name *should be* the same for a given cluster in either object
 	// Objects from a given cluster collide and update rather than duplicate insert
 	// Unmarshall either ManagedCluster or ManagedClusterInfo
-	err = json.Unmarshal(j, &managedClusterInfo)
-	if err != nil {
-		glog.V(3).Info("Error on ManagedClusterInfo unmarshal, trying ManagedCluster unmarshal")
+	// check which object we are using
+
+	var resource db.Resource
+	switch obj.(*unstructured.Unstructured).GetKind() {
+	case "ManagedCluster":
+		glog.Info("ManagedCluster")
+		managedCluster := clusterv1.ManagedCluster{}
 		err = json.Unmarshal(j, &managedCluster)
-		if err != nil{
-			glog.Warning("Failed to Unmarshal MangedCluster or ManagedclusterInfo")
-		} else {
-			glog.V(3).Info("Successful on ManagedClusterInfo unmarshal")
-			resource = transformManagedCluster(&managedCluster)
-		}
-	} else {
-		glog.V(3).Info("Successful on ManagedCluster unmarshal")
+		resource = transformManagedCluster(&managedCluster)
+	case "ManagedClusterInfo":
+		glog.Info("ManagedClusterInfo")
+		managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
+		err = json.Unmarshal(j, &managedClusterInfo)
 		resource = transformManagedClusterInfo(&managedClusterInfo)
+	default:
+		glog.Info("Unknown kind.", obj.(*unstructured.Unstructured).GetKind())
 	}
 
 	resource.Properties["status"] = "" // TODO: Get the status.  
