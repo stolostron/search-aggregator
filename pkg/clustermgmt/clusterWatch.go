@@ -116,12 +116,10 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	var resource db.Resource
 	switch obj.(*unstructured.Unstructured).GetKind() {
 	case "ManagedCluster":
-		glog.Info("ManagedCluster")
 		managedCluster := clusterv1.ManagedCluster{}
 		err = json.Unmarshal(j, &managedCluster)
 		resource = transformManagedCluster(&managedCluster)
 	case "ManagedClusterInfo":
-		glog.Info("ManagedClusterInfo")
 		managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
 		err = json.Unmarshal(j, &managedClusterInfo)
 		resource = transformManagedClusterInfo(&managedClusterInfo)
