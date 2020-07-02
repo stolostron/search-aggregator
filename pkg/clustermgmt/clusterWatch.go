@@ -190,13 +190,11 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster ) db.Resou
 	props["apigroup"] = "cluster.open-cluster-management.io" // use ManagedCluster apigroup as "main" apigroup
 	props["created"] = managedCluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
-	if &managedCluster.Status != nil { // managedCluster.Status is optional 
-		capacity := managedCluster.Status.Capacity["cpu"] // pointer dereference required 
-		props["cpu"], _ = capacity.AsInt64()
-		capacity = managedCluster.Status.Capacity["memory"]
-		props["memory"] = capacity.String()
-		props["kubernetesVersion"] = managedCluster.Status.Version.Kubernetes
-	}
+	capacity := managedCluster.Status.Capacity["cpu"] // pointer dereference required 
+	props["cpu"], _ = capacity.AsInt64()
+	capacity = managedCluster.Status.Capacity["memory"]
+	props["memory"] = capacity.String()
+	props["kubernetesVersion"] = managedCluster.Status.Version.Kubernetes
 
 	resource := db.Resource{
 		Kind:           "Cluster",
@@ -230,13 +228,11 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 		}
 	}
 
-	if &managedClusterInfo.Status != nil { // managedCluster.Status is optional 
-		props["nodes"] = len(managedClusterInfo.Status.NodeList)
-		for _, condition := range managedClusterInfo.Status.Conditions {
-			props[condition.Type] = string(condition.Status)
-		}
-		props["consoleURL"] = managedClusterInfo.Status.ConsoleURL // not being populated yet 
+	props["nodes"] = len(managedClusterInfo.Status.NodeList)
+	for _, condition := range managedClusterInfo.Status.Conditions {
+		props[condition.Type] = string(condition.Status)
 	}
+	props["consoleURL"] = managedClusterInfo.Status.ConsoleURL // not being populated yet 
 
 	resource := db.Resource{
 		Kind:           "Cluster",
