@@ -232,7 +232,7 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 	props["name"] = managedClusterInfo.GetName()
 	props["kind"] = "Cluster"
 
-	props["nodes"] = len(managedClusterInfo.Status.NodeList)
+	props["nodes"] = int64(len(managedClusterInfo.Status.NodeList))
 	for _, condition := range managedClusterInfo.Status.Conditions {
 		props[condition.Type] = string(condition.Status)
 	}
