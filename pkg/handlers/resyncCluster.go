@@ -137,11 +137,15 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	// RE-SYNC Edges
 
 	metrics.EdgeSyncStart = time.Now()
+	fmt.Println("Edge Start  ", time.Now())
+	all1 := time.Now()
 	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
 	if edgesError != nil {
 		glog.Warning("Error getting all existing edges for cluster ", clusterName, edgesError)
 		err = edgesError
 	}
+	all1end := time.Since(all1)
+	fmt.Println("MAtch all time  ", all1end)
 	var existingEdges = make(map[string]db.Edge)
 	var edgesToAdd = make([]db.Edge, 0)
 
@@ -167,6 +171,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		edgesToDelete = append(edgesToDelete, e)
 	}
 
+	ins1 := time.Now()
 	// INSERT Edges
 	insertEdgeResponse := db.ChunkedInsertEdge(edgesToAdd)
 	stats.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
@@ -176,6 +181,10 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		stats.AddEdgeErrors = processSyncErrors(insertEdgeResponse.ResourceErrors, "inserted by edge")
 	}
 
+	ins1end := time.Since(ins1)
+	fmt.Println("Insert time  ", ins1end)
+
+	del1 := time.Now()
 	// DELETE Edges
 	deleteEdgeResponse := db.ChunkedDeleteEdge(edgesToDelete)
 	stats.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
@@ -185,6 +194,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		stats.DeleteEdgeErrors = processSyncErrors(deleteEdgeResponse.ResourceErrors, "removed by edge")
 	}
 
+	del1end := time.Since(del1)
+	fmt.Println("Delete  time  ", del1end)
 	// There's no need to UPDATE edges because edges don't have properties yet.
 
 	metrics.EdgeSyncEnd = time.Now()
@@ -199,6 +210,7 @@ func valueToString(value interface{}) string {
 	case int:
 		stringValue = strconv.Itoa(typedVal)
 	default:
+		fmt.Println("default valueToString ", typedVal)
 		stringValue = typedVal.(string)
 	}
 	return stringValue
