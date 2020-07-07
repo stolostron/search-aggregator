@@ -201,6 +201,8 @@ func valueToString(value interface{}) string {
 	default:
 		if _, ok := typedVal.(string); ok {
 			stringValue = typedVal.(string)
+		} else {
+			glog.Warning("Unable to parse string value from interface{} :  ", typedVal)
 		}
 	}
 	return stringValue
