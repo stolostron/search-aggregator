@@ -199,7 +199,9 @@ func valueToString(value interface{}) string {
 	case int:
 		stringValue = strconv.Itoa(typedVal)
 	default:
-		stringValue = typedVal.(string)
+		if _, ok := typedVal.(string); ok {
+			stringValue = typedVal.(string)
+		}
 	}
 	return stringValue
 }
