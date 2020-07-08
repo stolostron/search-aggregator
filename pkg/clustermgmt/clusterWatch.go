@@ -147,12 +147,12 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	}
 
 	if alreadySET {
-		glog.V(2).Infof("Cluster %s already set on DB.", resource.Properties["name"])
+		glog.V(4).Infof("Node for cluster %s already exist on DB.", resource.Properties["name"])
 		return
 	}
 
 	if db.IsGraphMissing(err) || !db.IsPropertySet(res) {
-		glog.Info("Cluster object does not exist, inserting new object.")
+		glog.Infof("Node for cluster %s does not exist, inserting it.", resource.Properties["name"])
 		_, _, err = db.Insert([]*db.Resource{&resource}, "")
 		if err != nil {
 			glog.Error("Error adding Cluster node with error: ", err)
