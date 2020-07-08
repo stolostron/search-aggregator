@@ -44,7 +44,7 @@ func clearClusterCache() {
 
 func createClustersCache(key string, val map[string]interface{}) {
 	if existingClustersMap != nil { // this should not happen
-		glog.V(4).Infof("Trying to start duplicate RedisWatcher")
+		glog.Error("Trying to start duplicate RedisWatcher")
 		return
 	} else {
 		existingClustersMap = make(map[string]map[string]interface{})
