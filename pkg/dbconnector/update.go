@@ -151,7 +151,7 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error, bool) {
 		}
 	}
 
-	glog.Infof("Updating properties for cluster %s on db.", resource.Properties["name"])
+	glog.V(2).Infof("Updating properties for cluster %s on db.", resource.Properties["name"])
 	// e.g. "MATCH (n:Cluster {name: 'abc123'}) SET n.foo=4"
 	queryString := fmt.Sprintf("MATCH (n:%s {name: '%s'}) SET %s", resource.Properties["kind"], resource.Properties["name"], strings.Join(setStrings, ", "))
 	resp, err := Store.Query(queryString)

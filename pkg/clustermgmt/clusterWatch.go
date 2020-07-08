@@ -236,19 +236,6 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 func processClusterDelete(obj interface{}) {
 	glog.Info("Processing Cluster Delete.")
 
-	// j, err := json.Marshal(obj.(*unstructured.Unstructured))
-	// if err != nil {
-	// 	glog.Error("Failed to marshall ManagedCluster on processClusterDelete()")
-	// }
-
-	// managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
-	// err = json.Unmarshal(j, &managedClusterInfo)
-	// if err != nil {
-	// 	glog.Error("Failed to unmarshall ManagedClusterInfo on processDeleteCluster")
-	// }
-	// clusterName := managedClusterInfo.GetName()
-	// clusterUID := string("cluster_" + managedClusterInfo.GetUID())
-
 	clusterName := obj.(*unstructured.Unstructured).GetName()
 	clusterUID := string("cluster__" + obj.(*unstructured.Unstructured).GetName())
 	glog.Infof("Deleting Cluster resource %s and all resources from the cluster. UID %s", clusterName, clusterUID)
