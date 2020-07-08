@@ -140,7 +140,7 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 	}
 
 	if alreadySET {
-		glog.V2().Infof("Cluster %s already set on DB.", resource.Properties["name"])
+		glog.V(2).Infof("Cluster %s already set on DB.", resource.Properties["name"])
 		return
 	}
 
