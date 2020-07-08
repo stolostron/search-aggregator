@@ -13,6 +13,7 @@ package clustermgmt
 import (
 	"encoding/json"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
@@ -101,7 +102,13 @@ func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInforme
 	}
 }
 
+var mux sync.Mutex
+
 func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) {
+	// Lock so only one goroutine at a time can access add a cluster.
+	// Helps to eliminate duplicate entries.
+	mux.Lock()
+	defer mux.Unlock()
 	j, err := json.Marshal(obj.(*unstructured.Unstructured))
 	if err != nil {
 		glog.Warning("Error unmarshalling object from Informer in processClusterUpsert.")
