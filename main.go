@@ -19,6 +19,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
+	"github.com/open-cluster-management/search-aggregator/pkg/ccx"
 	"github.com/open-cluster-management/search-aggregator/pkg/clustermgmt"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	"github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
@@ -47,7 +48,7 @@ func main() {
 	go clustermgmt.WatchClusters()
 
 	// Sync CCX Insights with our search data.
-	go clustermgmt.CCXSync()
+	go ccx.CCXSync()
 
 	// Run routine to build intercluster edges
 	go handlers.BuildInterClusterEdges()
