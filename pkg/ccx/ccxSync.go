@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
 // Pull Insights from CCX and merge with our search data.
@@ -30,12 +31,36 @@ func processData() {
 
 	// Here we loop the results from the API and extract the data we want to index.
 
-	upsertNode()
+	// for each CCX Insight
+	props := make(map[string]interface{})
+
+	props["name"] = "the name"
+	props["kind"] = "Insight"
+	props["apigroup"] = "insight.open-cluster-management.io"
+
+	resource := db.Resource{
+		Kind:           "Insight",
+		UID:            string("insight__" + "something unique about the insight"),
+		Properties:     props,
+		ResourceString: "insights", // Needed for rbac, map to real cluster resource.
+	}
+
+	upsertNode(resource)
 }
 
-func upsertNode() {
+func upsertNode(resource db.Resource) {
 	glog.Info("Upserting node.")
 
 	// Here we insert/update the node into the search data.
 	// See clusterWatch.go  processClusterUpsert()
+
+	res, err, alreadySET := db.UpdateByName(resource) // <- UpdateByName() is optimized fot the Cluster nodes, we may need to make some changes there.
+	if err != nil {
+		glog.Warning("Error on UpdateByName() ", err)
+	}
+	if alreadySET {
+		glog.V(4).Infof("Node for Insight %s already exist on DB.", resource.Properties["name"])
+		return
+	}
+	glog.Info("Upserted node: ", res)
 }
