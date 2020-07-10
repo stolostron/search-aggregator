@@ -62,5 +62,14 @@ func upsertNode(resource db.Resource) {
 		glog.V(4).Infof("Node for Insight %s already exist on DB.", resource.Properties["name"])
 		return
 	}
-	glog.Info("Upserted node: ", res)
+
+	if db.IsGraphMissing(err) || !db.IsPropertySet(res) {
+		glog.Infof("Node for CCX insight %s does not exist, inserting it.", resource.Properties["name"])
+		_, _, err = db.Insert([]*db.Resource{&resource}, "")
+		if err != nil {
+			glog.Error("Error adding Insight node with error: ", err)
+			return
+		}
+	}
+	glog.Warning("Unknown error upserting CCX node.") // This should not happen.
 }
