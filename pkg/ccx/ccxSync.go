@@ -15,7 +15,8 @@ func CCXSync() {
 	for {
 		glog.Info("Fetching data from CCX")
 
-		// Here we need to make the HTTP call
+		// Here we need to make the HTTP call.
+		// You can look at the collector pkg/send/httpsClient.go for an example to initialize and use the client.
 
 		// Then process the result.
 		processData()
