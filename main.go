@@ -46,6 +46,9 @@ func main() {
 	// Watch clusters and sync status to Redis.
 	go clustermgmt.WatchClusters()
 
+	// Sync CCX Insights with our search data.
+	go clustermgmt.CCXSync()
+
 	// Run routine to build intercluster edges
 	go handlers.BuildInterClusterEdges()
 
