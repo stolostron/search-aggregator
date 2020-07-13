@@ -194,9 +194,9 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 	}
 
 	props["kind"] = "Cluster"
-	props["name"] = managedCluster.GetName()                  // must match managedClusterInfo
-	props["_clusterNamespace"] = managedCluster.GetName()     // Needed for rbac mapping.
-	props["apigroup"] = "internal.open-cluster-management.io" // Maps rbac to ManagedClusterInfo
+	props["name"] = managedCluster.GetName()                  // must match ManagedClusterInfo
+	props["_clusterNamespace"] = managedCluster.GetName()     // maps to the namespace of ManagedClusterInfo
+	props["apigroup"] = "internal.open-cluster-management.io" // maps rbac to ManagedClusterInfo
 	props["created"] = managedCluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
 	cpuCapacity := managedCluster.Status.Capacity["cpu"]
@@ -209,7 +209,7 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 		Kind:           "Cluster",
 		UID:            string("cluster__" + managedCluster.GetName()),
 		Properties:     props,
-		ResourceString: "managedclusterinfos", // Maps rbac to ManagedClusterInfo.
+		ResourceString: "managedclusterinfos", // Maps rbac to ManagedClusterInfo
 	}
 
 	return resource
