@@ -37,8 +37,6 @@ func (r *Resource) addRbacProperty() {
 				glog.Warning("Property 'namespace' must be a string or nil.  Got invalid value from resource: ", r)
 			}
 		}
-	} else if r.Properties["kind"] == "Cluster" {
-		rbac[0] = "null"
 	} else {
 		switch t := r.Properties["_clusterNamespace"].(type) {
 		case string:
