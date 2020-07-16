@@ -26,6 +26,7 @@ const (
 	DEFAULT_REDIS_WATCH_INTERVAL    = 15000 // 15 seconds
 	DEFAULT_REQUEST_LIMIT           = 5     // Max number of concurrent requests.
 	DEFAULT_SKIP_CLUSTER_VALIDATION = "false"
+	DEFAULT_CCX_SERVER              = "https://ira-mock-ccx-dev.apps.ocp.prod.psi.redhat.com/api/insights-results-aggregator"
 )
 
 // Define a config type to hold our config properties.
@@ -42,6 +43,7 @@ type Config struct {
 	RediscoverRateMS      int    // time in MS we should check on cluster resource type
 	RequestLimit          int    // Max number of concurrent requests. Used to prevent from overloading Redis.
 	SkipClusterValidation string // Skips cluster validation. Intended only for performance tests.
+	CCXServer             string
 }
 
 var Cfg = Config{}
@@ -61,6 +63,7 @@ func init() {
 	setDefaultInt(&Cfg.RequestLimit, "REQUEST_LIMIT", DEFAULT_REQUEST_LIMIT)
 	setDefaultInt(&Cfg.RedisWatchRate, "REDIS_WATCH_RATE_MS", DEFAULT_REDIS_WATCH_INTERVAL)
 	setDefaultInt(&Cfg.RediscoverRateMS, "REDISCOVER_RATE_MS", DEFAULT_REDISCOVER_RATE_MS)
+	setDefault(&Cfg.CCXServer, "CCX_SERVER", DEFAULT_CCX_SERVER)
 
 	defaultKubePath := filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	if _, err := os.Stat(defaultKubePath); os.IsNotExist(err) {

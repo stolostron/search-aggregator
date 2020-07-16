@@ -48,7 +48,7 @@ func main() {
 	go clustermgmt.WatchClusters()
 
 	// Sync CCX Insights with our search data.
-	go ccx.CCXSync()
+	go ccx.Sync()
 
 	// Run routine to build intercluster edges
 	go handlers.BuildInterClusterEdges()

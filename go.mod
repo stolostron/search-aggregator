@@ -7,12 +7,16 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.4
 	github.com/kennygrant/sanitize v1.2.4
+	github.com/kr/pretty v0.2.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200629084830-3965fdd47134
 	github.com/redislabs/redisgraph-go v2.0.2+incompatible
-	github.com/stretchr/testify v1.4.0
-	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
+	github.com/stretchr/testify v1.6.1
+	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
+	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
+	golang.org/x/text v0.3.3 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v13.0.0+incompatible
 	sigs.k8s.io/yaml v1.2.0 // indirect
