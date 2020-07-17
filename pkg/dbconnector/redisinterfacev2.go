@@ -33,6 +33,9 @@ type RedisGraphStoreV2 struct{}
 // Called by the other functions in this file
 // Not fully implemented
 func (RedisGraphStoreV2) Query(q string) (*rg2.QueryResult, error) {
+	//Initialize return vars
+	var result *rg2.QueryResult
+	var err error
 	// Get connection from the pool
 	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
 	defer conn.Close()
@@ -40,7 +43,7 @@ func (RedisGraphStoreV2) Query(q string) (*rg2.QueryResult, error) {
 		Conn: conn,
 		Id:   GRAPH_NAME,
 	}
-	result, err := g.Query(q)
+	result, err = g.Query(q)
 	if err != nil {
 		glog.Error("Error fetching results from RedisGraph V2 : ", err)
 	}
