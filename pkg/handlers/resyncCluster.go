@@ -193,6 +193,9 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 func valueToString(value interface{}) string {
 	var stringValue string
+	if value == nil { // If we have nil value for a property in a node we will return empty string. If "" does not match with existing property , we will update the entire node by adding to resourcesToUpdate
+		return stringValue
+	}
 	switch typedVal := value.(type) {
 	case int64:
 		stringValue = strconv.FormatInt(typedVal, 10)
