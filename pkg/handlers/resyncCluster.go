@@ -21,6 +21,7 @@ import (
 
 func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge, metrics *SyncMetrics) (stats SyncResponse, err error) {
 	glog.Info("Resync for cluster: ", clusterName)
+	xstart := time.Now()
 
 	// First get the existing resources from the datastore for the cluster
 	result, error := db.Store.Query(db.SanitizeQuery("MATCH (n {cluster: '%s'}) RETURN n", clusterName))
@@ -168,6 +169,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	}
 
 	// INSERT Edges
+	xinsert := time.Now()
 	insertEdgeResponse := db.ChunkedInsertEdge(edgesToAdd)
 	stats.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
 	if insertEdgeResponse.ConnectionError != nil {
@@ -175,6 +177,9 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	} else if len(insertEdgeResponse.ResourceErrors) != 0 {
 		stats.AddEdgeErrors = processSyncErrors(insertEdgeResponse.ResourceErrors, "inserted by edge")
 	}
+
+	elapsed2 := time.Since(xinsert)
+	glog.Info("Insert Time ", elapsed2)
 
 	// DELETE Edges
 	deleteEdgeResponse := db.ChunkedDeleteEdge(edgesToDelete)
@@ -188,6 +193,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	// There's no need to UPDATE edges because edges don't have properties yet.
 
 	metrics.EdgeSyncEnd = time.Now()
+	elapsed := time.Since(xstart)
+	glog.Info("Full Time ", elapsed)
 	return stats, err
 }
 
