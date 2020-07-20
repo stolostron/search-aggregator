@@ -237,6 +237,14 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 		if err != nil {
 			return rg2.QueryResult{}, err
 		}
+	} else {
+		//Delete interclusters because there is no remote subscriptions
+		deleteOldInstance := db.SanitizeQuery("MATCH ()-[e {_interCluster:true}]->() WHERE (type(e)='hostedSub' OR type(e)='usedBy' OR type(e)='deployedBy') AND e.app_instance<>%d DELETE e", currentAppInstance)
+		_, err = db.Store.Query(deleteOldInstance)
+		if err != nil {
+			return rg2.QueryResult{}, err
+		}
+
 	}
 	previousAppInstance = currentAppInstance // Next iteration we dont want to use this ID
 	// Record elapsed time
