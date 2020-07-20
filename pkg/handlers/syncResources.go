@@ -216,9 +216,12 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		for _, de := range syncEvent.DeleteResources {
 			deleteUIDS = append(deleteUIDS, de.UID)
 			// If we are deleting any subscriptions better run interclusteredges - Setting flag to true
-			if _, ok := subscriptionUIDMap[de.UID]; ok {
-				subscriptionUpdated = true
+			if !subscriptionUpdated {
+				if _, ok := subscriptionUIDMap[de.UID]; ok {
+					subscriptionUpdated = true
+				}
 			}
+
 		}
 
 		deleteResponse := db.ChunkedDelete(deleteUIDS)
