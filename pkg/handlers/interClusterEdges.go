@@ -175,7 +175,7 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 	if err != nil {
 		return rg2.QueryResult{}, err
 	}
-
+	glog.Infof("Intercluster edge RAN %t", remoteSubscriptions.Empty())
 	if !remoteSubscriptions.Empty() { //Check if any results are returned
 		// list of hub subscriptions
 		query = "MATCH (n:Subscription) WHERE  n.cluster='local-cluster' RETURN n._uid, n.namespace+'/'+n.name"
@@ -247,6 +247,6 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 	} else {
 		glog.V(4).Infof("Intercluster edge deletion and re-creation took %s", elapsed)
 	}
-
+	glog.Infof("Intercluster edge deletion and re-creation took %s", elapsed)
 	return rg2.QueryResult{}, nil
 }
