@@ -58,9 +58,10 @@ func Sync() {
 
 		for _, cluster := range clusters {
 			// GET url for each cluster (11789772 is the org.. need to look into this)
-			clusterReportURL := config.Cfg.CCXServer + "/api/insights-results-aggregator/v1/report/11789772/" + cluster
+			clusterReportURL := config.Cfg.CCXServer + "/report/11789772/" + cluster
 			// httpsClient := getHTTPSClient()
 			// resp, err := httpsClient.Get(clusterReportURL)
+			glog.Warning("clusterReportURL: ", clusterReportURL)
 			resp, err := http.Get(clusterReportURL)
 			if err != nil {
 				panic(err)
@@ -69,6 +70,7 @@ func Sync() {
 
 			var insight Insight
 			data, _ := ioutil.ReadAll(resp.Body)
+			glog.Warning("data: ", data)
 			err = json.Unmarshal(data, &insight)
 			if err != nil {
 				panic(err)
