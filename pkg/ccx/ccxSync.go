@@ -49,15 +49,18 @@ func Sync() {
 		// You can look at the collector pkg/send/httpsClient.go for an example to initialize and use the client.
 
 		// We need to get the clusters under management || that have CCX enabled.
-		var clusters [4]string
-		clusters[0] = "34c3ecc5-624a-49a5-bab8-4fdc5e51a266"
-		clusters[1] = "74ae54aa-6577-4e80-85e7-697cb646ff37"
-		clusters[2] = "a7467445-8d6a-43cc-b82c-7007664bdf69"
-		clusters[3] = "ee7d2bf4-8933-4a3a-8634-3328fe806e08"
+		clusters := []string{
+			"34c3ecc5-624a-49a5-bab8-4fdc5e51a266",
+			"74ae54aa-6577-4e80-85e7-697cb646ff37",
+			"a7467445-8d6a-43cc-b82c-7007664bdf69",
+			"ee7d2bf4-8933-4a3a-8634-3328fe806e08",
+		}
 
-		for c := range clusters {
+		for _, cluster := range clusters {
 			// GET url for each cluster (11789772 is the org.. need to look into this)
-			clusterReportURL := config.Cfg.CCXServer + "/v1/report/11789772/" + clusters[c]
+			clusterReportURL := config.Cfg.CCXServer + "/api/insights-results-aggregator/v1/report/11789772/" + cluster
+			// httpsClient := getHTTPSClient()
+			// resp, err := httpsClient.Get(clusterReportURL)
 			resp, err := http.Get(clusterReportURL)
 			if err != nil {
 				panic(err)
@@ -71,7 +74,7 @@ func Sync() {
 				panic(err)
 			}
 
-			processData(&insight, clusters[c])
+			processData(&insight, cluster)
 		}
 		time.Sleep(time.Duration(30) * time.Second)
 	}
@@ -86,8 +89,11 @@ func processData(data *Insight, cluster string) {
 		ruleViolation := data.Report.Data[rule]
 		props := make(map[string]interface{})
 		props["name"] = string(ruleViolation.ID + "_" + cluster) // TODO better naming?
-		props["namespace"] = cluster
+		props["namespace"] = cluster                             // is this redundant with _hubNamespace?
+		props["_clusterNamespace"] = cluster
+		props["cluster"] = cluster
 		props["kind"] = "Insight"
+		props["apigroup"] = "console.open-cluster-management.io"
 		props["created"] = ruleViolation.Created
 		props["description"] = ruleViolation.Description
 		props["details"] = ruleViolation.Details
