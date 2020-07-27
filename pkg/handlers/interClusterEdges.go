@@ -208,7 +208,7 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 					//TODO: For the subscription model, all intercluster edges are named as 'hostedSub {_interCluster: true}'. Change this to relevant names in future
 					//To add edges from hubSub to all resources connected to the remoteSub (bidirectional) - incoming edges and outgoing edges
 					// Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
-					query1 := db.SanitizeQuery("MATCH (hubSub {_uid: '%s'}) MATCH (remoteSub {_uid: '%s'})-[]->(n) WHERE n.kind <> 'application' AND n.kind <> 'subscription' MERGE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance, currentAppInstance)
+					query1 := db.SanitizeQuery("MATCH (hubSub {_uid: '%s'}) MATCH (remoteSub {_uid: '%s'})-[]->(n) WHERE n.kind <> 'application' AND n.kind <> 'subscription' MERGE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub) MERGE (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance, currentAppInstance)
 					// Add edges from hubSub to all resources that flow into remoteSub eg: pods, deployments, services, replicasets etc.
 					query2 := db.SanitizeQuery("MATCH (hubSub {_uid: '%s'}) MATCH (remoteSub {_uid: '%s'})<-[]-(n) MERGE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
 					// Connect all resources that flow into remoteSub with the hubsub's channel
