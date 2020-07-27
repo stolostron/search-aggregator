@@ -40,7 +40,7 @@ type InsightData struct {
 
 // Sync Pull Insights from CCX and merge with our search data.
 func Sync() {
-	glog.Info("Starting Sync()")
+	glog.Info("Starting CCX Sync()")
 
 	for {
 		glog.Info("Fetching data from CCX")
@@ -64,7 +64,7 @@ func Sync() {
 			glog.Warning("clusterReportURL: ", clusterReportURL)
 			resp, err := http.Get(clusterReportURL)
 			if err != nil {
-				panic(err)
+				glog.Error(err)
 			}
 			defer resp.Body.Close()
 
@@ -73,7 +73,7 @@ func Sync() {
 			glog.Warning("data: ", data)
 			err = json.Unmarshal(data, &insight)
 			if err != nil {
-				panic(err)
+				glog.Error(err)
 			}
 
 			processData(&insight, cluster)
