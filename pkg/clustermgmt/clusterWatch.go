@@ -151,7 +151,7 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 		return
 	}
 
-	if db.IsGraphMissing(err) || !db.IsPropertySet(res) {
+	if db.IsGraphMissing(err) || (err == nil && !db.IsPropertySet(res)) {
 		glog.Infof("Node for cluster %s does not exist, inserting it.", resource.Properties["name"])
 		_, _, err = db.Insert([]*db.Resource{&resource}, "")
 		if err != nil {
