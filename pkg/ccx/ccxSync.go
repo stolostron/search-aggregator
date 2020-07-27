@@ -96,6 +96,7 @@ func processData(data *Insight, cluster string) {
 		props["cluster"] = cluster
 		props["kind"] = "Insight"
 		props["apigroup"] = "console.open-cluster-management.io"
+		props["ruleID"] = ruleViolation.ID
 		props["created"] = ruleViolation.Created
 		props["description"] = ruleViolation.Description
 		props["details"] = ruleViolation.Details
