@@ -151,7 +151,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		e := currEdges.Record()
 		existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
 	}
-
+	//TODO: Redisgraph 2.0 supports addition of duplicate edges. So, we need to have code to identify and delete those.
 	//Loop through incoming new edges and decide if each edge needs to be added.
 	for _, e := range edges {
 		if _, exists := existingEdges[fmt.Sprintf("%s-%s->%s", e.SourceUID, e.EdgeType, e.DestUID)]; exists {
