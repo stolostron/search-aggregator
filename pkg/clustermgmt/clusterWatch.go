@@ -151,7 +151,7 @@ func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) 
 		return
 	}
 
-	if db.IsGraphMissing(err) || !db.IsPropertySet(res) {
+	if db.IsGraphMissing(err) || (err == nil && !db.IsPropertySet(res)) {
 		glog.Infof("Node for cluster %s does not exist, inserting it.", resource.Properties["name"])
 		_, _, err = db.Insert([]*db.Resource{&resource}, "")
 		if err != nil {
@@ -193,9 +193,10 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 		}
 	}
 
-	props["name"] = managedCluster.GetName() // must match managedClusterInfo
 	props["kind"] = "Cluster"
-	props["apigroup"] = "cluster.open-cluster-management.io" // use ManagedCluster apigroup as "main" apigroup
+	props["name"] = managedCluster.GetName()                  // must match ManagedClusterInfo
+	props["_clusterNamespace"] = managedCluster.GetName()     // maps to the namespace of ManagedClusterInfo
+	props["apigroup"] = "internal.open-cluster-management.io" // maps rbac to ManagedClusterInfo
 	props["created"] = managedCluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
 	cpuCapacity := managedCluster.Status.Capacity["cpu"]
@@ -208,7 +209,7 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 		Kind:           "Cluster",
 		UID:            string("cluster__" + managedCluster.GetName()),
 		Properties:     props,
-		ResourceString: "managedclusters", // Needed for rbac, map to real cluster resource.
+		ResourceString: "managedclusterinfos", // Maps rbac to ManagedClusterInfo
 	}
 
 	return resource
@@ -219,9 +220,10 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 	// https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/cluster/v1beta1/clusterinfo_types.go#L24
 	props := make(map[string]interface{})
 
-	props["name"] = managedClusterInfo.GetName()
 	props["kind"] = "Cluster"
-	props["apigroup"] = "cluster.open-cluster-management.io" // use ManagedCluster apigroup as "main" apigroup
+	props["name"] = managedClusterInfo.GetName()
+	props["_clusterNamespace"] = managedClusterInfo.GetNamespace() // Needed for rbac mapping.
+	props["apigroup"] = "internal.open-cluster-management.io"      // Maps rbac to ManagedClusterInfo
 
 	props["nodes"] = int64(len(managedClusterInfo.Status.NodeList))
 	for _, condition := range managedClusterInfo.Status.Conditions {
@@ -233,7 +235,7 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 		Kind:           "Cluster",
 		UID:            string("cluster__" + managedClusterInfo.GetName()),
 		Properties:     props,
-		ResourceString: "managedclusters", // Needed for rbac, map to real cluster resource.
+		ResourceString: "managedclusterinfos", // Maps rbac to ManagedClusterInfo.
 	}
 
 	return resource

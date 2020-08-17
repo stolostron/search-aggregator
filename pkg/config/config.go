@@ -18,7 +18,7 @@ import (
 const (
 	AGGREGATOR_API_VERSION          = "2.0.0"
 	DEFAULT_AGGREGATOR_ADDRESS      = ":3010"
-	DEFAULT_EDGE_BUILD_RATE_MS      = 10000  // 10 sec
+	DEFAULT_EDGE_BUILD_RATE_MS      = 30000  // 30 sec
 	DEFAULT_HTTP_TIMEOUT            = 300000 // 5 min, to fix the EOF response at the collector
 	DEFAULT_REDISCOVER_RATE_MS      = 300000 // 5 min
 	DEFAULT_REDIS_HOST              = "localhost"
