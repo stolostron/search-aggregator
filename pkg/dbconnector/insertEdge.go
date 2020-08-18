@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/golang/glog"
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
@@ -84,7 +86,12 @@ func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	if edge.SourceKind != "" && edge.DestKind != "" && whereClause == "" {
 		query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s) %s MERGE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, whereClause, edge.EdgeType)
 	}
-	//glog.Info(query)
+	glog.Info("insert edge query: ", query)
+	// Record start time
+	start := time.Now()
 	resp, err := Store.Query(query)
+	// Record elapsed time
+	elapsed := time.Since(start)
+	glog.Info("Time taken to insert edges: ", elapsed)
 	return resp, err
 }

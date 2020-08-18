@@ -261,6 +261,8 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 	previousAppInstance = currentAppInstance // Next iteration we dont want to use this ID
 	// Record elapsed time
 	elapsed := time.Since(start)
+	glog.Info("Time taken to insert intercluster edges: ", elapsed)
+
 	// Log a warning if it takes more than 100ms.
 	if elapsed.Nanoseconds() > 100*1000*1000 {
 		glog.Warningf("Intercluster edge deletion and re-creation took %s", elapsed)
