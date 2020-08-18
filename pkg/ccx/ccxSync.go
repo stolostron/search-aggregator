@@ -3,6 +3,7 @@
 package ccx
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -13,21 +14,31 @@ import (
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
-// Insight Spec
-type Insight struct {
-	Report InsightReport `json:"report"`
+// PostBody Request body listing all clusters to get a report for
+type PostBody struct {
+	Clusters []string `json:"clusters"`
 }
 
-// InsightReport report
-type InsightReport struct {
+// ResponseBody Reports array
+type ResponseBody struct {
+	Reports map[string]interface{} `json:"reports"`
+}
+
+// Policy Spec
+type Policy struct {
+	Report PolicyReport `json:"report"`
+}
+
+// PolicyReport report
+type PolicyReport struct {
 	Meta struct {
 		LastChecked string `json:"last_checked_at"`
 	} `json:"meta"`
-	Data []InsightData `json:"data"`
+	Data []ReportData `json:"data"`
 }
 
-// InsightData Insight rule violation data
-type InsightData struct {
+// ReportData rule violation data
+type ReportData struct {
 	Created      string `json:"created_at"`
 	Description  string `json:"description"`
 	Details      string `json:"details"`
@@ -38,67 +49,70 @@ type InsightData struct {
 	ID           string `json:"rule_id"`
 }
 
-// Sync Pull Insights from CCX and merge with our search data.
+// Sync - Query violations from CCX and merge with our search data.
 func Sync() {
 	glog.Info("Starting CCX Sync()")
 
 	for {
-		glog.Info("Fetching data from CCX")
-
-		// Here we need to make the HTTP call.
-		// You can look at the collector pkg/send/httpsClient.go for an example to initialize and use the client.
-
 		// We need to get the clusters under management || that have CCX enabled.
-		clusters := []string{
-			"34c3ecc5-624a-49a5-bab8-4fdc5e51a266",
-			"74ae54aa-6577-4e80-85e7-697cb646ff37",
-			"a7467445-8d6a-43cc-b82c-7007664bdf69",
-			"ee7d2bf4-8933-4a3a-8634-3328fe806e08",
+		mockClusters := PostBody{
+			Clusters: []string{
+				"34c3ecc5-624a-49a5-bab8-4fdc5e51a266",
+				"74ae54aa-6577-4e80-85e7-697cb646ff37",
+				"a7467445-8d6a-43cc-b82c-7007664bdf69",
+				"ee7d2bf4-8933-4a3a-8634-3328fe806e08",
+			},
+		}
+		reqBody, _ := json.Marshal(mockClusters)
+		clusterReportURL := config.Cfg.CCXServer + "/clusters"
+		postResp, postErr := http.Post(clusterReportURL, "application/json", bytes.NewBuffer(reqBody))
+		if postErr != nil {
+			glog.Error(postErr)
+		}
+		defer postResp.Body.Close()
+
+		var responseBody ResponseBody
+		var policy Policy
+		// return []byte of response body
+		data, _ := ioutil.ReadAll(postResp.Body)
+		// unmarshal response data into the ResponseBody struct
+		unmarshalError := json.Unmarshal(data, &responseBody)
+		if unmarshalError != nil {
+			glog.Error(unmarshalError)
+		}
+		// loop through the clusters in the response and create the PolicyReport node for each violation
+		for cluster := range responseBody.Reports {
+			// convert report data into []byte
+			reportBytes, _ := json.Marshal(responseBody.Reports[cluster])
+			// unmarshal response data into the Policy struct
+			unmarshalReportError := json.Unmarshal(reportBytes, &policy)
+			if unmarshalReportError != nil {
+				glog.Error(unmarshalReportError)
+			}
+			processData(&policy, cluster)
 		}
 
-		for _, cluster := range clusters {
-			// GET url for each cluster (11789772 is the org.. need to look into this)
-			clusterReportURL := config.Cfg.CCXServer + "/report/11789772/" + cluster
-			// httpsClient := getHTTPSClient()
-			// resp, err := httpsClient.Get(clusterReportURL)
-			glog.Warning("clusterReportURL: ", clusterReportURL)
-			resp, err := http.Get(clusterReportURL)
-			if err != nil {
-				glog.Error(err)
-			}
-			defer resp.Body.Close()
-
-			var insight Insight
-			data, _ := ioutil.ReadAll(resp.Body)
-			glog.Warning("data: ", data)
-			err = json.Unmarshal(data, &insight)
-			if err != nil {
-				glog.Error(err)
-			}
-
-			processData(&insight, cluster)
-		}
 		time.Sleep(time.Duration(30) * time.Second)
 	}
 }
 
-func processData(data *Insight, cluster string) {
+func processData(data *Policy, cluster string) {
 	glog.Info("Process Data")
 
 	//Here we loop the results from the API and extract the data we want to index.
 	for rule := range data.Report.Data {
-		// for each CCX Insight rule violation create a node
+		// for each CCX rule violation create a node
 		ruleViolation := data.Report.Data[rule]
 		props := make(map[string]interface{})
 		props["name"] = string(ruleViolation.ID + "_" + cluster) // TODO better naming?
 		props["namespace"] = cluster                             // is this redundant with _hubNamespace?
 		props["_clusterNamespace"] = cluster
 		props["cluster"] = cluster
-		props["kind"] = "Insight"
-		props["apigroup"] = "console.open-cluster-management.io"
+		props["kind"] = "PolicyReport"
+		props["apigroup"] = "open-cluster-management.io"
 		props["ruleID"] = ruleViolation.ID
 		props["created"] = ruleViolation.Created
-		props["description"] = ruleViolation.Description
+		props["message"] = ruleViolation.Description
 		props["details"] = ruleViolation.Details
 		props["reason"] = ruleViolation.Reason
 		props["resolution"] = ruleViolation.Resolution
@@ -107,10 +121,10 @@ func processData(data *Insight, cluster string) {
 		props["lastChanged"] = data.Report.Meta.LastChecked
 
 		resource := db.Resource{
-			Kind:           "Insight",                                // Insight? CCXInsight?
+			Kind:           "PolicyReport",
 			UID:            string(ruleViolation.ID + "_" + cluster), // TODO find a better unique identifier?
 			Properties:     props,
-			ResourceString: "insights", // Needed for rbac, map to real cluster resource.
+			ResourceString: "policyreports", // Needed for rbac, map to real cluster resource.
 		}
 
 		upsertNode(resource)
@@ -118,25 +132,21 @@ func processData(data *Insight, cluster string) {
 }
 
 func upsertNode(resource db.Resource) {
-	glog.Info("Upserting node.")
-
-	// Here we insert/update the node into the search data.
-	// See clusterWatch.go  processClusterUpsert()
-
+	glog.V(4).Info("Upserting node.")
 	res, err, alreadySET := db.UpdateByName(resource) // <- TODO UpdateByName() is optimized fot the Cluster nodes, we may need to make some changes there.
 	if err != nil {
 		glog.Warning("Error on UpdateByName() ", err)
 	}
 	if alreadySET {
-		glog.V(4).Infof("Node for Insight %s already exist on DB.", resource.Properties["name"])
+		glog.V(4).Infof("Node for rule violation %s already exist on DB.", resource.Properties["name"])
 		return
 	}
 
 	if db.IsGraphMissing(err) || !db.IsPropertySet(res) {
-		glog.Infof("Node for CCX insight %s does not exist, inserting it.", resource.Properties["name"])
+		glog.Infof("Node for CCX rule violation %s does not exist, inserting it.", resource.Properties["name"])
 		_, _, err = db.Insert([]*db.Resource{&resource}, "")
 		if err != nil {
-			glog.Error("Error adding Insight node with error: ", err)
+			glog.Error("Error adding rule violation node with error: ", err)
 			return
 		}
 		return

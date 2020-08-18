@@ -26,7 +26,8 @@ const (
 	DEFAULT_REDIS_WATCH_INTERVAL    = 15000 // 15 seconds
 	DEFAULT_REQUEST_LIMIT           = 5     // Max number of concurrent requests.
 	DEFAULT_SKIP_CLUSTER_VALIDATION = "false"
-	DEFAULT_CCX_SERVER              = "https://ccx-mock-service:8080"
+	DEFAULT_CCX_SERVER              = "https://ccx-mock-service:8080/api/v1"
+	// DEFAULT_CCX_SERVER              = "http://localhost:8080/api/v1" For local use only
 )
 
 // Define a config type to hold our config properties.
