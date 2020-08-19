@@ -10,7 +10,8 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 package handlers
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"time"
 
 	"github.com/golang/glog"
@@ -24,6 +25,18 @@ var previousAppInstance int
 
 func getApplicationUpdateTime() time.Time {
 	return ApplicationLastUpdated
+}
+
+func currAppInstance() int {
+	n, err := rand.Int(rand.Reader, big.NewInt(99999))
+	if err != nil {
+		glog.Error("Not able to generate random number for appInstance")
+		if previousAppInstance == 99999 {
+			return previousAppInstance - 1
+		}
+		return previousAppInstance + 1
+	}
+	return int(n.Int64())
 }
 
 // runs all the specific inter-cluster relationships we want to connect
@@ -163,10 +176,10 @@ func getUIDsForSubscriptions() (*rg2.QueryResult, error) {
 func buildSubscriptions() (rg2.QueryResult, error) {
 	// Record start time
 	start := time.Now()
-	currentAppInstance := rand.Intn(99999)
+	currentAppInstance := currAppInstance()
 	// Making sure that this instanceID is different from the previous
 	for currentAppInstance == previousAppInstance {
-		currentAppInstance = rand.Intn(99999)
+		currentAppInstance = currAppInstance()
 	}
 
 	// list of remote subscriptions
