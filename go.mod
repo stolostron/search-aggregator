@@ -16,14 +16,15 @@ require (
 	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v13.0.0+incompatible
 	sigs.k8s.io/yaml v1.2.0 // indirect
-	github.com/prometheus/prometheus v2.7.1	
 )
 
 replace (
 	github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
 	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.1.0
 	github.com/docker/docker => github.com/docker/docker v1.13.1
+	github.com/hashicorp/consul => github.com/hashicorp/consul v1.7.4
 	github.com/openshift/origin => github.com/openshift/origin v1.2.0
+	github.com/prometheus/prometheus => github.com/prometheus/prometheus v2.7.1+incompatible
 	github.com/terraform-providers/terraform-provider-azurerm => github.com/terraform-providers/terraform-provider-azurerm v0.0.0-20200604143437-d38893bc4f78
 	k8s.io/api => k8s.io/api v0.17.4
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.17.4
