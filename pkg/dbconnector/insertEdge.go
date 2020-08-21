@@ -82,7 +82,7 @@ func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	//Insert with node labels if only one edge is inserted at a time.
 	//If there are multiple edges being inserted, the edge destkinds might be different
 	if edge.SourceKind != "" && edge.DestKind != "" && whereClause == "" {
-		query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s) %s CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, whereClause, edge.EdgeType)
+		query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s {_uid: '%s'}) CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, edge.DestUID, edge.EdgeType)
 	}
 	//glog.Info(query)
 	resp, err := Store.Query(query)
