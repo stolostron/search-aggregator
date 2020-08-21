@@ -16,9 +16,10 @@ require (
 	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v13.0.0+incompatible
 	sigs.k8s.io/yaml v1.2.0 // indirect
+	github.com/prometheus/prometheus v2.7.1	
 )
 
-replace ( 
+replace (
 	github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
 	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.1.0
 	github.com/docker/docker => github.com/docker/docker v1.13.1
