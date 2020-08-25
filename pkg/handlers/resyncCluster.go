@@ -153,7 +153,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	}
 
 	//Redisgraph 2.0 supports addition of duplicate edges. Delete duplicate edges, if any, in the cluster
-	_, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
+	dupEdgedeleted, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
+	glog.Info("Deleted duplicate edges: ", dupEdgedeleted.RelationshipsDeleted())
 	if delEdgesError != nil {
 		glog.Warning("Error deleting duplicate edges for cluster ", clusterName, delEdgesError)
 		err = delEdgesError
@@ -176,6 +177,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	// INSERT Edges
 	insertEdgeResponse := db.ChunkedInsertEdge(edgesToAdd)
+	glog.Info("Resync: Number of edges to insert: ", len(edgesToAdd))
 	stats.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
 	if insertEdgeResponse.ConnectionError != nil {
 		err = insertEdgeResponse.ConnectionError
@@ -185,6 +187,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	// DELETE Edges
 	deleteEdgeResponse := db.ChunkedDeleteEdge(edgesToDelete)
+	glog.Info("Resync: Number of edges to delete: ", len(edgesToDelete))
 	stats.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
 	if deleteEdgeResponse.ConnectionError != nil {
 		err = deleteEdgeResponse.ConnectionError
