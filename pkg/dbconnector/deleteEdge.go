@@ -17,6 +17,8 @@ import (
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
+var deletedEdgeCount int
+
 // Recursive helper for DeleteEdge. Takes a single chunk, and recursively attempts to delete that chunk, then the first and second halves of that chunk independently, and so on.
 func chunkedDeleteEdgeHelper(resources []Edge) ChunkedOperationResult {
 	if len(resources) == 0 {
@@ -56,6 +58,7 @@ func chunkedDeleteEdgeHelper(resources []Edge) ChunkedOperationResult {
 
 // Updates the given resources in the graph, does chunking for you and returns errors related to individual edges.
 func ChunkedDeleteEdge(resources []Edge) ChunkedOperationResult {
+	deletedEdgeCount = 0
 	var resourceErrors map[string]error
 	totalSuccessful := 0
 	for i := 0; i < len(resources); i += CHUNK_SIZE {
@@ -68,9 +71,11 @@ func ChunkedDeleteEdge(resources []Edge) ChunkedOperationResult {
 		}
 		totalSuccessful += chunkResult.SuccessfulResources
 	}
+	glog.Info("Number of edges deleted: ", deletedEdgeCount)
 	return ChunkedOperationResult{
 		ResourceErrors:      resourceErrors,
 		SuccessfulResources: totalSuccessful,
+		EdgesDeleted:        deletedEdgeCount,
 	}
 }
 
@@ -78,8 +83,8 @@ func ChunkedDeleteEdge(resources []Edge) ChunkedOperationResult {
 func DeleteEdge(edges []Edge) (*rg2.QueryResult, error) {
 	query := deleteEdgeQuery(edges) // Encoding errors are recoverable, but we still report them
 	resp, err := Store.Query(query)
-	glog.Info("Delete edges query: ", query)
-	glog.Info("Number of edges deleted: ", resp.RelationshipsDeleted())
+	// glog.Info("Delete edges query: ", query)
+	deletedEdgeCount = deletedEdgeCount + resp.RelationshipsDeleted()
 	return resp, err
 }
 

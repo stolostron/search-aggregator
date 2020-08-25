@@ -36,6 +36,8 @@ type ChunkedOperationResult struct {
 	ResourceErrors      map[string]error // errors keyed by UID
 	ConnectionError     error            // For when redis conn is down. If this is set, then ResourceErrors and SuccessfulResources are irrelevant.
 	SuccessfulResources int              // Number that were successfully completed
+	EdgesAdded          int
+	EdgesDeleted        int
 }
 
 // Deletes all resources for given cluster

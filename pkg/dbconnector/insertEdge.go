@@ -17,8 +17,11 @@ import (
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
+var insertEdgeCount int
+
 // Inserts the given edges grouped by source
 func ChunkedInsertEdge(resources []Edge) ChunkedOperationResult {
+	insertEdgeCount = 0
 	if len(resources) == 0 {
 		return ChunkedOperationResult{
 			ResourceErrors:      nil,
@@ -70,10 +73,12 @@ func ChunkedInsertEdge(resources []Edge) ChunkedOperationResult {
 	} else {
 		totalAdded += currentLength
 	}
+	glog.Info("Number of edges inserted: ", insertEdgeCount)
 
 	return ChunkedOperationResult{
 		ResourceErrors:      resourceErrors,
 		SuccessfulResources: totalAdded,
+		EdgesAdded:          insertEdgeCount,
 	}
 }
 
@@ -87,6 +92,6 @@ func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	}
 	//glog.Info(query)
 	resp, err := Store.Query(query)
-	glog.Info("Number of edges inserted: ", resp.RelationshipsCreated())
+	insertEdgeCount = insertEdgeCount + resp.RelationshipsCreated()
 	return resp, err
 }
