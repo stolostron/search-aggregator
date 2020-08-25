@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/golang/glog"
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
@@ -86,5 +87,6 @@ func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	}
 	//glog.Info(query)
 	resp, err := Store.Query(query)
+	glog.Info("Number of edges inserted: ", resp.RelationshipsCreated())
 	return resp, err
 }

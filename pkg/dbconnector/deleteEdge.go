@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/golang/glog"
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
@@ -77,6 +78,8 @@ func ChunkedDeleteEdge(resources []Edge) ChunkedOperationResult {
 func DeleteEdge(edges []Edge) (*rg2.QueryResult, error) {
 	query := deleteEdgeQuery(edges) // Encoding errors are recoverable, but we still report them
 	resp, err := Store.Query(query)
+	glog.Info("Delete edges query: ", query)
+	glog.Info("Number of edges deleted: ", resp.RelationshipsDeleted())
 	return resp, err
 }
 
