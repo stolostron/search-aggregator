@@ -146,10 +146,11 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	var edgesToAdd = make([]db.Edge, 0)
 
 	// Create a map with the existing edges.
-
-	for currEdges.Next() {
-		e := currEdges.Record()
-		existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
+	if currEdges != nil {
+		for currEdges.Next() {
+			e := currEdges.Record()
+			existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
+		}
 	}
 
 	//Redisgraph 2.0 supports addition of duplicate edges. Delete duplicate edges, if any, in the cluster
