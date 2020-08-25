@@ -39,7 +39,7 @@ func InitSyncMetrics(clusterName string) SyncMetrics {
 }
 
 func (m SyncMetrics) CompleteSyncEvent() {
-	glog.V(2).Info("Completed sync of cluster: ", m.clusterName)
+	glog.Info("Completed sync of cluster: ", m.clusterName)
 	PendingRequestsMutex.Lock()
 	delete(PendingRequests, m.clusterName)
 	PendingRequestsMutex.Unlock()
@@ -53,8 +53,8 @@ func (m SyncMetrics) LogPerformanceMetrics(syncEvent SyncEvent) {
 		glog.Warning("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
 		glog.Warning("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
 	} else {
-		glog.V(4).Infof("SyncResources from %s took %s", m.clusterName, elapsed)
-		glog.V(4).Info("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
-		glog.V(4).Info("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
+		glog.Infof("SyncResources from %s took %s", m.clusterName, elapsed)
+		glog.Info("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
+		glog.Info("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
 	}
 }
