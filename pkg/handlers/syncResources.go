@@ -238,6 +238,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 		// Insert Edges
 		metrics.EdgeSyncStart = time.Now()
+		glog.Info("Number of edges to insert: ", len(syncEvent.AddEdges))
 		insertEdgeResponse := db.ChunkedInsertEdge(syncEvent.AddEdges)
 		response.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
 		if insertEdgeResponse.ConnectionError != nil {
@@ -250,6 +251,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Delete Edges
+		glog.Info("Number of edges to delete: ", len(syncEvent.DeleteEdges))
 		deleteEdgeResponse := db.ChunkedDeleteEdge(syncEvent.DeleteEdges)
 		response.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
 		if deleteEdgeResponse.ConnectionError != nil {
