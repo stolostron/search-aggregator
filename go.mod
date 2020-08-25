@@ -19,8 +19,12 @@ require (
 )
 
 replace (
+	github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
 	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.1.0
 	github.com/docker/docker => github.com/docker/docker v1.13.1
+	github.com/hashicorp/consul => github.com/hashicorp/consul v1.7.4
+	github.com/openshift/origin => github.com/openshift/origin v1.2.0
+	github.com/prometheus/prometheus => github.com/prometheus/prometheus v2.7.1+incompatible
 	github.com/terraform-providers/terraform-provider-azurerm => github.com/terraform-providers/terraform-provider-azurerm v0.0.0-20200604143437-d38893bc4f78
 	k8s.io/api => k8s.io/api v0.17.4
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.17.4
@@ -41,6 +45,7 @@ replace (
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.17.4
 	k8s.io/kubectl => k8s.io/kubectl v0.17.4
 	k8s.io/kubelet => k8s.io/kubelet v0.17.4
+	k8s.io/kubernetes => k8s.io/kubernetes v1.17.11
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.17.4
 	k8s.io/metrics => k8s.io/metrics v0.17.4
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.1
