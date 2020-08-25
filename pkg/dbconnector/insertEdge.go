@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/golang/glog"
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
@@ -49,7 +50,15 @@ func ChunkedInsertEdge(resources []Edge) ChunkedOperationResult {
 
 		//look ahead to see if we are in a differnet group or if at max chuck size
 		if currentLength == CHUNK_SIZE || (i < len(resources)-1 && (resources[i+1].SourceUID != resources[i].SourceUID || resources[i+1].EdgeType != resources[i].EdgeType)) {
-			_, err := insertEdge(insertEdgeQuery(resources[i], whereClause.String()))
+			var err error
+			if currentLength == 1 && (resources[i].SourceKind != "" && resources[i].DestKind != "") {
+				glog.Info("Resetting where clause")
+				whereClause.Reset()
+				_, err = insertEdge(insertEdgeQuery(resources[i], whereClause.String()))
+			} else {
+				glog.Info("**** Not Resetting where clause")
+				_, err = insertEdge(insertEdgeQuery(resources[i], whereClause.String()))
+			}
 			if err != nil {
 				// saving JUST the source as the key to the map
 				resourceErrors[resources[i].SourceUID] = err
@@ -88,7 +97,7 @@ func insertEdgeQuery(edge Edge, whereClause string) string {
 }
 
 func insertEdge(query string) (*rg2.QueryResult, error) {
-	//glog.Info(query)
+	glog.Info(query)
 	resp, err := Store.Query(query)
 	return resp, err
 }
