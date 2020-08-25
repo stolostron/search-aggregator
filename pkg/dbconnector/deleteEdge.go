@@ -92,9 +92,9 @@ func deleteEdgeQuery(edges []Edge) string {
 	for i, edge := range edges {
 		// e.g. MATCH (s {_uid: 'abc'})-[e:Type]->(d {_uid: 'def'})
 		if edge.SourceKind != "" && edge.DestKind != "" {
-			matchStrings = append(matchStrings, SanitizeQuery("(s%d:%[5]s {_uid: '%s'})-[e%[1]d:%[3]s]->(d%[1]d:%[6]s {_uid: '%[4]s'})", i, edge.SourceUID, edge.EdgeType, edge.DestUID, edge.SourceKind, edge.DestKind))
+			matchStrings = append(matchStrings, SanitizeQuery("(s%d:%[5]s {_uid: '%[2]s'})-[e%[1]d:%[3]s]->(d%[1]d:%[6]s {_uid: '%[4]s'})", i, edge.SourceUID, edge.EdgeType, edge.DestUID, edge.SourceKind, edge.DestKind))
 		} else {
-			matchStrings = append(matchStrings, SanitizeQuery("(s%d {_uid: '%s'})-[e%[1]d:%[3]s]->(d%[1]d {_uid: '%[4]s'})", i, edge.SourceUID, edge.EdgeType, edge.DestUID))
+			matchStrings = append(matchStrings, SanitizeQuery("(s%d {_uid: '%[2]s'})-[e%[1]d:%[3]s]->(d%[1]d {_uid: '%[4]s'})", i, edge.SourceUID, edge.EdgeType, edge.DestUID))
 		}
 		deleteStrings = append(deleteStrings, fmt.Sprintf("e%d", i)) // e.g. e0
 	}
