@@ -194,6 +194,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	}
 
 	if len(edgesToAdd) != insertEdgeResponse.EdgesAdded {
+		glog.Info("Edges to add: ", edgesToAdd)
 		glog.Fatal("Added edge count ", insertEdgeResponse.EdgesAdded, " didn't match expected number: ", len(edgesToAdd))
 	}
 
@@ -208,6 +209,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	}
 
 	if len(edgesToDelete) != deleteEdgeResponse.EdgesDeleted {
+		glog.Info("Edges to delete: ", edgesToDelete)
 		glog.Fatal("Deleted edge count ", deleteEdgeResponse.EdgesDeleted, " didn't match expected number: ", len(edgesToDelete))
 	}
 
