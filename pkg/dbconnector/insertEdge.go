@@ -54,7 +54,7 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 
 		//look ahead to see if we are in a differnet group or if at max chuck size
 		if currentLength == CHUNK_SIZE || (i < len(resources)-1 && (resources[i+1].SourceUID != resources[i].SourceUID || resources[i+1].EdgeType != resources[i].EdgeType)) {
-			_, err := insertEdge(resources[i], whereClause.String())
+			_, err := insertEdge(resources[i], whereClause.String(), currentLength)
 			if err != nil {
 				// saving JUST the source as the key to the map
 				resourceErrors[resources[i].SourceUID] = err
@@ -67,7 +67,7 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 	}
 
 	// commit the last edge string to the db
-	_, err := insertEdge(resources[len(resources)-1], whereClause.String())
+	_, err := insertEdge(resources[len(resources)-1], whereClause.String(), currentLength)
 	if err != nil {
 		// saving JUST the source as the key to the map
 		resourceErrors[resources[len(resources)-1].SourceUID] = err
@@ -84,15 +84,19 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 }
 
 // e.g. MATCH (s:{_uid:'abc'}), (d) WHERE d._uid='def' OR d._uid='ghi' CREATE (s)-[:Type]>(d)
-func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
+func insertEdge(edge Edge, whereClause string, currentLength int) (*rg2.QueryResult, error) {
 	query := fmt.Sprintf("MATCH (s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)", edge.SourceUID, whereClause, edge.EdgeType)
 	//Insert with node labels if only one edge is inserted at a time.
 	//If there are multiple edges being inserted, the edge destkinds might be different
 	if edge.SourceKind != "" && edge.DestKind != "" && whereClause == "" {
-		query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s) %s CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, whereClause, edge.EdgeType)
+		query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s ) %s CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, whereClause, edge.EdgeType)
 	}
 	//glog.Info(query)
 	resp, err := Store.Query(query)
 	insertEdgeCount = insertEdgeCount + resp.RelationshipsCreated()
+	if currentLength != resp.RelationshipsCreated() {
+		glog.Info("Number of inserted edges ", resp.RelationshipsCreated(), " doesn't match received edges ", currentLength)
+		glog.Info("*** Insert query: ", query)
+	}
 	return resp, err
 }

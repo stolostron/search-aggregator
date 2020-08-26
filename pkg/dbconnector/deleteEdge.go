@@ -88,7 +88,7 @@ func DeleteEdge(edges []Edge) (*rg2.QueryResult, error) {
 	deletedEdgeCount = deletedEdgeCount + resp.RelationshipsDeleted()
 	if len(edges) != resp.RelationshipsDeleted() {
 		glog.Info("Number of edges received in DeleteEdge", len(edges), " didn't match RelationshipsDeleted: ", resp.RelationshipsDeleted())
-		glog.Info("** Delete query: ", query)
+		glog.Info("*** Delete query: ", query)
 	}
 	return resp, err
 }
