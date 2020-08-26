@@ -141,17 +141,6 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	currEdgesCount := computeIntraEdges(clusterName)
 	glog.Info("Number of intra edges for cluster ", clusterName, " before removing duplicates: ", currEdgesCount)
 
-	//Redisgraph 2.0 supports addition of duplicate edges. Delete duplicate edges, if any, in the cluster
-	dupEdgedeleted, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
-	glog.Info("For cluster, ", clusterName, ": Deleted duplicate edges: ", dupEdgedeleted.RelationshipsDeleted())
-	if delEdgesError != nil {
-		glog.Warning("Error deleting duplicate edges for cluster ", clusterName, delEdgesError)
-		err = delEdgesError
-	}
-
-	currEdgesCount = computeIntraEdges(clusterName)
-	glog.Info("Number of intra edges for cluster ", clusterName, " after removing duplicates: ", currEdgesCount)
-
 	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
 	if edgesError != nil {
 		glog.Warning("Error getting all existing edges for cluster ", clusterName, edgesError)
@@ -172,6 +161,18 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 			dupCount++
 		}
 	}
+
+	//Redisgraph 2.0 supports addition of duplicate edges. Delete duplicate edges, if any, in the cluster
+	dupEdgedeleted, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
+	glog.Info("For cluster, ", clusterName, ": Deleted duplicate edges: ", dupEdgedeleted.RelationshipsDeleted())
+	if delEdgesError != nil {
+		glog.Warning("Error deleting duplicate edges for cluster ", clusterName, delEdgesError)
+		err = delEdgesError
+	}
+
+	currEdgesCount = computeIntraEdges(clusterName)
+	glog.Info("Number of intra edges for cluster ", clusterName, " after removing duplicates: ", currEdgesCount)
+
 	existingEdgesMapLength := len(existingEdges)
 	glog.Info("Existing edges map length: ", len(existingEdges))
 	glog.Info("Duplicate edge count: ", dupCount)
