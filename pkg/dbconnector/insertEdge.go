@@ -93,7 +93,6 @@ func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	}
 	//glog.Info(query)
 	resp, err := Store.Query(query)
-	glog.Info("Relationships Created: ", resp.RelationshipsCreated())
 	insertEdgeCount = insertEdgeCount + resp.RelationshipsCreated()
 	return resp, err
 }
