@@ -187,7 +187,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	expectedEdgesAfterProcessing := currEdgesCount + len(edgesToAdd) - len(edgesToDelete)
 	if expectedEdgesAfterProcessing != len(resources) {
-		glog.Warning("*** For cluster ", clusterName, " expectedEdgesAfterProcessing: ", expectedEdgesAfterProcessing, " doesn't match received len(edges): ", len(resources))
+		glog.Warning("*** For cluster ", clusterName, " expectedEdgesAfterProcessing: ", expectedEdgesAfterProcessing, " doesn't match received len(edges): ", len(edges))
 	}
 	// INSERT Edges
 	glog.Info("Resync for cluster ", clusterName, ": Number of edges to insert: ", len(edgesToAdd))
@@ -203,6 +203,9 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		glog.Info("Edges to add: ", edgesToAdd)
 		glog.Info("Edge add errors: ", len(insertEdgeResponse.ResourceErrors))
 		glog.Info("Edge add errors: ", insertEdgeResponse.ResourceErrors)
+		currEdgesCount = computeIntraEdges(clusterName)
+		glog.Info("Number of intra edges for cluster ", clusterName, " after adding edges: ", currEdgesCount)
+		glog.Info("currEdgesCount: ", currEdgesCount, " incoming edges: ", len(edges))
 		glog.Fatal("Added edge count ", insertEdgeResponse.EdgesAdded, " didn't match expected number: ", len(edgesToAdd))
 	}
 
@@ -220,7 +223,9 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		glog.Info("Edges to delete: ", edgesToDelete)
 		glog.Info("Edge delete errors: ", len(deleteEdgeResponse.ResourceErrors))
 		glog.Info("Edge delete errors: ", deleteEdgeResponse.ResourceErrors)
-
+		currEdgesCount = computeIntraEdges(clusterName)
+		glog.Info("Number of intra edges for cluster ", clusterName, " after deleting edges: ", currEdgesCount)
+		glog.Info("currEdgesCount: ", currEdgesCount, " incoming edges: ", len(edges))
 		glog.Fatal("Deleted edge count ", deleteEdgeResponse.EdgesDeleted, " didn't match expected number: ", len(edgesToDelete))
 	}
 
