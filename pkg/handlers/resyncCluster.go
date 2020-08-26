@@ -20,7 +20,7 @@ import (
 )
 
 func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge, metrics *SyncMetrics) (stats SyncResponse, err error) {
-	glog.Info("Resync for cluster: ", clusterName, "edges to insert: ", len(edges))
+	glog.Info("Resync for cluster: ", clusterName, " edges to insert: ", len(edges))
 
 	// First get the existing resources from the datastore for the cluster
 	result, error := db.Store.Query(db.SanitizeQuery("MATCH (n {cluster: '%s'}) RETURN n", clusterName))
@@ -138,6 +138,9 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	metrics.EdgeSyncStart = time.Now()
 
+	currEdgesCount := computeIntraEdges(clusterName)
+	glog.Info("Number of intra edges for cluster ", clusterName, " before removing duplicates: ", currEdgesCount)
+
 	//Redisgraph 2.0 supports addition of duplicate edges. Delete duplicate edges, if any, in the cluster
 	dupEdgedeleted, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
 	glog.Info("For cluster, ", clusterName, ": Deleted duplicate edges: ", dupEdgedeleted.RelationshipsDeleted())
@@ -146,7 +149,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		err = delEdgesError
 	}
 
-	currEdgesCount := computeIntraEdges(clusterName)
+	currEdgesCount = computeIntraEdges(clusterName)
 	glog.Info("Number of intra edges for cluster ", clusterName, " after removing duplicates: ", currEdgesCount)
 
 	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
@@ -159,10 +162,19 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	// Create a map with the existing edges.
 
+	dupCount := 0
 	for currEdges.Next() {
 		e := currEdges.Record()
-		existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
+		key := fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))
+		if _, ok := existingEdges[key]; !ok {
+			existingEdges[key] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
+		} else {
+			dupCount++
+		}
 	}
+	existingEdgesMapLength := len(existingEdges)
+	glog.Info("Existing edges map length: ", len(existingEdges))
+	glog.Info("Duplicate edge count: ", dupCount)
 
 	var verifyEdges = make(map[string]bool)
 
@@ -185,8 +197,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		edgesToDelete = append(edgesToDelete, e)
 	}
 
-	expectedEdgesAfterProcessing := currEdgesCount + len(edgesToAdd) - len(edgesToDelete)
-	if expectedEdgesAfterProcessing != len(resources) {
+	expectedEdgesAfterProcessing := existingEdgesMapLength + len(edgesToAdd) - len(edgesToDelete)
+	if expectedEdgesAfterProcessing != len(edges) {
 		glog.Warning("*** For cluster ", clusterName, " expectedEdgesAfterProcessing: ", expectedEdgesAfterProcessing, " doesn't match received len(edges): ", len(edges))
 	}
 	// INSERT Edges
