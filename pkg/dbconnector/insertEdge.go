@@ -20,7 +20,8 @@ import (
 var insertEdgeCount int
 
 // Inserts the given edges grouped by source
-func ChunkedInsertEdge(resources []Edge) ChunkedOperationResult {
+func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationResult {
+	glog.Info("For cluster ", clusterName, ": Number of edges received in ChunkedInsertEdge: ", len(resources))
 	insertEdgeCount = 0
 	if len(resources) == 0 {
 		return ChunkedOperationResult{
@@ -73,7 +74,7 @@ func ChunkedInsertEdge(resources []Edge) ChunkedOperationResult {
 	} else {
 		totalAdded += currentLength
 	}
-	glog.Info("Number of edges inserted: ", insertEdgeCount)
+	glog.Info("ChunkedInsertEdge: For cluster, ", clusterName, ": Number of edges inserted: ", insertEdgeCount)
 
 	return ChunkedOperationResult{
 		ResourceErrors:      resourceErrors,
@@ -92,6 +93,7 @@ func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	}
 	//glog.Info(query)
 	resp, err := Store.Query(query)
+	glog.Info("Relationships Created: ", resp.RelationshipsCreated())
 	insertEdgeCount = insertEdgeCount + resp.RelationshipsCreated()
 	return resp, err
 }

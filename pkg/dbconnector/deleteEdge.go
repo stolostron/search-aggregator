@@ -57,7 +57,8 @@ func chunkedDeleteEdgeHelper(resources []Edge) ChunkedOperationResult {
 }
 
 // Updates the given resources in the graph, does chunking for you and returns errors related to individual edges.
-func ChunkedDeleteEdge(resources []Edge) ChunkedOperationResult {
+func ChunkedDeleteEdge(resources []Edge, clusterName string) ChunkedOperationResult {
+	glog.Info("For cluster ", clusterName, ": Number of edges received in ChunkedDeleteEdge: ", len(resources))
 	deletedEdgeCount = 0
 	var resourceErrors map[string]error
 	totalSuccessful := 0
@@ -71,7 +72,7 @@ func ChunkedDeleteEdge(resources []Edge) ChunkedOperationResult {
 		}
 		totalSuccessful += chunkResult.SuccessfulResources
 	}
-	glog.Info("Number of edges deleted: ", deletedEdgeCount)
+	glog.Info("ChunkedDeleteEdge: For cluster, ", clusterName, ": Number of edges deleted: ", deletedEdgeCount)
 	return ChunkedOperationResult{
 		ResourceErrors:      resourceErrors,
 		SuccessfulResources: totalSuccessful,

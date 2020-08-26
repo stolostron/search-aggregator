@@ -185,7 +185,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	// INSERT Edges
 	glog.Info("Resync for cluster ", clusterName, ": Number of edges to insert: ", len(edgesToAdd))
-	insertEdgeResponse := db.ChunkedInsertEdge(edgesToAdd)
+	insertEdgeResponse := db.ChunkedInsertEdge(edgesToAdd, clusterName)
 	stats.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
 	if insertEdgeResponse.ConnectionError != nil {
 		err = insertEdgeResponse.ConnectionError
@@ -200,7 +200,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	// DELETE Edges
 	glog.Info("Resync for cluster ", clusterName, ": Number of edges to delete: ", len(edgesToDelete))
-	deleteEdgeResponse := db.ChunkedDeleteEdge(edgesToDelete)
+	deleteEdgeResponse := db.ChunkedDeleteEdge(edgesToDelete, clusterName)
 	stats.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
 	if deleteEdgeResponse.ConnectionError != nil {
 		err = deleteEdgeResponse.ConnectionError
@@ -216,6 +216,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	// There's no need to UPDATE edges because edges don't have properties yet.
 
 	metrics.EdgeSyncEnd = time.Now()
+	glog.Infof("resyncCluster complete. Done updating resources for cluster %s, preparing response", clusterName)
+
 	return stats, err
 }
 
