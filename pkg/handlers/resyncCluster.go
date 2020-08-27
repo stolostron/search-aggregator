@@ -220,7 +220,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		currEdgesCount = computeIntraEdges(clusterName)
 		glog.Info("Number of intra edges for cluster ", clusterName, " after adding edges: ", currEdgesCount)
 		glog.Info("currEdgesCount: ", currEdgesCount, " incoming edges: ", len(edges))
-		glog.Fatal("Added edge count ", insertEdgeResponse.EdgesAdded, " didn't match expected number: ", len(edgesToAdd))
+		glog.Error("Added edge count ", insertEdgeResponse.EdgesAdded, " didn't match expected number: ", len(edgesToAdd))
 	}
 
 	// DELETE Edges
@@ -240,7 +240,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		currEdgesCount = computeIntraEdges(clusterName)
 		glog.Info("Number of intra edges for cluster ", clusterName, " after deleting edges: ", currEdgesCount)
 		glog.Info("currEdgesCount: ", currEdgesCount, " incoming edges: ", len(edges))
-		glog.Fatal("Deleted edge count ", deleteEdgeResponse.EdgesDeleted, " didn't match expected number: ", len(edgesToDelete))
+		glog.Error("Deleted edge count ", deleteEdgeResponse.EdgesDeleted, " didn't match expected number: ", len(edgesToDelete))
 	}
 
 	// There's no need to UPDATE edges because edges don't have properties yet.
