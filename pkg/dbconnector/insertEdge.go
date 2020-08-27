@@ -91,7 +91,7 @@ func insertEdge(edge Edge, whereClause string, currentLength int) (*rg2.QueryRes
 	if edge.SourceKind != "" && edge.DestKind != "" && whereClause == "" {
 		query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s {_uid: '%s'}) CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, edge.DestUID, edge.EdgeType)
 	}
-	//glog.Info(query)
+	glog.Info("Insert query: ", query)
 	resp, err := Store.Query(query)
 	insertEdgeCount = insertEdgeCount + resp.RelationshipsCreated()
 	if currentLength != resp.RelationshipsCreated() {
