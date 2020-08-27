@@ -93,6 +93,7 @@ func insertEdge(edge Edge, whereClause string, currentLength int) (*rg2.QueryRes
 	}
 	glog.Info("Insert query: ", query)
 	resp, err := Store.Query(query)
+	glog.Info("relationships created: ", resp.RelationshipsCreated())
 	insertEdgeCount = insertEdgeCount + resp.RelationshipsCreated()
 	if currentLength != resp.RelationshipsCreated() {
 		glog.Info("Number of inserted edges ", resp.RelationshipsCreated(), " doesn't match received edges ", currentLength)
