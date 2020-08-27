@@ -70,9 +70,6 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 	}
 
 	if newWhereClause {
-		if currentLength == 1 {
-			whereClause.Reset()
-		}
 		// commit the last edge string to the db
 		_, err := insertEdge(resources[len(resources)-1], whereClause.String())
 		if err != nil {
@@ -94,18 +91,15 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 // e.g. MATCH (s:{_uid:'abc'}), (d) WHERE d._uid='def' OR d._uid='ghi' CREATE (s)-[:Type]>(d)
 func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	query := fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, whereClause, edge.EdgeType)
-	//Insert with node labels if only one edge is inserted at a time.
-	//If there are multiple edges being inserted, the edge destkinds might be different
-	if edge.SourceKind != "" && edge.DestKind != "" && whereClause == "" {
-		query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s {_uid: '%s'}) CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, edge.DestUID, edge.EdgeType)
+
+	if !strings.Contains(whereClause, " OR d._uid=") {
+		//Insert with node labels if only one edge is inserted at a time.
+		//If there are multiple edges being inserted, the edge destkinds might be different
+		query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s) %s CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, whereClause, edge.EdgeType)
 	}
 	glog.Info("Insert query: ", query)
 	resp, err := Store.Query(query)
 	glog.Info("relationships created: ", resp.RelationshipsCreated())
 	insertEdgeCount = insertEdgeCount + resp.RelationshipsCreated()
-	// if currentLength != resp.RelationshipsCreated() {
-	// 	glog.Info("Number of inserted edges ", resp.RelationshipsCreated(), " doesn't match received edges ", currentLength)
-	// 	glog.Info("*** Insert query: ", query)
-	// }
 	return resp, err
 }
