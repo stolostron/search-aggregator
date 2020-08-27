@@ -141,7 +141,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	currEdgesCount := computeIntraEdges(clusterName)
 	glog.Info("Number of intra edges for cluster ", clusterName, " before removing duplicates: ", currEdgesCount)
 
-	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
+	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) WHERE (r._interCluster <> true) OR (r._interCluster IS NULL) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
 	if edgesError != nil {
 		glog.Warning("Error getting all existing edges for cluster ", clusterName, edgesError)
 		err = edgesError
@@ -162,8 +162,10 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		}
 	}
 
+	glog.Info("Duplicate edge count: ", dupCount)
+
 	//Redisgraph 2.0 supports addition of duplicate edges. Delete duplicate edges, if any, in the cluster
-	dupEdgedeleted, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
+	dupEdgedeleted, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WHERE (r._interCluster <> true) OR (r._interCluster IS NULL) WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
 	glog.Info("For cluster, ", clusterName, ": Deleted duplicate edges: ", dupEdgedeleted.RelationshipsDeleted())
 	if delEdgesError != nil {
 		glog.Warning("Error deleting duplicate edges for cluster ", clusterName, delEdgesError)
@@ -175,7 +177,6 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	existingEdgesMapLength := len(existingEdges)
 	glog.Info("Existing edges map length: ", len(existingEdges))
-	glog.Info("Duplicate edge count: ", dupCount)
 
 	var verifyEdges = make(map[string]bool)
 
