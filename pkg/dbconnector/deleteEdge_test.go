@@ -6,10 +6,6 @@ import (
 	assert "github.com/stretchr/testify/assert"
 )
 
-func init() {
-	Store = MockCache{}
-}
-
 func deleteQueryCheck(q string) bool {
 	delMultipleQuery := "MATCH (s0 {_uid: 'srcUID1'})-[e0:edgeType1]->(d0 {_uid: 'destUID1'}), (s1:srcKind1 {_uid: 'srcUID1'})-[e1:edgeType1]->(d1:destKind2 {_uid: 'destUID2'}), (s2:srcKind1 {_uid: 'srcUID1'})-[e2:edgeType2]->(d2:destKind3 {_uid: 'destUID3'}) DELETE e0, e1, e2"
 	delSingleQuery := "MATCH (s0:srcKind1 {_uid: 'srcUID1'})-[e0:edgeType1]->(d0:destKind1 {_uid: 'destUID1'}) DELETE e0"

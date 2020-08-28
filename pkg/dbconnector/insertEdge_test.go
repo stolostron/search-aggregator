@@ -6,10 +6,6 @@ import (
 	assert "github.com/stretchr/testify/assert"
 )
 
-func init() {
-	Store = MockCache{}
-}
-
 func initTestEdges() []Edge {
 	edge1 := Edge{SourceUID: "srcUID1", DestUID: "destUID1",
 		EdgeType:   "edgeType1",
