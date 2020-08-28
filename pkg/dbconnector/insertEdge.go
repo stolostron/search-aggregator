@@ -13,7 +13,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/glog"
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
@@ -97,8 +96,7 @@ func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 			query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s) %s CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, whereClause, edge.EdgeType)
 		}
 	}
-	fmt.Println("Insert query: ", query)
+	//glog.Info(query)
 	resp, err := Store.Query(query)
-	glog.Info("relationships created: ", resp.RelationshipsCreated())
 	return resp, err
 }
