@@ -33,24 +33,25 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	// Build a map of duplicated resources.
 	var existingResources = make(map[string]*rg2.Node)
 	var duplicatedResources = make(map[string]int)
-	for result.Next() {
-		record := result.Record()
-		if rgNode, ok := record.GetByIndex(0).(*rg2.Node); ok {
-			if existingResourceUID, ok := rgNode.Properties["_uid"].(string); ok {
-				if _, exists := existingResources[existingResourceUID]; exists {
-					dupeCount, dupeExists := duplicatedResources[existingResourceUID]
-					if !dupeExists {
-						duplicatedResources[existingResourceUID] = 1
+	if err == nil {
+		for result.Next() {
+			record := result.Record()
+			if rgNode, ok := record.GetByIndex(0).(*rg2.Node); ok {
+				if existingResourceUID, ok := rgNode.Properties["_uid"].(string); ok {
+					if _, exists := existingResources[existingResourceUID]; exists {
+						dupeCount, dupeExists := duplicatedResources[existingResourceUID]
+						if !dupeExists {
+							duplicatedResources[existingResourceUID] = 1
+						} else {
+							duplicatedResources[existingResourceUID] = dupeCount + 1
+						}
 					} else {
-						duplicatedResources[existingResourceUID] = dupeCount + 1
+						existingResources[existingResourceUID] = rgNode
 					}
-				} else {
-					existingResources[existingResourceUID] = rgNode
 				}
 			}
 		}
 	}
-
 	// Delete duplicated records. We have to delete all records with the duplicated UID and recreate.
 	if len(duplicatedResources) > 0 {
 		glog.Warningf("RedisGraph contains duplicate records for some UIDs in cluster %s. Total uids duplicates: %d", clusterName, len(duplicatedResources))
@@ -146,12 +147,12 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	var edgesToAdd = make([]db.Edge, 0)
 
 	// Create a map with the existing edges.
-
-	for currEdges.Next() {
-		e := currEdges.Record()
-		existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
+	if edgesError == nil {
+		for currEdges.Next() {
+			e := currEdges.Record()
+			existingEdges[fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
+		}
 	}
-
 	//Redisgraph 2.0 supports addition of duplicate edges. Delete duplicate edges, if any, in the cluster
 	_, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WHERE (r._interCluster <> true) OR (r._interCluster IS NULL) WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
 	if delEdgesError != nil {
