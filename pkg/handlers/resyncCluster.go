@@ -33,25 +33,24 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	// Build a map of duplicated resources.
 	var existingResources = make(map[string]*rg2.Node)
 	var duplicatedResources = make(map[string]int)
-	if err == nil {
-		for result.Next() {
-			record := result.Record()
-			if rgNode, ok := record.GetByIndex(0).(*rg2.Node); ok {
-				if existingResourceUID, ok := rgNode.Properties["_uid"].(string); ok {
-					if _, exists := existingResources[existingResourceUID]; exists {
-						dupeCount, dupeExists := duplicatedResources[existingResourceUID]
-						if !dupeExists {
-							duplicatedResources[existingResourceUID] = 1
-						} else {
-							duplicatedResources[existingResourceUID] = dupeCount + 1
-						}
+	for result.Next() {
+		record := result.Record()
+		if rgNode, ok := record.GetByIndex(0).(*rg2.Node); ok {
+			if existingResourceUID, ok := rgNode.Properties["_uid"].(string); ok {
+				if _, exists := existingResources[existingResourceUID]; exists {
+					dupeCount, dupeExists := duplicatedResources[existingResourceUID]
+					if !dupeExists {
+						duplicatedResources[existingResourceUID] = 1
 					} else {
-						existingResources[existingResourceUID] = rgNode
+						duplicatedResources[existingResourceUID] = dupeCount + 1
 					}
+				} else {
+					existingResources[existingResourceUID] = rgNode
 				}
 			}
 		}
 	}
+
 	// Delete duplicated records. We have to delete all records with the duplicated UID and recreate.
 	if len(duplicatedResources) > 0 {
 		glog.Warningf("RedisGraph contains duplicate records for some UIDs in cluster %s. Total uids duplicates: %d", clusterName, len(duplicatedResources))
