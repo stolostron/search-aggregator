@@ -33,6 +33,7 @@ type RedisGraphStoreV2 struct{}
 // Called by the other functions in this file
 // Not fully implemented
 func (RedisGraphStoreV2) Query(q string) (*rg2.QueryResult, error) {
+	glog.Info("RedisGraphStoreV2 query: ", q)
 	// Get connection from the pool
 	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
 	defer conn.Close()
