@@ -14,7 +14,7 @@ import (
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
-const CHUNK_SIZE = 2 // Used for the chunked operations in other files.
+const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 
 // Resource - Describes a resource (node)
 type Resource struct {

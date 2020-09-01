@@ -43,6 +43,7 @@ func (RedisGraphStoreV2) Query(q string) (*rg2.QueryResult, error) {
 	result, err := g.Query(q)
 	if err != nil {
 		glog.Error("Error fetching results from RedisGraph V2 : ", err)
+		glog.Error("Failed query: ", q)
 	}
 	return result, err
 
