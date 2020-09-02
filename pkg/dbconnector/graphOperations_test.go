@@ -21,7 +21,7 @@ func init() {
 	Store = MockCache{}
 }
 func (mc MockCache) Query(q string) (*rg2.QueryResult, error) {
-	if q == "MATCH (n {cluster:'good-cluster-name'}) DELETE n" {
+	if q == "MATCH (n {cluster:'good-cluster-name'}) DELETE n" || insertQueryCheck(q) || deleteQueryCheck(q) {
 		return &rg2.QueryResult{}, nil
 	}
 	return &rg2.QueryResult{}, errors.New("Incorrect Query formed")
