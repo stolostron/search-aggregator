@@ -152,13 +152,15 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	// Create a map with the existing edges.
 
 	dupCount := 0
-	for currEdges.Next() {
-		e := currEdges.Record()
-		key := fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))
-		if _, ok := existingEdges[key]; !ok {
-			existingEdges[key] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
-		} else {
-			dupCount++
+	if edgesError == nil { //to avoid panic if there is an error executing query
+		for currEdges.Next() {
+			e := currEdges.Record()
+			key := fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)), valueToString(e.GetByIndex(2)))
+			if _, ok := existingEdges[key]; !ok {
+				existingEdges[key] = db.Edge{SourceUID: valueToString(e.GetByIndex(0)), EdgeType: valueToString(e.GetByIndex(1)), DestUID: valueToString(e.GetByIndex(2))}
+			} else {
+				dupCount++
+			}
 		}
 	}
 

@@ -19,13 +19,14 @@ import (
 
 var deletedEdgeCount int
 
-// Recursive helper for DeleteEdge. Takes a single chunk, and recursively attempts to delete that chunk, then the first and second halves of that chunk independently, and so on.
+// Recursive helper for DeleteEdge. Takes a single chunk, and recursively attempts to delete that chunk, then the first // and second halves of that chunk independently, and so on.
 func chunkedDeleteEdgeHelper(resources []Edge) ChunkedOperationResult {
 	if len(resources) == 0 {
 		return ChunkedOperationResult{} // No errors, and no SuccessfulResources
 	}
-	resp, err := DeleteEdge(resources) // We currently ignore encoding errors as they are always recoverable, may change in the future.
-	if IsBadConnection(err) {          // this is false if err is nil
+	// We currently ignore encoding errors as they are always recoverable, may change in the future.
+	resp, err := DeleteEdge(resources)
+	if IsBadConnection(err) { // this is false if err is nil
 		return ChunkedOperationResult{
 			ConnectionError: err,
 		}
@@ -39,14 +40,16 @@ func chunkedDeleteEdgeHelper(resources []Edge) ChunkedOperationResult {
 		} else { // If this is multiple resources, we make a recursive call to find which half had the error.
 			firstHalf := chunkedDeleteEdgeHelper(resources[0 : len(resources)/2])
 			secondHalf := chunkedDeleteEdgeHelper(resources[len(resources)/2:])
-			if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil { // Again, if either one has a redis conn issue we just instantly bail
+			if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil {
+				// Again, if either one has a redis conn issue we just instantly bail
 				return ChunkedOperationResult{
 					ConnectionError: err,
 				}
 			}
 			return ChunkedOperationResult{
-				ResourceErrors:      mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
-				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources, // These will be 0 if there were errs in the halves
+				ResourceErrors: mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
+				// These will be 0 if there were errs in the halves
+				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources,
 				EdgesDeleted:        firstHalf.EdgesDeleted + secondHalf.EdgesDeleted,
 			}
 		}
@@ -70,7 +73,8 @@ func ChunkedDeleteEdge(resources []Edge, clusterName string) ChunkedOperationRes
 		if chunkResult.ConnectionError != nil {
 			return chunkResult
 		} else if chunkResult.ResourceErrors != nil {
-			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is still nil.
+			// if both are nil, this is still nil.
+			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors)
 		}
 		totalSuccessful += chunkResult.SuccessfulResources
 		deletedEdgeCount += chunkResult.EdgesDeleted
@@ -89,7 +93,8 @@ func DeleteEdge(edges []Edge) (*rg2.QueryResult, error) {
 	resp, err := Store.Query(query)
 	if err == nil {
 		if len(edges) != resp.RelationshipsDeleted() {
-			glog.V(4).Info("Number of edges received in DeleteEdge ", len(edges), " didn't match RelationshipsDeleted: ", resp.RelationshipsDeleted())
+			glog.V(4).Info("Number of edges received in DeleteEdge ",
+				len(edges), " didn't match RelationshipsDeleted: ", resp.RelationshipsDeleted())
 			glog.V(4).Info("Delete query: ", query)
 		}
 	}
@@ -108,9 +113,13 @@ func deleteEdgeQuery(edges []Edge) string {
 	for i, edge := range edges {
 		// e.g. MATCH (s {_uid: 'abc'})-[e:Type]->(d {_uid: 'def'})
 		if edge.SourceKind != "" && edge.DestKind != "" {
-			matchStrings = append(matchStrings, SanitizeQuery("(s%d:%[5]s {_uid: '%[2]s'})-[e%[1]d:%[3]s]->(d%[1]d:%[6]s {_uid: '%[4]s'})", i, edge.SourceUID, edge.EdgeType, edge.DestUID, edge.SourceKind, edge.DestKind))
+			matchStrings = append(matchStrings,
+				SanitizeQuery("(s%d:%[5]s {_uid: '%[2]s'})-[e%[1]d:%[3]s]->(d%[1]d:%[6]s {_uid: '%[4]s'})",
+					i, edge.SourceUID, edge.EdgeType, edge.DestUID, edge.SourceKind, edge.DestKind))
 		} else {
-			matchStrings = append(matchStrings, SanitizeQuery("(s%d {_uid: '%[2]s'})-[e%[1]d:%[3]s]->(d%[1]d {_uid: '%[4]s'})", i, edge.SourceUID, edge.EdgeType, edge.DestUID))
+			matchStrings = append(matchStrings,
+				SanitizeQuery("(s%d {_uid: '%[2]s'})-[e%[1]d:%[3]s]->(d%[1]d {_uid: '%[4]s'})",
+					i, edge.SourceUID, edge.EdgeType, edge.DestUID))
 		}
 		deleteStrings = append(deleteStrings, fmt.Sprintf("e%d", i)) // e.g. e0
 	}
