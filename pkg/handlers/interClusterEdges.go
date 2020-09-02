@@ -57,7 +57,7 @@ func BuildInterClusterEdges() {
 		interval := time.Duration(config.Cfg.EdgeBuildRateMS) * time.Millisecond
 		time.Sleep(interval)
 
-		glog.V(4).Info("Building intercluster edges")
+		glog.V(3).Info("Building intercluster edges")
 
 		for _, edgeFunc := range tranforms {
 			// if no updates have been made during the sleep skip edge building

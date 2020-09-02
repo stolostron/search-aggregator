@@ -139,7 +139,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	metrics.EdgeSyncStart = time.Now()
 
 	currEdgesCount := computeIntraEdges(clusterName)
-	glog.Info("Number of intra edges for cluster ", clusterName, " before removing duplicates: ", currEdgesCount)
+	glog.V(4).Info("Number of intra edges for cluster ", clusterName, " before removing duplicates: ", currEdgesCount)
 
 	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) WHERE (r._interCluster <> true) OR (r._interCluster IS NULL) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
 	if edgesError != nil {
@@ -162,21 +162,22 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		}
 	}
 
-	glog.Info("Duplicate edge count: ", dupCount)
+	glog.V(4).Info("Duplicate edge count: ", dupCount)
 
 	//Redisgraph 2.0 supports addition of duplicate edges. Delete duplicate edges, if any, in the cluster
 	dupEdgedeleted, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WHERE (r._interCluster <> true) OR (r._interCluster IS NULL) WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
-	glog.Info("For cluster, ", clusterName, ": Deleted duplicate edges: ", dupEdgedeleted.RelationshipsDeleted())
 	if delEdgesError != nil {
 		glog.Warning("Error deleting duplicate edges for cluster ", clusterName, delEdgesError)
 		err = delEdgesError
+	} else {
+		glog.V(4).Info("For cluster, ", clusterName, ": Deleted duplicate edges: ", dupEdgedeleted.RelationshipsDeleted())
 	}
 
 	currEdgesCount = computeIntraEdges(clusterName)
-	glog.Info("Number of intra edges for cluster ", clusterName, " after removing duplicates: ", currEdgesCount)
+	glog.V(4).Info("Number of intra edges for cluster ", clusterName, " after removing duplicates: ", currEdgesCount)
 
 	existingEdgesMapLength := len(existingEdges)
-	glog.Info("Existing edges map length: ", len(existingEdges))
+	glog.V(4).Info("Existing edges map length: ", len(existingEdges))
 
 	var verifyEdges = make(map[string]bool)
 
@@ -201,10 +202,10 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	expectedEdgesAfterProcessing := existingEdgesMapLength + len(edgesToAdd) - len(edgesToDelete)
 	if expectedEdgesAfterProcessing != len(edges) {
-		glog.Warning("*** For cluster ", clusterName, " expectedEdgesAfterProcessing: ", expectedEdgesAfterProcessing, " doesn't match received len(edges): ", len(edges))
+		glog.Warning("For cluster ", clusterName, " expectedEdgesAfterProcessing: ", expectedEdgesAfterProcessing, " doesn't match received len(edges): ", len(edges))
 	}
 	// INSERT Edges
-	glog.Info("Resync for cluster ", clusterName, ": Number of edges to insert: ", len(edgesToAdd))
+	glog.V(4).Info("Resync for cluster ", clusterName, ": Number of edges to insert: ", len(edgesToAdd))
 	insertEdgeResponse := db.ChunkedInsertEdge(edgesToAdd, clusterName)
 	stats.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
 	if insertEdgeResponse.ConnectionError != nil {
@@ -214,13 +215,13 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	}
 
 	if len(edgesToAdd) != insertEdgeResponse.EdgesAdded {
-		glog.Info("Edges to add: ", edgesToAdd)
-		glog.Info("Edge add errors: ", len(insertEdgeResponse.ResourceErrors))
-		glog.Info("Edge add errors: ", insertEdgeResponse.ResourceErrors)
+		glog.V(4).Info("Edges to add len: ", len(edgesToAdd))
+		glog.V(4).Info("Edge add errors: ", len(insertEdgeResponse.ResourceErrors))
+		glog.V(4).Info("Edge add errors: ", insertEdgeResponse.ResourceErrors)
 		currEdgesCount = computeIntraEdges(clusterName)
-		glog.Info("Number of intra edges for cluster ", clusterName, " after adding edges: ", currEdgesCount)
-		glog.Info("currEdgesCount: ", currEdgesCount, " incoming edges: ", len(edges))
-		glog.Error("Added edge count ", insertEdgeResponse.EdgesAdded, " didn't match expected number: ", len(edgesToAdd))
+		glog.V(4).Info("Number of intra edges for cluster ", clusterName, " after adding edges: ", currEdgesCount)
+		glog.V(4).Info("currEdgesCount: ", currEdgesCount, " incoming edges: ", len(edges))
+		glog.V(4).Info("Added edge count ", insertEdgeResponse.EdgesAdded, " didn't match expected number: ", len(edgesToAdd))
 	}
 
 	// DELETE Edges

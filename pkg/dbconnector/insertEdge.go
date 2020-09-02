@@ -17,12 +17,10 @@ import (
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
-var insertEdgeCount int
-
 // Inserts the given edges grouped by source
 func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationResult {
-	glog.Info("For cluster ", clusterName, ": Number of edges received in ChunkedInsertEdge: ", len(resources))
-	insertEdgeCount = 0
+	glog.V(4).Info("For cluster ", clusterName, ": Number of edges received in ChunkedInsertEdge: ", len(resources))
+	var insertEdgeCount int
 	if len(resources) == 0 {
 		return ChunkedOperationResult{
 			ResourceErrors:      nil,
@@ -56,13 +54,14 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 
 		//look ahead to see if we are in a differnet group or if at max chuck size
 		if currentLength == CHUNK_SIZE || (i < len(resources)-1 && (resources[i+1].SourceUID != resources[i].SourceUID || resources[i+1].EdgeType != resources[i].EdgeType)) {
-			_, err := insertEdge(resources[i], whereClause.String())
+			resp, err := insertEdge(resources[i], whereClause.String())
 			newWhereClause = false
 			if err != nil {
 				// saving JUST the source as the key to the map
 				resourceErrors[resources[i].SourceUID] = err
 			} else {
 				totalAdded += currentLength
+				insertEdgeCount += resp.RelationshipsCreated()
 			}
 			whereClause.Reset()
 			currentLength = 0
@@ -71,12 +70,13 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 
 	if newWhereClause {
 		// commit the last edge string to the db
-		_, err := insertEdge(resources[len(resources)-1], whereClause.String())
+		resp, err := insertEdge(resources[len(resources)-1], whereClause.String())
 		if err != nil {
 			// saving JUST the source as the key to the map
 			resourceErrors[resources[len(resources)-1].SourceUID] = err
 		} else {
 			totalAdded += currentLength
+			insertEdgeCount += resp.RelationshipsCreated()
 		}
 	}
 	glog.V(4).Info("ChunkedInsertEdge: For cluster, ", clusterName, ": Number of edges inserted: ", insertEdgeCount)
@@ -105,11 +105,8 @@ func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	}
 	glog.V(4).Info("Insert query: ", query)
 	resp, err := Store.Query(query)
-	numCreated := 0
 	if err == nil {
-		numCreated = resp.RelationshipsCreated()
+		glog.V(4).Info("Relationships created: ", resp.RelationshipsCreated())
 	}
-	glog.V(4).Info("Relationships created: ", numCreated)
-	insertEdgeCount = insertEdgeCount + numCreated
 	return resp, err
 }

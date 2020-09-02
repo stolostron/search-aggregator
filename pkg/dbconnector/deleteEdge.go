@@ -24,8 +24,8 @@ func chunkedDeleteEdgeHelper(resources []Edge) ChunkedOperationResult {
 	if len(resources) == 0 {
 		return ChunkedOperationResult{} // No errors, and no SuccessfulResources
 	}
-	_, err := DeleteEdge(resources) // We currently ignore encoding errors as they are always recoverable, may change in the future.
-	if IsBadConnection(err) {       // this is false if err is nil
+	resp, err := DeleteEdge(resources) // We currently ignore encoding errors as they are always recoverable, may change in the future.
+	if IsBadConnection(err) {          // this is false if err is nil
 		return ChunkedOperationResult{
 			ConnectionError: err,
 		}
@@ -47,12 +47,14 @@ func chunkedDeleteEdgeHelper(resources []Edge) ChunkedOperationResult {
 			return ChunkedOperationResult{
 				ResourceErrors:      mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
 				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources, // These will be 0 if there were errs in the halves
+				EdgesDeleted:        firstHalf.EdgesDeleted + secondHalf.EdgesDeleted,
 			}
 		}
 	}
 	// All clear, return that we got everything in
 	return ChunkedOperationResult{
 		SuccessfulResources: len(resources),
+		EdgesDeleted:        resp.RelationshipsDeleted(),
 	}
 }
 
@@ -71,6 +73,7 @@ func ChunkedDeleteEdge(resources []Edge, clusterName string) ChunkedOperationRes
 			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is still nil.
 		}
 		totalSuccessful += chunkResult.SuccessfulResources
+		deletedEdgeCount += chunkResult.EdgesDeleted
 	}
 	glog.V(4).Info("ChunkedDeleteEdge: For cluster, ", clusterName, ": Number of edges deleted: ", deletedEdgeCount)
 	return ChunkedOperationResult{
@@ -84,15 +87,11 @@ func ChunkedDeleteEdge(resources []Edge, clusterName string) ChunkedOperationRes
 func DeleteEdge(edges []Edge) (*rg2.QueryResult, error) {
 	query := deleteEdgeQuery(edges) // Encoding errors are recoverable, but we still report them
 	resp, err := Store.Query(query)
-	// glog.Info("Delete edges query: ", query)
-	numDeleted := 0
 	if err == nil {
-		numDeleted = resp.RelationshipsDeleted()
-	}
-	deletedEdgeCount = deletedEdgeCount + numDeleted
-	if len(edges) != numDeleted {
-		glog.V(4).Info("Number of edges received in DeleteEdge ", len(edges), " didn't match RelationshipsDeleted: ", numDeleted)
-		glog.V(4).Info("Delete query: ", query)
+		if len(edges) != resp.RelationshipsDeleted() {
+			glog.V(4).Info("Number of edges received in DeleteEdge ", len(edges), " didn't match RelationshipsDeleted: ", resp.RelationshipsDeleted())
+			glog.V(4).Info("Delete query: ", query)
+		}
 	}
 	return resp, err
 }
