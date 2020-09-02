@@ -13,7 +13,7 @@ var ExistingIndexMap = make(map[string]bool)
 
 // GetIndexes - returns map to hold all resource kinds that have index built in redisgraph
 func GetIndexes() {
-	glog.Info("Fetching indexes")
+	glog.V(4).Info("Fetching indexes")
 	resp, err := Store.Query("MATCH (n) RETURN distinct labels(n)")
 	if err == nil {
 		var ExistingIndexMapMutex = sync.RWMutex{}
@@ -45,9 +45,9 @@ func GetIndexes() {
 
 // Given a resource, inserts index on resource uid into redisgraph.
 func insertIndex(kind, property string) error {
-	glog.Info("Inserting index")
+	glog.V(4).Info("Inserting index")
 	query := SanitizeQuery("CREATE INDEX ON :%s(%s)", kind, property) //CREATE INDEX ON :Pod(_uid)"
 	_, err := Store.Query(query)
-	glog.Info("Insert index query: ", query)
+	glog.V(4).Info("Insert index query: ", query)
 	return err
 }

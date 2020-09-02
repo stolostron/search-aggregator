@@ -57,7 +57,7 @@ func BuildInterClusterEdges() {
 		interval := time.Duration(config.Cfg.EdgeBuildRateMS) * time.Millisecond
 		time.Sleep(interval)
 
-		glog.Info("Building intercluster edges")
+		glog.V(4).Info("Building intercluster edges")
 
 		for _, edgeFunc := range tranforms {
 			// if no updates have been made during the sleep skip edge building
@@ -265,7 +265,7 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 	if elapsed.Nanoseconds() > 100*1000*1000 {
 		glog.Warningf("Intercluster edge deletion and re-creation took %s", elapsed)
 	} else {
-		glog.Infof("Intercluster edge deletion and re-creation took %s", elapsed)
+		glog.V(4).Infof("Intercluster edge deletion and re-creation took %s", elapsed)
 	}
 	return rg2.QueryResult{}, nil
 }

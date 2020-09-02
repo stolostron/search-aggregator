@@ -58,7 +58,7 @@ func chunkedDeleteEdgeHelper(resources []Edge) ChunkedOperationResult {
 
 // Updates the given resources in the graph, does chunking for you and returns errors related to individual edges.
 func ChunkedDeleteEdge(resources []Edge, clusterName string) ChunkedOperationResult {
-	glog.Info("For cluster ", clusterName, ": Number of edges received in ChunkedDeleteEdge: ", len(resources))
+	glog.V(4).Info("For cluster ", clusterName, ": Number of edges received in ChunkedDeleteEdge: ", len(resources))
 	deletedEdgeCount = 0
 	var resourceErrors map[string]error
 	totalSuccessful := 0
@@ -72,7 +72,7 @@ func ChunkedDeleteEdge(resources []Edge, clusterName string) ChunkedOperationRes
 		}
 		totalSuccessful += chunkResult.SuccessfulResources
 	}
-	glog.Info("ChunkedDeleteEdge: For cluster, ", clusterName, ": Number of edges deleted: ", deletedEdgeCount)
+	glog.V(4).Info("ChunkedDeleteEdge: For cluster, ", clusterName, ": Number of edges deleted: ", deletedEdgeCount)
 	return ChunkedOperationResult{
 		ResourceErrors:      resourceErrors,
 		SuccessfulResources: totalSuccessful,
@@ -85,10 +85,14 @@ func DeleteEdge(edges []Edge) (*rg2.QueryResult, error) {
 	query := deleteEdgeQuery(edges) // Encoding errors are recoverable, but we still report them
 	resp, err := Store.Query(query)
 	// glog.Info("Delete edges query: ", query)
-	deletedEdgeCount = deletedEdgeCount + resp.RelationshipsDeleted()
-	if len(edges) != resp.RelationshipsDeleted() {
-		glog.Info("Number of edges received in DeleteEdge", len(edges), " didn't match RelationshipsDeleted: ", resp.RelationshipsDeleted())
-		glog.Info("*** Delete query: ", query)
+	numDeleted := 0
+	if err == nil {
+		numDeleted = resp.RelationshipsDeleted()
+	}
+	deletedEdgeCount = deletedEdgeCount + numDeleted
+	if len(edges) != numDeleted {
+		glog.V(4).Info("Number of edges received in DeleteEdge ", len(edges), " didn't match RelationshipsDeleted: ", numDeleted)
+		glog.V(4).Info("Delete query: ", query)
 	}
 	return resp, err
 }

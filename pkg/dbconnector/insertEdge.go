@@ -79,7 +79,7 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 			totalAdded += currentLength
 		}
 	}
-	glog.Info("ChunkedInsertEdge: For cluster, ", clusterName, ": Number of edges inserted: ", insertEdgeCount)
+	glog.V(4).Info("ChunkedInsertEdge: For cluster, ", clusterName, ": Number of edges inserted: ", insertEdgeCount)
 
 	return ChunkedOperationResult{
 		ResourceErrors:      resourceErrors,
@@ -103,9 +103,13 @@ func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 			query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s) %s CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, whereClause, edge.EdgeType)
 		}
 	}
-	glog.Info("Insert query: ", query)
+	glog.V(4).Info("Insert query: ", query)
 	resp, err := Store.Query(query)
-	glog.Info("relationships created: ", resp.RelationshipsCreated())
-	insertEdgeCount = insertEdgeCount + resp.RelationshipsCreated()
+	numCreated := 0
+	if err == nil {
+		numCreated = resp.RelationshipsCreated()
+	}
+	glog.V(4).Info("Relationships created: ", numCreated)
+	insertEdgeCount = insertEdgeCount + numCreated
 	return resp, err
 }
