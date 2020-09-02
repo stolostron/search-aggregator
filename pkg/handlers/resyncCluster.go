@@ -225,7 +225,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	}
 
 	// DELETE Edges
-	glog.Info("Resync for cluster ", clusterName, ": Number of edges to delete: ", len(edgesToDelete))
+	glog.V(4).Info("Resync for cluster ", clusterName, ": Number of edges to delete: ", len(edgesToDelete))
 	deleteEdgeResponse := db.ChunkedDeleteEdge(edgesToDelete, clusterName)
 	stats.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
 	if deleteEdgeResponse.ConnectionError != nil {
@@ -235,19 +235,19 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	}
 
 	if len(edgesToDelete) != deleteEdgeResponse.EdgesDeleted {
-		glog.Info("Edges to delete: ", edgesToDelete)
-		glog.Info("Edge delete errors: ", len(deleteEdgeResponse.ResourceErrors))
-		glog.Info("Edge delete errors: ", deleteEdgeResponse.ResourceErrors)
+		glog.V(4).Info("Edges to delete: len", len(edgesToDelete))
+		glog.V(4).Info("Edge delete errors: ", len(deleteEdgeResponse.ResourceErrors))
+		glog.V(4).Info("Edge delete errors: ", deleteEdgeResponse.ResourceErrors)
 		currEdgesCount = computeIntraEdges(clusterName)
-		glog.Info("Number of intra edges for cluster ", clusterName, " after deleting edges: ", currEdgesCount)
-		glog.Info("currEdgesCount: ", currEdgesCount, " incoming edges: ", len(edges))
-		glog.Error("Deleted edge count ", deleteEdgeResponse.EdgesDeleted, " didn't match expected number: ", len(edgesToDelete))
+		glog.V(4).Info("Number of intra edges for cluster ", clusterName, " after deleting edges: ", currEdgesCount)
+		glog.V(4).Info("currEdgesCount: ", currEdgesCount, " incoming edges: ", len(edges))
+		glog.V(4).Info("Deleted edge count ", deleteEdgeResponse.EdgesDeleted, " didn't match expected number: ", len(edgesToDelete))
 	}
 
 	// There's no need to UPDATE edges because edges don't have properties yet.
 
 	metrics.EdgeSyncEnd = time.Now()
-	glog.Infof("resyncCluster complete. Done updating resources for cluster %s, preparing response", clusterName)
+	glog.V(4).Infof("resyncCluster complete. Done updating resources for cluster %s, preparing response", clusterName)
 
 	return stats, err
 }

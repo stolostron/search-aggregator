@@ -238,7 +238,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 		// Insert Edges
 		metrics.EdgeSyncStart = time.Now()
-		glog.Info("Sync cluster ", clusterName, ": Number of edges to insert: ", len(syncEvent.AddEdges))
+		glog.V(4).Info("Sync cluster ", clusterName, ": Number of edges to insert: ", len(syncEvent.AddEdges))
 		insertEdgeResponse := db.ChunkedInsertEdge(syncEvent.AddEdges, clusterName)
 		response.TotalEdgesAdded = insertEdgeResponse.SuccessfulResources // could be 0
 		if insertEdgeResponse.ConnectionError != nil {
@@ -251,7 +251,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Delete Edges
-		glog.Info("Sync cluster ", clusterName, ": Number of edges to delete: ", len(syncEvent.DeleteEdges))
+		glog.V(4).Info("Sync cluster ", clusterName, ": Number of edges to delete: ", len(syncEvent.DeleteEdges))
 		deleteEdgeResponse := db.ChunkedDeleteEdge(syncEvent.DeleteEdges, clusterName)
 		response.TotalEdgesDeleted = deleteEdgeResponse.SuccessfulResources // could be 0
 		if deleteEdgeResponse.ConnectionError != nil {
@@ -268,7 +268,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	metrics.SyncEnd = time.Now()
 	metrics.LogPerformanceMetrics(syncEvent)
 
-	glog.Infof("syncResources complete. Done updating resources for cluster %s, preparing response", clusterName)
+	glog.V(2).Infof("syncResources complete. Done updating resources for cluster %s, preparing response", clusterName)
 	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB through a work order, so it can take a second
 	response.TotalEdges = computeIntraEdges(clusterName)
 
