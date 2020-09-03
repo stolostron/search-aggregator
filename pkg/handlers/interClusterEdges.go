@@ -55,7 +55,7 @@ func BuildInterClusterEdges() {
 				glog.V(3).Infof("Skipping %s because nothing has changed", edgeFunc.description)
 				continue
 			}
-			glog.V(3).Infof("Running  %s because changed observed", edgeFunc.description)
+			glog.V(3).Infof("Running  %s because change observed", edgeFunc.description)
 			_, err := edgeFunc.transfrom()
 			if err != nil {
 				glog.Errorf("Error %s : %s", edgeFunc.description, err)
@@ -222,9 +222,11 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 
 					queries := [...]string{query1, query2, query3, query4, query5, query6}
 					for _, query := range queries {
-						_, err = db.Store.Query(query)
+						resp, err := db.Store.Query(query)
 						if err != nil {
 							glog.Errorf("Error %s : %s", query, err) //Logging error so that loop will continue
+						} else {
+							glog.V(4).Info("Number of edges created by query: ", query, " is : ", resp.RelationshipsCreated())
 						}
 					}
 				}

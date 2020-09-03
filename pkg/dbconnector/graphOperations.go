@@ -36,6 +36,8 @@ type ChunkedOperationResult struct {
 	ResourceErrors      map[string]error // errors keyed by UID
 	ConnectionError     error            // For when redis conn is down. If this is set, then ResourceErrors and SuccessfulResources are irrelevant.
 	SuccessfulResources int              // Number that were successfully completed
+	EdgesAdded          int
+	EdgesDeleted        int
 }
 
 // Deletes all resources for given cluster
@@ -63,7 +65,7 @@ func TotalIntraEdges(clusterName string) (*rg2.QueryResult, error) {
 	if err != nil {
 		return &rg2.QueryResult{}, err
 	}
-	query := SanitizeQuery("MATCH (s {cluster:'%s'})-[e]->(d) WHERE (e._interCluster <> true) OR (e._interCluster IS NULL) RETURN count(e)", clusterName)
+	query := SanitizeQuery("MATCH (s {cluster:'%s'})-[e]->(d {cluster:'%s'}) WHERE (e._interCluster <> true) OR (e._interCluster IS NULL) RETURN count(e)", clusterName, clusterName)
 	resp, err := Store.Query(query)
 	return resp, err
 }
