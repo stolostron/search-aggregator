@@ -1,7 +1,7 @@
 # search-aggregator
 Works with [search-collector](https://github.com/open-cluster-management/search-collector) to synchronize kubernetes resources into [RedisGraph](https://oss.redislabs.com/redisgraph/), for use by the search UI. Runs on the hub cluster and receives from the collectors running on each remote cluster.
 
-
+  
 ## Development
 
 1. Start [RedisGraph](https://oss.redislabs.com/redisgraph/)
