@@ -237,16 +237,15 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 					// query6 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})-[]->(n)  WHERE n.kind <> 'application' AND n.kind <> 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
 
 					// queries := [...]string{query1, query2, query3, query4, query5, query6}
-					queries := [...]string{query0}
 
-					for _, query := range queries {
-						resp, err := db.Store.Query(query)
-						if err != nil {
-							glog.Errorf("Error %s : %s", query, err) //Logging error so that loop will continue
-						} else {
-							glog.V(4).Info("Number of edges created by query: ", query, " is : ", resp.RelationshipsCreated())
-						}
+					// for _, query := range queries {
+					resp, err := db.Store.Query(query0)
+					if err != nil {
+						glog.Errorf("Error %s : %s", query, err) //Logging error so that loop will continue
+					} else {
+						glog.V(4).Info("Number of edges created by query: ", query, " is : ", resp.RelationshipsCreated())
 					}
+					// }
 				}
 			}
 		}
