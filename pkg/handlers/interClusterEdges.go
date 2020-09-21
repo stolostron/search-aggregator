@@ -233,7 +233,8 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 					// query4 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})  CREATE (remoteSub)-[:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
 					// // Connect all resources that flow into remoteSub with the hubsub's application
 					// query5 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})<-[]-(n)  CREATE (n)-[r:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
-					// // Connect resources that are connected to remoteSub with the hubsub's application - add check to avoid connecting application to itself
+					// // Connect resources that are connected to remoteSub with the hubsub's application - add check
+					// to avoid connecting application to itself
 					// query6 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})-[]->(n)  WHERE n.kind <> 'application' AND n.kind <> 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
 
 					// queries := [...]string{query1, query2, query3, query4, query5, query6}
