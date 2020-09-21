@@ -229,7 +229,11 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 				}
 			}
 			// remoteSub[1] has the hosting subscription information which is in the format hosting subscription's "namespace+'/'+name"
-			/*if remoteSub[1] != "" {
+			/* NOTE: This logic has been moved to the search-api.  Instead of pre-computing these edges 
+                            here, now we use more complex multi-hop queries to compute these only when needed. This
+                            is more efficient and reduces pressure on RedisGraph.
+                            Keeping this commented code until we validate the new implementation. 
+			if remoteSub[1] != "" {
 				//So, we look up if the hostingSubscription is in the hubSubMap. If it is there, get the UID
 				if hubSubUID, ok := hubSubMap[remoteSub[1]]; ok {
 
