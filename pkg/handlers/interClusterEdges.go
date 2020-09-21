@@ -223,7 +223,7 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 					// Add an edge between remoteSub and hubSub.
 					query0 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}), (remoteSub:Subscription {_uid: '%s'}) CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
 
-					// // Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
+					/*// // Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
 					// query1 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}) MATCH (remoteSub:Subscription {_uid: '%s'})-[]->(n) WHERE n.kind <> 'application' AND n.kind <> 'subscription' CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance, currentAppInstance)
 					// Add edges from hubSub to all resources that flow into remoteSub eg: pods, deployments, services, replicasets etc.
 					// query2 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}) MATCH (remoteSub:Subscription {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
@@ -238,7 +238,7 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 
 					// queries := [...]string{query1, query2, query3, query4, query5, query6}
 
-					// for _, query := range queries {
+					// for _, query := range queries {*/
 					resp, err := db.Store.Query(query0)
 					if err != nil {
 						glog.Errorf("Error %s : %s", query, err) //Logging error so that loop will continue
