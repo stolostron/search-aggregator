@@ -213,42 +213,52 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 			if _, ok := remoteRecord.GetByIndex(1).(string); ok {
 				remoteSub[1] = remoteRecord.GetByIndex(1).(string)
 			}
-			// remoteSub[1] has the hosting subscription information which is in the format hosting subscription's "namespace+'/'+name"
+			var hubSubUID string
+			var ok bool
 			if remoteSub[1] != "" {
+				hubSubUID, ok = hubSubMap[remoteSub[1]]
+			}
+			if ok {
+				// Add an edge between remoteSub and hubSub.
+				query0 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}), (remoteSub:Subscription {_uid: '%s'}) CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
+				resp, err := db.Store.Query(query0)
+				if err != nil {
+					glog.Errorf("Error %s : %s", query, err) //Logging error so that loop will continue
+				} else {
+					glog.V(4).Info("Number of edges created by query: ", query, " is : ", resp.RelationshipsCreated())
+				}
+			}
+			// remoteSub[1] has the hosting subscription information which is in the format hosting subscription's "namespace+'/'+name"
+			/*if remoteSub[1] != "" {
 				//So, we look up if the hostingSubscription is in the hubSubMap. If it is there, get the UID
 				if hubSubUID, ok := hubSubMap[remoteSub[1]]; ok {
 
 					//TODO: For the subscription model, all intercluster edges are named as 'hostedSub {_interCluster: true}'. Change this to relevant names in future
 					//To add edges from hubSub to all resources connected to the remoteSub (bidirectional) - incoming edges and outgoing edges
-					// Add an edge between remoteSub and hubSub.
-					query0 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}), (remoteSub:Subscription {_uid: '%s'}) CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
-
-					/*// // Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
-					// query1 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}) MATCH (remoteSub:Subscription {_uid: '%s'})-[]->(n) WHERE n.kind <> 'application' AND n.kind <> 'subscription' CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance, currentAppInstance)
+					// Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
+					query1 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}) MATCH (remoteSub:Subscription {_uid: '%s'})-[]->(n) WHERE n.kind <> 'application' AND n.kind <> 'subscription' CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance, currentAppInstance)
 					// Add edges from hubSub to all resources that flow into remoteSub eg: pods, deployments, services, replicasets etc.
-					// query2 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}) MATCH (remoteSub:Subscription {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
-					// // Connect all resources that flow into remoteSub with the hubsub's channel
-					// query3 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})-[]->(chan:Channel) MATCH  (remoteSub:Subscription {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(chan)", hubSubUID, remoteSub[0], currentAppInstance)
-					// // Connect the remoteSub with the hubsub's application
-					// query4 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})  CREATE (remoteSub)-[:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
-					// // Connect all resources that flow into remoteSub with the hubsub's application
-					// query5 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})<-[]-(n)  CREATE (n)-[r:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
-					// // Connect resources that are connected to remoteSub with the hubsub's application - add check
-					// to avoid connecting application to itself
-					// query6 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})-[]->(n)  WHERE n.kind <> 'application' AND n.kind <> 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
+					query2 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}) MATCH (remoteSub:Subscription {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
+					// Connect all resources that flow into remoteSub with the hubsub's channel
+					query3 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})-[]->(chan:Channel) MATCH  (remoteSub:Subscription {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(chan)", hubSubUID, remoteSub[0], currentAppInstance)
+					// Connect the remoteSub with the hubsub's application
+					query4 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})  CREATE (remoteSub)-[:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
+					// Connect all resources that flow into remoteSub with the hubsub's application
+					query5 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})<-[]-(n)  CREATE (n)-[r:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
+					// Connect resources that are connected to remoteSub with the hubsub's application - add check to avoid connecting application to itself
+					query6 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})-[]->(n)  WHERE n.kind <> 'application' AND n.kind <> 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
 
-					// queries := [...]string{query1, query2, query3, query4, query5, query6}
-
-					// for _, query := range queries {*/
-					resp, err := db.Store.Query(query0)
-					if err != nil {
-						glog.Errorf("Error %s : %s", query, err) //Logging error so that loop will continue
-					} else {
-						glog.V(4).Info("Number of edges created by query: ", query, " is : ", resp.RelationshipsCreated())
+					queries := [...]string{query1, query2, query3, query4, query5, query6}
+					for _, query := range queries {
+						resp, err := db.Store.Query(query)
+						if err != nil {
+							glog.Errorf("Error %s : %s", query, err) //Logging error so that loop will continue
+						} else {
+							glog.V(4).Info("Number of edges created by query: ", query, " is : ", resp.RelationshipsCreated())
+						}
 					}
-					// }
 				}
-			}
+			}*/
 		}
 		//Delete interclusters with other instance ids after all hub subscriptions are processed
 		deleteOldInstance := db.SanitizeQuery("MATCH ()-[e {_interCluster:true}]->() WHERE (type(e)='hostedSub' OR type(e)='usedBy' OR type(e)='deployedBy') AND e.app_instance<>%d DELETE e", currentAppInstance)
