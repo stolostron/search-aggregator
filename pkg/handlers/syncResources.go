@@ -74,7 +74,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// TODO: The next step is to degrade performance instead of rejecting the request.
 	//       We will give priority to nodes over edges after reaching certain load.
 	//       Will also prioritize small updates over a large resync.
-	if len(PendingRequests) > config.Cfg.RequestLimit && clusterName != "local-cluster" {
+	if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" {
 		glog.Warningf("Too many pending requests (%d). Rejecting sync from cluster %s", len(PendingRequests), clusterName)
 		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
 		return
@@ -274,13 +274,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	respond(http.StatusOK)
 
-	// update the timestamp if we made any changes Kind = Subscription OR Kind = Policy
-	// An Edge which connect from/to a Node (Kind = Subscription) or (Kind = Policy or VulnerabilityPolicy or MutationPolicy)
+	// update the timestamp if we made any changes Kind = Subscription
 
 	// if any Node with kind Subscription Added then subscriptionUpdated
-	// if any Node with kind Policy/VulnerabilityPolicy / MutationPolicy Added then policyUpdated
 	for i := range syncEvent.AddResources {
-		if (!subscriptionUpdated) && (syncEvent.AddResources[i].Properties["kind"] == "Subscription" || syncEvent.AddResources[i].Properties["kind"] == "Application") {
+		if (!subscriptionUpdated) && (syncEvent.AddResources[i].Properties["kind"] == "Subscription") {
 			glog.V(3).Infof("Will trigger Intercluster - Added  Node %s ", syncEvent.AddResources[i].Properties["name"])
 			subscriptionUpdated = true
 			break
@@ -288,26 +286,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	}
 	if !subscriptionUpdated {
 		for i := range syncEvent.UpdateResources {
-			if (!subscriptionUpdated) && (syncEvent.UpdateResources[i].Properties["kind"] == "Subscription" || syncEvent.UpdateResources[i].Properties["kind"] == "Application") {
+			if (!subscriptionUpdated) && (syncEvent.UpdateResources[i].Properties["kind"] == "Subscription") {
 				glog.V(3).Infof("Will trigger Intercluster - Updated  Node %s ", syncEvent.UpdateResources[i].Properties["name"])
-				subscriptionUpdated = true
-				break
-			}
-		}
-	}
-	if !subscriptionUpdated {
-		for i := range syncEvent.AddEdges {
-			if (!subscriptionUpdated) && (subscriptionUIDMap[syncEvent.AddEdges[i].SourceUID] || subscriptionUIDMap[syncEvent.AddEdges[i].DestUID]) {
-				glog.V(3).Infof("Will trigger Intercluster Added Edge %s -> %s ", syncEvent.AddEdges[i].SourceUID, syncEvent.AddEdges[i].DestUID)
-				subscriptionUpdated = true
-				break
-			}
-		}
-	}
-	if !subscriptionUpdated {
-		for i := range syncEvent.DeleteEdges {
-			if (!subscriptionUpdated) && (subscriptionUIDMap[syncEvent.DeleteEdges[i].SourceUID] || subscriptionUIDMap[syncEvent.DeleteEdges[i].DestUID]) {
-				glog.V(3).Infof("Will trigger Intercluster Deleted Edge %s -> %s ", syncEvent.DeleteEdges[i].SourceUID, syncEvent.DeleteEdges[i].DestUID)
 				subscriptionUpdated = true
 				break
 			}

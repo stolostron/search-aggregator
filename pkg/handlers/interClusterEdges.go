@@ -213,7 +213,26 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 			if _, ok := remoteRecord.GetByIndex(1).(string); ok {
 				remoteSub[1] = remoteRecord.GetByIndex(1).(string)
 			}
+			var hubSubUID string
+			var ok bool
+			if remoteSub[1] != "" {
+				hubSubUID, ok = hubSubMap[remoteSub[1]]
+			}
+			if ok {
+				// Add an edge between remoteSub and hubSub.
+				query0 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}), (remoteSub:Subscription {_uid: '%s'}) CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
+				resp, err := db.Store.Query(query0)
+				if err != nil {
+					glog.Errorf("Error %s : %s", query, err) //Logging error so that loop will continue
+				} else {
+					glog.V(4).Info("Number of edges created by query: ", query, " is : ", resp.RelationshipsCreated())
+				}
+			}
 			// remoteSub[1] has the hosting subscription information which is in the format hosting subscription's "namespace+'/'+name"
+			/* NOTE: This logic has been moved to the search-api.  Instead of pre-computing these edges 
+                            here, now we use more complex multi-hop queries to compute these only when needed. This
+                            is more efficient and reduces pressure on RedisGraph.
+                            Keeping this commented code until we validate the new implementation. 
 			if remoteSub[1] != "" {
 				//So, we look up if the hostingSubscription is in the hubSubMap. If it is there, get the UID
 				if hubSubUID, ok := hubSubMap[remoteSub[1]]; ok {
@@ -243,7 +262,7 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 						}
 					}
 				}
-			}
+			}*/
 		}
 		//Delete interclusters with other instance ids after all hub subscriptions are processed
 		deleteOldInstance := db.SanitizeQuery("MATCH ()-[e {_interCluster:true}]->() WHERE (type(e)='hostedSub' OR type(e)='usedBy' OR type(e)='deployedBy') AND e.app_instance<>%d DELETE e", currentAppInstance)
