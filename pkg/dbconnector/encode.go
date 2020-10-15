@@ -17,7 +17,6 @@ import (
 	"strings"
 )
 
-
 // Tells whether the given clusterName is valid, i.e. has no illegal characters and isn't empty
 func ValidateClusterName(clusterName string) error {
 	if len(clusterName) == 0 {
@@ -53,7 +52,7 @@ func (r Resource) EncodeProperties() (map[string]interface{}, error) {
 }
 
 // Outputs all the redisgraph properties that come out of a given property on a resource.
-// Outputs exclusively in our supported types: string, []string, map[string]string, and int64.
+// Outputs exclusively in our supported types: string, []string, map[string]string, and int64 and []interface.
 func encodeProperty(key string, value interface{}) (map[string]interface{}, error) {
 
 	// Sanitize key
@@ -79,15 +78,17 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 		}
 
 	case []interface{}:
-		// RedisGraph 1.0.15 doesn't support a list of properties. As a workaround to this limitation
-		// we are encoding a list of values in a single string.
+		// RedisGraph 2 supports a list of properties.
+		// we are encoding a list of values as individually quoted strings
 		elementStrings := make([]string, 0, len(typedVal))
 		for _, e := range typedVal {
-			elementString := fmt.Sprintf("%v", e)
+			elementString := fmt.Sprintf("'%v'", sanitizeValue(fmt.Sprintf("%v", e)))
 			elementStrings = append(elementStrings, elementString)
 		}
-		sort.Strings(elementStrings)                                 // Sotring to make comparisons more predictable
-		res[key] = sanitizeValue(strings.Join(elementStrings, ", ")) // e.g. val1, val2, val3
+		sanitizedStr := strings.Join(elementStrings, ", ") // e.g. 'val1', 'val2', 'val3'
+		tmpInterface := make([]interface{}, 1)             //store the value as list to allow partial matching
+		tmpInterface[0] = sanitizedStr
+		res[key] = tmpInterface
 
 	case map[string]interface{}:
 		// RedisGraph 1.0.15 doesn't support a list of properties. As a workaround to this limitation

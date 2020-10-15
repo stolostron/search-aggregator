@@ -11,6 +11,7 @@ package handlers
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -82,11 +83,18 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 				resourcesToUpdate = append(resourcesToUpdate, newResource)
 			} else {
 				for key, value := range newEncodedProperties {
-					// Need to compare everything as strings because that's what we get from RedisGraph.
-					stringValue := valueToString(value)
-					existingProperty := valueToString(existingResource.Properties[key])
-
-					if existingProperty != stringValue {
+					var isInterface bool
+					var existingProperty, stringValue string
+					_, interfaceTypeTrue := value.([]interface{})
+					existingInterface, existingInterfaceTypeTrue := existingResource.Properties[key].([]interface{})
+					if interfaceTypeTrue && existingInterfaceTypeTrue {
+						isInterface = true
+					} else {
+						// Need to compare everything other than interfaces as strings because that's what we get from RedisGraph.
+						stringValue = valueToString(value)
+						existingProperty = valueToString(existingResource.Properties[key])
+					}
+					if (isInterface && !reflect.DeepEqual(newResource.Properties[key], existingInterface)) || existingProperty != stringValue {
 						resourcesToUpdate = append(resourcesToUpdate, newResource)
 						break
 					}
