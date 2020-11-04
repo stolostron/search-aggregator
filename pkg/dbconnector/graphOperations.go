@@ -75,7 +75,7 @@ func MergeDummyCluster(name string) (*rg2.QueryResult, error) {
 	kubeVersion := ""
 	discoveryClient, err := config.GetDiscoveryClient()
 
-	if err != nil && discoveryClient != nil {
+	if err == nil && discoveryClient != nil {
 		clusterClientServerVersion, ver := discoveryClient.ServerVersion()
 		if ver != nil {
 			glog.Error("clusterClientServerVersion not found")
