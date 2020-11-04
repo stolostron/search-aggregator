@@ -73,10 +73,10 @@ func TotalIntraEdges(clusterName string) (*rg2.QueryResult, error) {
 
 func MergeDummyCluster(name string) (*rg2.QueryResult, error) {
 	kubeVersion := ""
-	hubClientConfig, err := config.InitClient()
+	discoveryClient, err := config.GetDiscoveryClient()
 
-	if err != nil && hubClientConfig != nil {
-		clusterClientServerVersion, ver := hubClientConfig.ServerVersion()
+	if err != nil && discoveryClient != nil {
+		clusterClientServerVersion, ver := discoveryClient.ServerVersion()
 		if ver != nil {
 			glog.Error("clusterClientServerVersion not found")
 		} else {

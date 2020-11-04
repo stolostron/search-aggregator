@@ -11,6 +11,7 @@ package config
 import (
 	"github.com/golang/glog"
 
+	"k8s.io/client-go/discovery"
 	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -21,6 +22,22 @@ var KubeClient *kubeClientset.Clientset
 
 //InitClient - Initialize all clientsets
 func InitClient() (*rest.Config, error) {
+
+	// Initialize the kube client.
+	kubeClient, err := kubeClientset.NewForConfig(getClientConfig())
+	if err != nil {
+		glog.Error("Cannot Construct kube Client From Config: ", err)
+	}
+	KubeClient = kubeClient
+
+	return getClientConfig(), err
+}
+
+func GetDiscoveryClient() (*discovery.DiscoveryClient, error) {
+	return discovery.NewDiscoveryClientForConfig(getClientConfig())
+}
+
+func getClientConfig() *rest.Config {
 	var clientConfig *rest.Config
 	var err error
 	if Cfg.KubeConfig != "" {
@@ -33,13 +50,5 @@ func InitClient() (*rest.Config, error) {
 	if err != nil {
 		glog.Fatal("Error Constructing Client From Config: ", err)
 	}
-
-	// Initialize the kube client.
-	kubeClient, err := kubeClientset.NewForConfig(clientConfig)
-	if err != nil {
-		glog.Error("Cannot Construct kube Client From Config: ", err)
-	}
-	KubeClient = kubeClient
-
-	return clientConfig, err
+	return clientConfig
 }
