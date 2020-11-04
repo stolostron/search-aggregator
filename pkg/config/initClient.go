@@ -26,7 +26,7 @@ func InitClient() (*rest.Config, error) {
 	// Initialize the kube client.
 	kubeClient, err := kubeClientset.NewForConfig(getClientConfig())
 	if err != nil {
-		glog.Error("Cannot Construct kube Client From Config: ", err)
+		glog.Error("Cannot get a kube client from config. ", err)
 	}
 	KubeClient = kubeClient
 
@@ -44,11 +44,10 @@ func getClientConfig() *rest.Config {
 		glog.Infof("Creating k8s client using path: %s", Cfg.KubeConfig)
 		clientConfig, err = clientcmd.BuildConfigFromFlags("", Cfg.KubeConfig)
 	} else {
-		glog.Info("Creating k8s client using InClusterConfig()")
 		clientConfig, err = rest.InClusterConfig()
 	}
 	if err != nil {
-		glog.Fatal("Error Constructing Client From Config: ", err)
+		glog.Fatal("Error getting the kube client config. ", err)
 	}
 	return clientConfig
 }
