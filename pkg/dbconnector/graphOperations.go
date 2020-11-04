@@ -11,6 +11,7 @@ package dbconnector
 
 import (
 	"github.com/golang/glog"
+	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
@@ -72,18 +73,18 @@ func TotalIntraEdges(clusterName string) (*rg2.QueryResult, error) {
 
 func MergeDummyCluster(name string) (*rg2.QueryResult, error) {
 	kubeVersion := ""
-	// TODO: Get this from new ManagedClusterInfo
-	//
-	// if config.ClusterClient != nil {
-	// 	clusterClientServerVersion, verr := config.ClusterClient.ServerVersion()
-	// 	if verr != nil {
-	// 		glog.Error("clusterClientServerVersion not found")
-	// 	} else {
-	// 		kubeVersion = clusterClientServerVersion.String()
-	// 	}
-	// } else {
-	// 	glog.Error("ClusterClient not initialized")
-	// }
+	hubClientConfig, err := config.InitClient()
+
+	if err != nil && hubClientConfig != nil {
+		clusterClientServerVersion, ver := hubClientConfig.ServerVersion()
+		if ver != nil {
+			glog.Error("clusterClientServerVersion not found")
+		} else {
+			kubeVersion = clusterClientServerVersion.String()
+		}
+	} else {
+		glog.Error("Error initializing client to get kubernetes version.")
+	}
 	query := SanitizeQuery("MERGE (c:Cluster {name: '%s', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", name, kubeVersion)
 	return Store.Query(query)
 }
