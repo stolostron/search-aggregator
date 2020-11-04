@@ -83,7 +83,7 @@ func MergeDummyCluster(name string) (*rg2.QueryResult, error) {
 			kubeVersion = clusterClientServerVersion.String()
 		}
 	} else {
-		glog.Error("Error initializing client to get kubernetes version.")
+		glog.Error("Error initializing client to get kubernetes version.", err)
 	}
 	query := SanitizeQuery("MERGE (c:Cluster {name: '%s', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", name, kubeVersion)
 	return Store.Query(query)
