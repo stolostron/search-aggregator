@@ -76,15 +76,14 @@ func MergeDummyCluster(name string) (*rg2.QueryResult, error) {
 	discoveryClient := config.GetDiscoveryClient()
 
 	if discoveryClient != nil {
-		clusterClientServerVersion, ver := discoveryClient.ServerVersion()
-		if ver != nil {
-			glog.Error("clusterClientServerVersion not found")
+		clusterClientServerVersion, err := discoveryClient.ServerVersion()
+		if err != nil {
+			glog.Error("Error getting hub kubernetes version. clusterClientServerVersion was not found.")
 		} else {
 			kubeVersion = clusterClientServerVersion.String()
 		}
-	} else {
-		glog.Error("Error getting hub kubernetes version.")
 	}
+
 	query := SanitizeQuery("MERGE (c:Cluster {name: '%s', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", name, kubeVersion)
 	return Store.Query(query)
 }
