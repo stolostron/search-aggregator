@@ -54,7 +54,6 @@ func getClientConfig() *rest.Config {
 		glog.Infof("Creating k8s client using path: %s", Cfg.KubeConfig)
 		clientConfig, err = clientcmd.BuildConfigFromFlags("", Cfg.KubeConfig)
 	} else {
-		glog.Info("Creating k8s client using InClusterConfig()")
 		clientConfig, err = rest.InClusterConfig()
 	}
 	if err != nil {
