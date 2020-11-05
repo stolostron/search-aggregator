@@ -2,9 +2,11 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
+
+Copyright (c) 2020 Red Hat, Inc.
 */
-// Copyright (c) 2020 Red Hat, Inc.
 
 package config
 
@@ -12,29 +14,37 @@ import (
 	"github.com/golang/glog"
 
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-//KubeClient - Client to get jobs resource
-var KubeClient *kubeClientset.Clientset
-
-//InitClient - Initialize all clientsets
-func InitClient() (*rest.Config, error) {
-
-	// Initialize the kube client.
+// KubeClient - Client to get jobs resource
+func GetKubeClient() *kubeClientset.Clientset {
 	kubeClient, err := kubeClientset.NewForConfig(getClientConfig())
 	if err != nil {
-		glog.Error("Cannot get a kube client from config. ", err)
+		glog.Error("Error getting a kube clientset. ", err)
 	}
-	KubeClient = kubeClient
-
-	return getClientConfig(), err
+	return kubeClient
 }
 
-func GetDiscoveryClient() (*discovery.DiscoveryClient, error) {
-	return discovery.NewDiscoveryClientForConfig(getClientConfig())
+// Dynamic Client
+func GetDynamicClient() dynamic.Interface {
+	dynamicClientset, err := dynamic.NewForConfig(getClientConfig())
+	if err != nil {
+		glog.Error("Error getting a dynamic client. ", err)
+	}
+	return dynamicClientset
+}
+
+// Discovery Client
+func GetDiscoveryClient() *discovery.DiscoveryClient {
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(getClientConfig())
+	if err != nil {
+		glog.Error("Error getting a discovery client. ", err)
+	}
+	return discoveryClient
 }
 
 func getClientConfig() *rest.Config {
