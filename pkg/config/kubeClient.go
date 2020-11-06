@@ -23,28 +23,29 @@ import (
 // KubeClient - Client to get jobs resource
 func GetKubeClient() *kubeClientset.Clientset {
 	kubeClient, err := kubeClientset.NewForConfig(getClientConfig())
-	if err != nil {
+	// fmt.Println("Got Kube client", kubeClient)
+	if kubeClient == nil || err != nil {
 		glog.Error("Error getting a kube clientset. ", err)
 	}
 	return kubeClient
-}
-
-// Dynamic Client
-func GetDynamicClient() dynamic.Interface {
-	dynamicClientset, err := dynamic.NewForConfig(getClientConfig())
-	if err != nil {
-		glog.Error("Error getting a dynamic client. ", err)
-	}
-	return dynamicClientset
 }
 
 // Discovery Client
 func GetDiscoveryClient() *discovery.DiscoveryClient {
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(getClientConfig())
 	if err != nil {
-		glog.Error("Error getting a discovery client. ", err)
+		glog.Warning("Error getting a discovery client. ", err)
 	}
 	return discoveryClient
+}
+
+// Dynamic Client
+func GetDynamicClient() dynamic.Interface {
+	dynamicClientset, err := dynamic.NewForConfig(getClientConfig())
+	if err != nil {
+		glog.Warning("Error getting a dynamic client. ", err)
+	}
+	return dynamicClientset
 }
 
 func getClientConfig() *rest.Config {
@@ -57,7 +58,9 @@ func getClientConfig() *rest.Config {
 		clientConfig, err = rest.InClusterConfig()
 	}
 	if err != nil {
-		glog.Fatal("Error getting the kube client config. ", err)
+		glog.Warning("Error getting the kube client config. ", err)
+		return &rest.Config{}
 	}
+	glog.Info(">>> clientConfig", clientConfig)
 	return clientConfig
 }
