@@ -23,7 +23,6 @@ import (
 // KubeClient - Client to get jobs resource
 func GetKubeClient() *kubeClientset.Clientset {
 	kubeClient, err := kubeClientset.NewForConfig(getClientConfig())
-	// fmt.Println("Got Kube client", kubeClient)
 	if kubeClient == nil || err != nil {
 		glog.Error("Error getting a kube clientset. ", err)
 	}
@@ -61,6 +60,5 @@ func getClientConfig() *rest.Config {
 		glog.Warning("Error getting the kube client config. ", err)
 		return &rest.Config{}
 	}
-	glog.Info(">>> clientConfig", clientConfig)
 	return clientConfig
 }
