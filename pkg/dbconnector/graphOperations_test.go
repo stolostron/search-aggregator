@@ -36,3 +36,8 @@ func TestBadDeleteCluster(t *testing.T) {
 	_, err := DeleteCluster("bad-cluster=name")
 	assert.Error(t, err)
 }
+
+func TestMergeDummyCluster(t *testing.T) {
+	_, err := MergeDummyCluster("fake-cluster")
+	assert.Error(t, err)
+}
