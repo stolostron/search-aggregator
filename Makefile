@@ -34,7 +34,7 @@ build-linux:
 .PHONY: lint
 lint:
 	# Flag GOGC=25 needed to run garbage collection more often and avoid out of memory issue.
-	GOGC=50 golangci-lint run --timeout=3m
+	GOGC=25 golangci-lint run --timeout=3m
 
 run:
 	go run main.go
