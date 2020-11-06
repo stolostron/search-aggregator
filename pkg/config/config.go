@@ -83,7 +83,7 @@ func setDefault(field *string, env, defaultVal string) {
 		}
 		*field = val
 	} else if *field == "" && defaultVal != "" {
-		// Skip logging when running tests to avoid polluting output.
+		// Skip logging when running tests to reduce confusing output.
 		if !strings.HasSuffix(os.Args[0], ".test") {
 			glog.Infof("%s not set, using default value: %s", env, defaultVal)
 		}
@@ -100,7 +100,7 @@ func setDefaultInt(field *int, env string, defaultVal int) {
 			glog.Error("Error parsing env [", env, "].  Expected an integer.  Original error: ", err)
 		}
 	} else if *field == 0 && defaultVal != 0 {
-		// Skip logging when running tests to avoid polluting output.
+		// Skip logging when running tests to reduce confusing output.
 		if !strings.HasSuffix(os.Args[0], ".test") {
 			glog.Infof("No %s from file or environment, using default value: %d", env, defaultVal)
 		}
