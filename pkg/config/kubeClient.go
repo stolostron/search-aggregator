@@ -24,7 +24,7 @@ import (
 func GetKubeClient() *kubeClientset.Clientset {
 	kubeClient, err := kubeClientset.NewForConfig(getClientConfig())
 	if kubeClient == nil || err != nil {
-		glog.Error("Error getting a kube clientset. ", err)
+		glog.Error("Error getting the kube clientset. ", err)
 	}
 	return kubeClient
 }
@@ -33,7 +33,7 @@ func GetKubeClient() *kubeClientset.Clientset {
 func GetDiscoveryClient() *discovery.DiscoveryClient {
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(getClientConfig())
 	if err != nil {
-		glog.Warning("Error getting a discovery client. ", err)
+		glog.Warning("Error getting the discovery client. ", err)
 	}
 	return discoveryClient
 }
@@ -42,7 +42,7 @@ func GetDiscoveryClient() *discovery.DiscoveryClient {
 func GetDynamicClient() dynamic.Interface {
 	dynamicClientset, err := dynamic.NewForConfig(getClientConfig())
 	if err != nil {
-		glog.Warning("Error getting a dynamic client. ", err)
+		glog.Warning("Error getting the dynamic client. ", err)
 	}
 	return dynamicClientset
 }
@@ -51,7 +51,7 @@ func getClientConfig() *rest.Config {
 	var clientConfig *rest.Config
 	var err error
 	if Cfg.KubeConfig != "" {
-		glog.Infof("Creating k8s client using path: %s", Cfg.KubeConfig)
+		glog.V(1).Infof("Creating k8s client using path: %s", Cfg.KubeConfig)
 		clientConfig, err = clientcmd.BuildConfigFromFlags("", Cfg.KubeConfig)
 	} else {
 		clientConfig, err = rest.InClusterConfig()
