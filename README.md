@@ -29,7 +29,7 @@ Works with [search-collector](https://github.com/open-cluster-management/search-
     **Response:**
     - Timestamp of last update.
     - Total number of resources in the cluster.
-    - Total number of intra edges in the cluster
+    - Total number of intra edges in the cluster.
     - MaxQueueTime - used to tell collectors how often to send updates.
 
 3. POST https://localhost:3010/aggregator/clusters/[clustername]/sync
