@@ -2,7 +2,10 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
+
+Copyright (c) 2020 Red Hat, Inc.
 */
 
 package config
@@ -11,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/golang/glog"
 )
@@ -79,12 +83,14 @@ func setDefault(field *string, env, defaultVal string) {
 		}
 		*field = val
 	} else if *field == "" && defaultVal != "" {
-		glog.Infof("%s not set, using default value: %s", env, defaultVal)
+		// Skip logging when running tests to reduce confusing output.
+		if !strings.HasSuffix(os.Args[0], ".test") {
+			glog.Infof("%s not set, using default value: %s", env, defaultVal)
+		}
 		*field = defaultVal
 	}
 }
 
-// TODO: Combine with function above.
 func setDefaultInt(field *int, env string, defaultVal int) {
 	if val := os.Getenv(env); val != "" {
 		glog.Infof("Using %s from environment: %s", env, val)
@@ -94,7 +100,10 @@ func setDefaultInt(field *int, env string, defaultVal int) {
 			glog.Error("Error parsing env [", env, "].  Expected an integer.  Original error: ", err)
 		}
 	} else if *field == 0 && defaultVal != 0 {
-		glog.Infof("No %s from file or environment, using default value: %d", env, defaultVal)
+		// Skip logging when running tests to reduce confusing output.
+		if !strings.HasSuffix(os.Args[0], ".test") {
+			glog.Infof("No %s from file or environment, using default value: %d", env, defaultVal)
+		}
 		*field = defaultVal
 	}
 }

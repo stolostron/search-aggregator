@@ -20,9 +20,7 @@ import (
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
-	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
 	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
@@ -35,16 +33,8 @@ import (
 func WatchClusters() {
 	glog.Info("Begin ClusterWatch routine")
 
-	// Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources.
-	hubClientConfig, err := config.InitClient()
-	if err != nil {
-		glog.Info("Unable to create ClusterWatch clientset ", err)
-	}
-	dynamicClientset, err := dynamic.NewForConfig(hubClientConfig)
-	if err != nil {
-		glog.Warning("cannot construct dynamic client for cluster watch from config: ", err)
-	}
-	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 60*time.Second)
+	dynamicClient := config.GetDynamicClient()
+	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClient, 60*time.Second)
 
 	// Create GVR for ManagedCluster and ManagedClusterInfo
 	managedClusterGvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
@@ -57,10 +47,10 @@ func WatchClusters() {
 	// Create handlers for events
 	handlers := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			processClusterUpsert(obj, config.KubeClient)
+			processClusterUpsert(obj)
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
-			processClusterUpsert(next, config.KubeClient)
+			processClusterUpsert(next)
 		},
 		DeleteFunc: func(obj interface{}) {
 			processClusterDelete(obj)
@@ -82,7 +72,7 @@ func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInforme
 	informerRunning := false
 
 	for {
-		_, err := config.KubeClient.ServerResourcesForGroupVersion(groupVersion)
+		_, err := config.GetKubeClient().ServerResourcesForGroupVersion(groupVersion)
 		// we fail to fetch for some reason other than not found
 		if err != nil && !isClusterMissing(err) {
 			glog.Errorf("Cannot fetch resource list for %s, error message: %s ", groupVersion, err)
@@ -104,7 +94,7 @@ func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInforme
 
 var mux sync.Mutex
 
-func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) {
+func processClusterUpsert(obj interface{}) {
 	// Lock so only one goroutine at a time can access add a cluster.
 	// Helps to eliminate duplicate entries.
 	mux.Lock()

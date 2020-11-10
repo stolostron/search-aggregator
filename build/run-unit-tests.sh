@@ -5,8 +5,8 @@ set -e
 export DOCKER_IMAGE_AND_TAG=${1}
 
 make deps
-make lint
 make test
 make coverage
+make lint
 
 exit 0
