@@ -29,8 +29,7 @@ import (
 func main() {
 	// parse flags
 	flag.Parse()
-	// Glog is weird in that by default it logs to a file.
-	// Change it so that by default it all goes to stderr. (no option for stdout).
+	// Glog is weird in that by default it logs to a file. Change it so that by default it all goes to stderr. (no option for stdout).
 	err := flag.Lookup("logtostderr").Value.Set("true")
 	if err != nil {
 		fmt.Println("Error setting default flag:", err) // Uses fmt.Println in case something is wrong with glog args
