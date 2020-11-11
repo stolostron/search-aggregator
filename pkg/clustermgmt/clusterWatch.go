@@ -168,6 +168,7 @@ func isClusterMissing(err error) bool {
 
 // Transform ManagedCluster object into db.Resource suitable for insert into redis
 func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resource {
+	// This function is getting tested.
 	// https://github.com/open-cluster-management/api/blob/master/cluster/v1/types.go#L78
 	// We use ManagedCluster as the primary source of information
 	// Properties duplicated between this and ManagedClusterInfo are taken from ManagedCluster
