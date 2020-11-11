@@ -160,6 +160,8 @@ func processClusterUpsert(obj interface{}) {
 
 func isClusterMissing(err error) bool {
 	// This function is not getting tested.
+	// Comment line 2
+	// Comment line 3
 	if err == nil {
 		return false
 	}
