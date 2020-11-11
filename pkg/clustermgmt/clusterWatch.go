@@ -195,6 +195,10 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 	props["memory"] = memCapacity.String()
 	props["kubernetesVersion"] = managedCluster.Status.Version.Kubernetes
 
+	for _, condition := range managedCluster.Status.Conditions {
+		props[condition.Type] = string(condition.Status)
+	}
+
 	resource := db.Resource{
 		Kind:           "Cluster",
 		UID:            string("cluster__" + managedCluster.GetName()),
@@ -207,7 +211,8 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 
 // Transform ManagedClusterInfo object into db.Resource suitable for insert into redis
 func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClusterInfo) db.Resource {
-	// https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/cluster/v1beta1/clusterinfo_types.go#L24
+	// https://github.com/open-cluster-management/multicloud-operators-foundation/
+	//    blob/master/pkg/apis/internal.open-cluster-management.io/v1beta1/clusterinfo_types.go
 	props := make(map[string]interface{})
 
 	props["kind"] = "Cluster"
@@ -215,11 +220,8 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 	props["_clusterNamespace"] = managedClusterInfo.GetNamespace() // Needed for rbac mapping.
 	props["apigroup"] = "internal.open-cluster-management.io"      // Maps rbac to ManagedClusterInfo
 
-	props["nodes"] = int64(len(managedClusterInfo.Status.NodeList))
-	for _, condition := range managedClusterInfo.Status.Conditions {
-		props[condition.Type] = string(condition.Status)
-	}
 	props["consoleURL"] = managedClusterInfo.Status.ConsoleURL
+	props["nodes"] = int64(len(managedClusterInfo.Status.NodeList))
 
 	resource := db.Resource{
 		Kind:           "Cluster",
