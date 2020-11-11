@@ -3,17 +3,33 @@
 package clustermgmt
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"testing"
 
+	sanitize "github.com/kennygrant/sanitize"
 	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
-	utils "github.com/open-cluster-management/search-aggregator/pkg/utils"
 	"github.com/stretchr/testify/assert"
 )
 
+func unmarshalFile(filepath string, resourceType interface{}, t *testing.T) {
+	// open given filepath string
+	rawBytes, err := ioutil.ReadFile("../../test-data/" + sanitize.Name(filepath))
+	if err != nil {
+		t.Fatal("Unable to read test data", err)
+	}
+
+	// unmarshal file into given resource type
+	err = json.Unmarshal(rawBytes, resourceType)
+	if err != nil {
+		t.Fatalf("Unable to unmarshal json to type %T %s", resourceType, err)
+	}
+}
+
 func Test_transformManagedCluster(t *testing.T) {
 	managedCluster := clusterv1.ManagedCluster{}
-	utils.UnmarshalFile("managedCluster.json", &managedCluster, t)
+	unmarshalFile("managedCluster.json", &managedCluster, t)
 
 	result := transformManagedCluster(&managedCluster)
 
@@ -36,7 +52,7 @@ func Test_transformManagedCluster(t *testing.T) {
 
 func Test_transformManagedClusterInfo(t *testing.T) {
 	managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
-	utils.UnmarshalFile("managedClusterInfo.json", &managedClusterInfo, t)
+	unmarshalFile("managedClusterInfo.json", &managedClusterInfo, t)
 
 	result := transformManagedClusterInfo(&managedClusterInfo)
 
