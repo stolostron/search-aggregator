@@ -1,0 +1,278 @@
+{
+  "apiVersion": "internal.open-cluster-management.io/v1beta1",
+  "kind": "ManagedClusterInfo",
+  "metadata": {
+      "creationTimestamp": "2020-11-10T22:46:09Z",
+      "generation": 1,
+      "labels": {
+          "cloud": "Amazon",
+          "clusterID": "96016d6b-820a-45bc-b04b-95e511781163",
+          "name": "managed-cluster-01",
+          "vendor": "OpenShift"
+      },
+      "managedFields": [
+          {
+              "apiVersion": "internal.open-cluster-management.io/v1beta1",
+              "fieldsType": "FieldsV1",
+              "fieldsV1": {
+                  "f:metadata": {
+                      "f:labels": {
+                          ".": {},
+                          "f:cloud": {},
+                          "f:clusterID": {},
+                          "f:name": {},
+                          "f:vendor": {}
+                      }
+                  },
+                  "f:spec": {
+                      ".": {},
+                      "f:loggingCA": {}
+                  },
+                  "f:status": {
+                      ".": {},
+                      "f:distributionInfo": {
+                          ".": {},
+                          "f:ocp": {}
+                      },
+                      "f:loggingEndpoint": {
+                          ".": {},
+                          "f:ip": {}
+                      },
+                      "f:loggingPort": {
+                          ".": {},
+                          "f:port": {}
+                      }
+                  }
+              },
+              "manager": "controller",
+              "operation": "Update",
+              "time": "2020-11-10T22:49:54Z"
+          },
+          {
+              "apiVersion": "internal.open-cluster-management.io/v1beta1",
+              "fieldsType": "FieldsV1",
+              "fieldsV1": {
+                  "f:status": {
+                      "f:cloudVendor": {},
+                      "f:clusterID": {},
+                      "f:conditions": {},
+                      "f:consoleURL": {},
+                      "f:distributionInfo": {
+                          "f:ocp": {
+                              "f:availableUpdates": {},
+                              "f:desiredVersion": {},
+                              "f:version": {}
+                          },
+                          "f:type": {}
+                      },
+                      "f:kubeVendor": {},
+                      "f:loggingEndpoint": {
+                          "f:hostname": {}
+                      },
+                      "f:loggingPort": {
+                          "f:name": {},
+                          "f:protocol": {}
+                      },
+                      "f:nodeList": {},
+                      "f:version": {}
+                  }
+              },
+              "manager": "agent",
+              "operation": "Update",
+              "time": "2020-11-11T02:19:43Z"
+          }
+      ],
+      "name": "managed-cluster-01",
+      "namespace": "managed-cluster-01",
+      "resourceVersion": "264819",
+      "selfLink": "/apis/internal.open-cluster-management.io/v1beta1/namespaces/managed-cluster-01/managedclusterinfos/managed-cluster-01",
+      "uid": "02607b8a-eb68-4b96-9c21-6340b3b7536c"
+  },
+  "spec": {
+      "loggingCA": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURGakNDQWY2Z0F3SUJBZ0lRSS9Yc0g3Y3Q3bHY0MDFtTWtPejMvREFOQmdrcWhraUc5dzBCQVFzRkFEQWwKTVNNd0lRWURWUVFERXhwdGRXeDBhV05zZFhOMFpYSm9kV0l0YTJ4MWMzUmxjbXhsZERBZUZ3MHlNREV4TVRBeQpNVE01TVROYUZ3MHlNVEV4TVRBeU1UTTVNVE5hTUNVeEl6QWhCZ05WQkFNVEdtMTFiSFJwWTJ4MWMzUmxjbWgxCllpMXJiSFZ6ZEdWeWJHVjBNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQTJXRzgKeVZURysrZ2VUOXhBRWc5QlRDN3lKS3E2UlFIV0Vtd0dRRzdtT1g4MlZHVTBBWVZJNldqYllZSE13TVNMb0dHdgpXME5oTEN2SzFOL3RjeWExV0ZETVhvNmkyOWhJelhMTzkvVDFuR3NOWUhjcjRrS0I5OXh3YTNVYjVRcEs2STBMCkY1RkpkUHV1UUtQOGE0eXdwdVJTWU9pQVpYMEdXMnQwUzVvNlpoOUd3YWw4Wll2QVRKT0lsZWxkSERISjh6bVcKd01XMVVDbC94Y1lrT3lOT2paems2b2VONjNud2ttOHRKZmVUOVM3MFF5WUdoNzByYnJmeHR4OGFxenBPdnN2dgpaNy92Smc3by84RHZ0UGNDS0NZSDFmYWZMYTU0Q1cwL0tUR1NpMDgzQWsvaUZLbFBCeXhMTk9tZXVaazJ1Z2wvCm9MdkoyUzZlWHk1NnJzUXpMUUlEQVFBQm8wSXdRREFPQmdOVkhROEJBZjhFQkFNQ0FxUXdIUVlEVlIwbEJCWXcKRkFZSUt3WUJCUVVIQXdFR0NDc0dBUVVGQndNQ01BOEdBMVVkRXdFQi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTgpBUUVMQlFBRGdnRUJBQ2dXVHFseE1QMmpoSUltbGZFSTdJY0hJbHJFeUVtaEJkVDR4MDJZaktic09nK2ZlM0hhCnNsbFBXUTBqckFsMFZtakdId0JOWElSMERaZXVQZ3RvSzhWWmlkRTNrZk5zcGtZSjE5aVl3d1dxOUVQU1daZEIKS2pQUFFja3dJR0xDVW53YU1wcEZpN3RXT1o4MllTUjJhVDlCQmxlMTNCaUVYYWNQQ1dha3hTdERBMEJwKzZENApOb21QQ28ydERHaDlkdGJOQUVVQW12ZE5zcVRWek5DY1czMmdTNmxvT1lGZmU3eEhNK0hNVUNNTWJRVWRMQStNCmhoazdOeExMQkRyV3ozQ3hFZ3BFQld1THZxZmdqVkMzdUJVOVc0K0JjWFVVaVJ0M3pMcnJFUHlsRGVPOGJZa0EKQmdEV05RN1FkVUs1a1QrTWlJWHFWQndaMGFSOC9ZRHkyWmM9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+  },
+  "status": {
+      "cloudVendor": "Amazon",
+      "clusterID": "96016d6b-820a-45bc-b04b-95e511781163",
+      "conditions": [
+          {
+              "lastTransitionTime": "2020-11-10T22:46:08Z",
+              "message": "Accepted by hub cluster admin",
+              "reason": "HubClusterAdminAccepted",
+              "status": "True",
+              "type": "HubAcceptedManagedCluster"
+          },
+          {
+              "lastTransitionTime": "2020-11-10T22:47:56Z",
+              "message": "Managed cluster joined",
+              "reason": "ManagedClusterJoined",
+              "status": "True",
+              "type": "ManagedClusterJoined"
+          },
+          {
+              "lastTransitionTime": "2020-11-10T22:47:56Z",
+              "message": "Managed cluster is available",
+              "reason": "ManagedClusterAvailable",
+              "status": "True",
+              "type": "ManagedClusterConditionAvailable"
+          },
+          {
+              "lastTransitionTime": "2020-11-10T22:49:54Z",
+              "message": "Managed cluster info is synced",
+              "reason": "ManagedClusterInfoSynced",
+              "status": "True",
+              "type": "ManagedClusterInfoSynced"
+          }
+      ],
+      "consoleURL": "https://console-openshift-console.apps.base-host-name.com",
+      "distributionInfo": {
+          "ocp": {
+              "availableUpdates": [
+                  "4.5.9",
+                  "4.5.13",
+                  "4.5.11",
+                  "4.5.16",
+                  "4.5.15",
+                  "4.5.17",
+                  "4.5.14"
+              ],
+              "desiredVersion": "4.5.8",
+              "version": "4.5.8"
+          },
+          "type": "OCP"
+      },
+      "kubeVendor": "OpenShift",
+      "loggingEndpoint": {
+          "hostname": "klusterlet-addon-workmgr-open-cluster-management-agent-addon.apps.base-host-name.com",
+          "ip": ""
+      },
+      "loggingPort": {
+          "name": "https",
+          "port": 0,
+          "protocol": "TCP"
+      },
+      "nodeList": [
+          {
+              "capacity": {
+                  "cpu": "8",
+                  "memory": "32931992Ki"
+              },
+              "conditions": [
+                  {
+                      "status": "True",
+                      "type": "Ready"
+                  }
+              ],
+              "labels": {
+                  "beta.kubernetes.io/instance-type": "m4.2xlarge",
+                  "failure-domain.beta.kubernetes.io/region": "us-east-2",
+                  "failure-domain.beta.kubernetes.io/zone": "us-east-2a",
+                  "node-role.kubernetes.io/worker": "",
+                  "node.kubernetes.io/instance-type": "m4.2xlarge"
+              },
+              "name": "ip-10-0-130-163.us-east-2.compute.internal"
+          },
+          {
+              "capacity": {
+                  "cpu": "4",
+                  "memory": "16416940Ki"
+              },
+              "conditions": [
+                  {
+                      "status": "True",
+                      "type": "Ready"
+                  }
+              ],
+              "labels": {
+                  "beta.kubernetes.io/instance-type": "m4.xlarge",
+                  "failure-domain.beta.kubernetes.io/region": "us-east-2",
+                  "failure-domain.beta.kubernetes.io/zone": "us-east-2a",
+                  "node-role.kubernetes.io/master": "",
+                  "node.kubernetes.io/instance-type": "m4.xlarge"
+              },
+              "name": "ip-10-0-138-251.us-east-2.compute.internal"
+          },
+          {
+              "capacity": {
+                  "cpu": "8",
+                  "memory": "32931992Ki"
+              },
+              "conditions": [
+                  {
+                      "status": "True",
+                      "type": "Ready"
+                  }
+              ],
+              "labels": {
+                  "beta.kubernetes.io/instance-type": "m4.2xlarge",
+                  "failure-domain.beta.kubernetes.io/region": "us-east-2",
+                  "failure-domain.beta.kubernetes.io/zone": "us-east-2b",
+                  "node-role.kubernetes.io/worker": "",
+                  "node.kubernetes.io/instance-type": "m4.2xlarge"
+              },
+              "name": "ip-10-0-169-15.us-east-2.compute.internal"
+          },
+          {
+              "capacity": {
+                  "cpu": "4",
+                  "memory": "16416940Ki"
+              },
+              "conditions": [
+                  {
+                      "status": "True",
+                      "type": "Ready"
+                  }
+              ],
+              "labels": {
+                  "beta.kubernetes.io/instance-type": "m4.xlarge",
+                  "failure-domain.beta.kubernetes.io/region": "us-east-2",
+                  "failure-domain.beta.kubernetes.io/zone": "us-east-2b",
+                  "node-role.kubernetes.io/master": "",
+                  "node.kubernetes.io/instance-type": "m4.xlarge"
+              },
+              "name": "ip-10-0-180-36.us-east-2.compute.internal"
+          },
+          {
+              "capacity": {
+                  "cpu": "4",
+                  "memory": "16416940Ki"
+              },
+              "conditions": [
+                  {
+                      "status": "True",
+                      "type": "Ready"
+                  }
+              ],
+              "labels": {
+                  "beta.kubernetes.io/instance-type": "m4.xlarge",
+                  "failure-domain.beta.kubernetes.io/region": "us-east-2",
+                  "failure-domain.beta.kubernetes.io/zone": "us-east-2c",
+                  "node-role.kubernetes.io/master": "",
+                  "node.kubernetes.io/instance-type": "m4.xlarge"
+              },
+              "name": "ip-10-0-208-76.us-east-2.compute.internal"
+          },
+          {
+              "capacity": {
+                  "cpu": "8",
+                  "memory": "32931992Ki"
+              },
+              "conditions": [
+                  {
+                      "status": "True",
+                      "type": "Ready"
+                  }
+              ],
+              "labels": {
+                  "beta.kubernetes.io/instance-type": "m4.2xlarge",
+                  "failure-domain.beta.kubernetes.io/region": "us-east-2",
+                  "failure-domain.beta.kubernetes.io/zone": "us-east-2c",
+                  "node-role.kubernetes.io/worker": "",
+                  "node.kubernetes.io/instance-type": "m4.2xlarge"
+              },
+              "name": "ip-10-0-219-144.us-east-2.compute.internal"
+          }
+      ],
+      "version": "v1.18.3+6c42de8"
+  }
+}

@@ -1,0 +1,141 @@
+{
+    "apiVersion": "cluster.open-cluster-management.io/v1",
+    "kind": "ManagedCluster",
+    "metadata": {
+        "creationTimestamp": "2020-11-10T22:46:08Z",
+        "finalizers": [
+            "agent.open-cluster-management.io/klusterletaddonconfig-cleanup",
+            "cluster.open-cluster-management.io/api-resource-cleanup",
+            "managedclusterinfo.finalizers.open-cluster-management.io",
+            "open-cluster-management.io/managedclusterrole",
+            "managedcluster-import-controller.open-cluster-management.io/cleanup"
+        ],
+        "generation": 1,
+        "labels": {
+            "cloud": "Amazon",
+            "clusterID": "96016d6b-820a-45bc-b04b-95e511781163",
+            "name": "managed-cluster-01",
+            "vendor": "OpenShift"
+        },
+        "managedFields": [
+            {
+                "apiVersion": "cluster.open-cluster-management.io/v1",
+                "fieldsType": "FieldsV1",
+                "fieldsV1": {
+                    "f:metadata": {
+                        "f:labels": {
+                            ".": {},
+                            "f:name": {}
+                        }
+                    },
+                    "f:spec": {
+                        ".": {},
+                        "f:hubAcceptsClient": {}
+                    }
+                },
+                "manager": "unknown",
+                "operation": "Update",
+                "time": "2020-11-10T22:46:08Z"
+            },
+            {
+                "apiVersion": "cluster.open-cluster-management.io/v1",
+                "fieldsType": "FieldsV1",
+                "fieldsV1": {
+                    "f:metadata": {
+                        "f:finalizers": {}
+                    }
+                },
+                "manager": "rcm-controller",
+                "operation": "Update",
+                "time": "2020-11-10T22:46:11Z"
+            },
+            {
+                "apiVersion": "cluster.open-cluster-management.io/v1",
+                "fieldsType": "FieldsV1",
+                "fieldsV1": {
+                    "f:status": {
+                        ".": {},
+                        "f:allocatable": {
+                            ".": {},
+                            "f:cpu": {},
+                            "f:memory": {}
+                        },
+                        "f:capacity": {
+                            ".": {},
+                            "f:cpu": {},
+                            "f:memory": {}
+                        },
+                        "f:conditions": {},
+                        "f:version": {
+                            ".": {},
+                            "f:kubernetes": {}
+                        }
+                    }
+                },
+                "manager": "registration",
+                "operation": "Update",
+                "time": "2020-11-10T22:47:56Z"
+            },
+            {
+                "apiVersion": "cluster.open-cluster-management.io/v1",
+                "fieldsType": "FieldsV1",
+                "fieldsV1": {
+                    "f:metadata": {
+                        "f:labels": {
+                            "f:cloud": {},
+                            "f:clusterID": {},
+                            "f:vendor": {}
+                        }
+                    }
+                },
+                "manager": "controller",
+                "operation": "Update",
+                "time": "2020-11-10T22:49:54Z"
+            }
+        ],
+        "name": "managed-cluster-01",
+        "resourceVersion": "115693",
+        "selfLink": "/apis/cluster.open-cluster-management.io/v1/managedclusters/managed-cluster-01",
+        "uid": "0883d271-61ed-4e4c-9f4c-c70c27016114"
+    },
+    "spec": {
+        "hubAcceptsClient": true,
+        "leaseDurationSeconds": 60
+    },
+    "status": {
+        "allocatable": {
+            "cpu": "33",
+            "memory": "137832Mi"
+        },
+        "capacity": {
+            "cpu": "36",
+            "memory": "144576Mi"
+        },
+        "conditions": [
+            {
+                "lastTransitionTime": "2020-11-10T22:46:08Z",
+                "message": "Accepted by hub cluster admin",
+                "reason": "HubClusterAdminAccepted",
+                "status": "True",
+                "type": "HubAcceptedManagedCluster"
+            },
+            {
+                "lastTransitionTime": "2020-11-10T22:47:56Z",
+                "message": "Managed cluster joined",
+                "reason": "ManagedClusterJoined",
+                "status": "True",
+                "type": "ManagedClusterJoined"
+            },
+            {
+                "lastTransitionTime": "2020-11-10T22:47:56Z",
+                "message": "Managed cluster is available",
+                "reason": "ManagedClusterAvailable",
+                "status": "True",
+                "type": "ManagedClusterConditionAvailable"
+            }
+        ],
+        "version": {
+            "kubernetes": "v1.18.3+6c42de8"
+        }
+    }
+}
