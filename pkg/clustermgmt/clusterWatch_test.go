@@ -29,7 +29,7 @@ func unmarshalFile(filepath string, resourceType interface{}, t *testing.T) {
 
 func Test_transformManagedCluster(t *testing.T) {
 	managedCluster := clusterv1.ManagedCluster{}
-	unmarshalFile("managedcluster.json", &managedCluster, t)
+	unmarshalFile("managed-cluster.json", &managedCluster, t)
 
 	result := transformManagedCluster(&managedCluster)
 
@@ -52,7 +52,7 @@ func Test_transformManagedCluster(t *testing.T) {
 
 func Test_transformManagedClusterInfo(t *testing.T) {
 	managedClusterInfo := clusterv1beta1.ManagedClusterInfo{}
-	unmarshalFile("managedclusterinfo.json", &managedClusterInfo, t)
+	unmarshalFile("managed-cluster-info.json", &managedClusterInfo, t)
 
 	result := transformManagedClusterInfo(&managedClusterInfo)
 
