@@ -5,7 +5,8 @@ set -e
 export DOCKER_IMAGE_AND_TAG=${1}
 
 pwd
-cd ..
+ls
+ls test-data
 make deps
 make test
 make coverage
