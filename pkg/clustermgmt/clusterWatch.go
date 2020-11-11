@@ -183,10 +183,10 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 		}
 	}
 
-	props["apigroup"] = "internal.open-cluster-management.io" // maps rbac to ManagedClusterInfo
 	props["kind"] = "Cluster"
-	props["name"] = managedCluster.GetName()              // must match ManagedClusterInfo
-	props["_clusterNamespace"] = managedCluster.GetName() // maps to the namespace of ManagedClusterInfo
+	props["name"] = managedCluster.GetName()                  // must match ManagedClusterInfo
+	props["_clusterNamespace"] = managedCluster.GetName()     // maps to the namespace of ManagedClusterInfo
+	props["apigroup"] = "internal.open-cluster-management.io" // maps rbac to ManagedClusterInfo
 	props["created"] = managedCluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
 	cpuCapacity := managedCluster.Status.Capacity["cpu"]
