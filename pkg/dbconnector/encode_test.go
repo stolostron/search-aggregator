@@ -108,7 +108,6 @@ func Test_encodeProperty(t *testing.T) {
 	assert.Equal(t, nil, error10)
 
 	// case default
-
 	result11, error11 := encodeProperty("default", []string{})
 	assert.Equal(t, nil, result11["default"], "Should print error if received property is unsupported.")
 	assert.Equal(t, "Property type unsupported: []string []", error11.Error())
