@@ -2,7 +2,9 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
+
 Copyright (c) 2020 Red Hat, Inc.
 */
 
@@ -75,7 +77,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	//       We will give priority to nodes over edges after reaching certain load.
 	//       Will also prioritize small updates over a large resync.
 	if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" {
-		glog.Warningf("Too many pending requests (%d). Rejecting sync from cluster %s", len(PendingRequests), clusterName)
+		glog.Warningf("Too many pending requests (%d). Rejecting sync from %s", len(PendingRequests), clusterName)
 		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
 		return
 	}
@@ -124,7 +126,9 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.RequestId = syncEvent.RequestId
-	glog.V(3).Infof("Processing Request with { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }", syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
+	glog.V(3).Infof("Processing Request { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }",
+		syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources),
+		len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
 
 	err = db.ValidateClusterName(clusterName)
 	if err != nil {
@@ -163,7 +167,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		glog.Warningf("Error Fetching Subscriptions %s", uiderr)
 	}
 
-	// This usually indicates that something has gone wrong, basically that the collector detected we are out of sync and wants us to resync.
+	// This usually indicates that something has gone wrong, basically that the collector detected we
+	// are out of sync and wants us to resync.
 	if syncEvent.ClearAll {
 		stats, err := resyncCluster(clusterName, syncEvent.AddResources, syncEvent.AddEdges, &metrics)
 		if err != nil {
@@ -269,7 +274,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	metrics.LogPerformanceMetrics(syncEvent)
 
 	glog.V(2).Infof("syncResources complete. Done updating resources for cluster %s, preparing response", clusterName)
-	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB through a work order, so it can take a second
+	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB, so it can take a second
 	response.TotalEdges = computeIntraEdges(clusterName)
 
 	respond(http.StatusOK)
@@ -279,7 +284,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// if any Node with kind Subscription Added then subscriptionUpdated
 	for i := range syncEvent.AddResources {
 		if (!subscriptionUpdated) && (syncEvent.AddResources[i].Properties["kind"] == "Subscription") {
-			glog.V(3).Infof("Will trigger Intercluster - Added  Node %s ", syncEvent.AddResources[i].Properties["name"])
+			glog.V(3).Infof("Will trigger Intercluster - Added Node %s ", syncEvent.AddResources[i].Properties["name"])
 			subscriptionUpdated = true
 			break
 		}
@@ -287,7 +292,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	if !subscriptionUpdated {
 		for i := range syncEvent.UpdateResources {
 			if (!subscriptionUpdated) && (syncEvent.UpdateResources[i].Properties["kind"] == "Subscription") {
-				glog.V(3).Infof("Will trigger Intercluster - Updated  Node %s ", syncEvent.UpdateResources[i].Properties["name"])
+				glog.V(3).Infof("Will trigger Intercluster - Updated Node %s ",
+					syncEvent.UpdateResources[i].Properties["name"])
 				subscriptionUpdated = true
 				break
 			}
