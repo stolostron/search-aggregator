@@ -2,7 +2,8 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
 Copyright (c) 2020 Red Hat, Inc.
 */
 
@@ -53,7 +54,8 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 		currentLength++
 
 		//look ahead to see if we are in a differnet group or if at max chuck size
-		if currentLength == CHUNK_SIZE || (i < len(resources)-1 && (resources[i+1].SourceUID != resources[i].SourceUID || resources[i+1].EdgeType != resources[i].EdgeType)) {
+		if currentLength == CHUNK_SIZE || (i < len(resources)-1 &&
+			(resources[i+1].SourceUID != resources[i].SourceUID || resources[i+1].EdgeType != resources[i].EdgeType)) {
 			resp, err := insertEdge(resources[i], whereClause.String())
 			newWhereClause = false
 			if err != nil {
@@ -91,16 +93,20 @@ func ChunkedInsertEdge(resources []Edge, clusterName string) ChunkedOperationRes
 // e.g. MATCH (s:{_uid:'abc'}), (d) WHERE d._uid='def' OR d._uid='ghi' CREATE (s)-[:Type]>(d)
 func insertEdge(edge Edge, whereClause string) (*rg2.QueryResult, error) {
 	//This is the basic insert query without using node labels
-	query := fmt.Sprintf("MATCH (s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)", edge.SourceUID, whereClause, edge.EdgeType)
+	query := fmt.Sprintf("MATCH (s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)",
+		edge.SourceUID, whereClause, edge.EdgeType)
 
-	if strings.Contains(whereClause, " OR d._uid=") { //If OR d_uid= is present in whereClause, multiple edges are inserted. So, filter by destKind label cannot be used
+	// If OR d_uid= is present in whereClause, multiple edges are inserted. So, filter by destKind label cannot be used
+	if strings.Contains(whereClause, " OR d._uid=") {
 		if edge.SourceKind != "" {
-			query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, whereClause, edge.EdgeType)
+			query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d) %s CREATE (s)-[:%s]->(d)",
+				edge.SourceKind, edge.SourceUID, whereClause, edge.EdgeType)
 		}
 	} else { //insert only single edge
 		//Insert with node labels if only one edge is inserted at a time.
 		if edge.SourceKind != "" && edge.DestKind != "" { // check if both source and dest labels are present
-			query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s) %s CREATE (s)-[:%s]->(d)", edge.SourceKind, edge.SourceUID, edge.DestKind, whereClause, edge.EdgeType)
+			query = fmt.Sprintf("MATCH (s:%s {_uid: '%s'}), (d:%s) %s CREATE (s)-[:%s]->(d)",
+				edge.SourceKind, edge.SourceUID, edge.DestKind, whereClause, edge.EdgeType)
 		}
 	}
 	glog.V(4).Info("Insert query: ", query)

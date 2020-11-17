@@ -2,7 +2,10 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
+
+Copyright (c) 2020 Red Hat, Inc.
 */
 package handlers
 
@@ -49,7 +52,10 @@ func (m SyncMetrics) LogPerformanceMetrics(syncEvent SyncEvent) {
 	elapsed := time.Since(m.syncStart)
 	if int(elapsed.Seconds()) > 1 {
 		glog.Warningf("SyncResources from %s took %s", m.clusterName, elapsed)
-		glog.Warningf("Increased Processing time with incoming { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }", syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
+		glog.Warningf(
+			"Increased processing time {request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d}",
+			syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources),
+			len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
 		glog.Warning("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
 		glog.Warning("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
 	} else {
