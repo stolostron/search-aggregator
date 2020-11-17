@@ -38,14 +38,19 @@ func Test_ValidateClusterName(t *testing.T) {
 
 func Test_EncodeProperties(t *testing.T) {
 	props := make(map[string]interface{})
+
+	// Test empty properties
+	resource := Resource{Kind: "test", UID: "test1", Properties: props}
+	result1, error1 := resource.EncodeProperties()
+	assert.Equal(t, map[string]interface{}(nil), result1)
+	assert.Equal(t, "No valid redisgraph properties found", error1.Error())
+
+	// Test with properties to encode.
 	props["abc"] = "xyz"
-
-	resource := Resource{Kind: "test", UID: "test123", Properties: props}
-
-	result, err := resource.EncodeProperties()
-
-	assert.Equal(t, props, result)
-	assert.Equal(t, nil, err, "Must not have errors.")
+	resource2 := Resource{Kind: "test", UID: "test2", Properties: props}
+	result2, error2 := resource2.EncodeProperties()
+	assert.Equal(t, props, result2)
+	assert.Equal(t, nil, error2, "Must not have errors.")
 }
 
 func Test_encodeProperty(t *testing.T) {
@@ -89,9 +94,9 @@ func Test_encodeProperty(t *testing.T) {
 	assert.Equal(t, nil, error7)
 
 	// case float64
-	// result8, error8 := encodeProperty("float64", float64(1.23))
-	// assert.Equal(t, int64(123), result8["int64"], "Should encode float64 into int64.")
-	// assert.Equal(t, nil, error8)
+	result8, error8 := encodeProperty("float64", float64(12.3))
+	assert.Equal(t, int64(12), result8["float64"], "Should encode float64 into int64.")
+	assert.Equal(t, nil, error8)
 
 	// case bool
 	result9, error9 := encodeProperty("boolean_true", true)
@@ -103,4 +108,8 @@ func Test_encodeProperty(t *testing.T) {
 	assert.Equal(t, nil, error10)
 
 	// case default
+
+	result11, error11 := encodeProperty("default", []string{})
+	assert.Equal(t, nil, result11["default"], "Should print error if received property is unsupported.")
+	assert.Equal(t, "Property type unsupported: []string []", error11.Error())
 }
