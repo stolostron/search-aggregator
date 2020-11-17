@@ -2,9 +2,11 @@
 IBM Confidential
 OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
-The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
+
+Copyright (c) 2020 Red Hat, Inc.
 */
-// Copyright (c) 2020 Red Hat, Inc.
 
 package dbconnector
 
@@ -32,8 +34,8 @@ const (
 // Also initializes the Store interface.
 func init() {
 	Pool = &redis.Pool{
-		MaxIdle:      10, // TODO: Expose with ENV. Idle connections are connections that have been returned to the pool.
-		MaxActive:    20, // TODO: Expose with ENV. Active connections = connections in-use + idle connections
+		MaxIdle:      10, // Idle connections are connections that have been returned to the pool.
+		MaxActive:    20, // Active connections = connections in-use + idle connections
 		Dial:         getRedisConnection,
 		TestOnBorrow: testRedisConnection,
 		Wait:         true,
@@ -45,10 +47,11 @@ func init() {
 func getRedisConnection() (redis.Conn, error) {
 	var redisConn redis.Conn
 	if config.Cfg.RedisSSHPort != "" {
-		glog.V(2).Info("Initializing new Redis SSH client with redisHost: ", config.Cfg.RedisHost, " redisSSHPort: ", config.Cfg.RedisSSHPort)
+		glog.V(2).Infof("Initializing new Redis SSH client with redisHost: %s redisSSHPort: %s",
+			config.Cfg.RedisHost, config.Cfg.RedisSSHPort)
 		caCert, err := ioutil.ReadFile("./rediscert/redis.crt")
 		if err != nil {
-			glog.Error("Error loading TLS certificate. Redis Certificate must be mounted at ./sslcert/redis.crt: ", err)
+			glog.Error("Error loading TLS certificate. Redis cert must be mounted at ./sslcert/redis.crt: ", err)
 			return nil, err
 		}
 		caCertPool := x509.NewCertPool()
@@ -73,7 +76,8 @@ func getRedisConnection() (redis.Conn, error) {
 
 	} else {
 		var err error
-		glog.V(2).Info("Initializing new Redis client with redisHost: ", config.Cfg.RedisHost, " redisPort: ", config.Cfg.RedisPort)
+		glog.V(2).Infof("Initializing new Redis client with redisHost: %s redisPort: %s",
+			config.Cfg.RedisHost, config.Cfg.RedisPort)
 
 		redisConn, err = redis.Dial("tcp", net.JoinHostPort(config.Cfg.RedisHost, config.Cfg.RedisPort))
 		if err != nil {
@@ -100,7 +104,8 @@ func getRedisConnection() (redis.Conn, error) {
 	return redisConn, nil
 }
 
-// Used by the pool to test if redis connections are still okay. If they have been idle for less than a minute, just assumes they are okay. If not, calls PING.
+// Used by the pool to test if redis connections are still okay. If they have been idle for less than a minute,
+// just assumes they are okay. If not, calls PING.
 func testRedisConnection(c redis.Conn, t time.Time) error {
 	if time.Since(t) < IDLE_TIMEOUT*time.Second {
 		return nil
