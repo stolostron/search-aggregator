@@ -163,8 +163,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 			if _, ok := existingEdges[key]; !ok {
 				existingEdges[key] = db.Edge{
 					SourceUID: valueToString(e.GetByIndex(0)),
-					EdgeType: valueToString(e.GetByIndex(1)),
-					DestUID: valueToString(e.GetByIndex(2))
+					EdgeType:  valueToString(e.GetByIndex(1)),
+					DestUID:   valueToString(e.GetByIndex(2)),
 				}
 			} else {
 				dupCount++
