@@ -82,4 +82,25 @@ func Test_encodeProperty(t *testing.T) {
 	result6, error6 := encodeProperty("label", mapValue)
 	assert.Equal(t, "key1=value1; key2=value2", result6["label"], "Should encode labels map into a single string.")
 	assert.Equal(t, nil, error6)
+
+	// case int64
+	result7, error7 := encodeProperty("int64", int64(123))
+	assert.Equal(t, int64(123), result7["int64"], "Should encode int64 into int64.")
+	assert.Equal(t, nil, error7)
+
+	// case float64
+	// result8, error8 := encodeProperty("float64", float64(1.23))
+	// assert.Equal(t, int64(123), result8["int64"], "Should encode float64 into int64.")
+	// assert.Equal(t, nil, error8)
+
+	// case bool
+	result9, error9 := encodeProperty("boolean_true", true)
+	assert.Equal(t, "true", result9["boolean_true"], "Should encode boolean into string (true).")
+	assert.Equal(t, nil, error9)
+
+	result10, error10 := encodeProperty("boolean_false", false)
+	assert.Equal(t, "false", result10["boolean_false"], "Should encode boolean into string (false).")
+	assert.Equal(t, nil, error10)
+
+	// case default
 }
