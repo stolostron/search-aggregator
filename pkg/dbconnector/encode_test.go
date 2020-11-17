@@ -15,20 +15,6 @@ import (
 	assert "github.com/stretchr/testify/assert"
 )
 
-func TestValidateClusterName(t *testing.T) {
-	error1 := ValidateClusterName("test")
-	assert.Equal(t, error1, nil, "test")
-	error2 := ValidateClusterName("te'st")
-	assert.Error(t, error2)
-	error3 := ValidateClusterName("te/st")
-	assert.Error(t, error3)
-	error4 := ValidateClusterName("te.st")
-	assert.Error(t, error4)
-	error5 := ValidateClusterName("=test")
-	assert.Error(t, error5)
-
-}
-
 func Test_ValidateClusterName(t *testing.T) {
 
 	error1 := ValidateClusterName("test")
@@ -82,7 +68,18 @@ func Test_encodeProperty(t *testing.T) {
 	assert.Equal(t, nil, error4)
 
 	// case []interface{}
+	list := make([]interface{}, 2)
+	list[0] = "value1"
+	list[1] = "value2"
+	result5, error5 := encodeProperty("list", list)
+	assert.Equal(t, "value1, value2", result5["list"], "Should encode array into a single string.")
+	assert.Equal(t, nil, error5)
 
 	// case map[string]interfce{}
-
+	mapValue := make(map[string]interface{})
+	mapValue["key1"] = "value1"
+	mapValue["key2"] = "value2"
+	result6, error6 := encodeProperty("label", mapValue)
+	assert.Equal(t, "key1=value1; key2=value2", result6["label"], "Should encode labels map into a single string.")
+	assert.Equal(t, nil, error6)
 }
