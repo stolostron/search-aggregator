@@ -20,6 +20,10 @@ import (
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
+func getEdgeUID(sourceUID string, edgeType string, destUID string) string {
+	return fmt.Sprintf("%s-%s->%s", sourceUID, edgeType, destUID)
+}
+
 func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge, metrics *SyncMetrics) (stats SyncResponse, err error) {
 	glog.Info("Resync for cluster: ", clusterName, " edges to insert: ", len(edges))
 
@@ -158,7 +162,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	if edgesError == nil { //to avoid panic if there is an error executing query
 		for currEdges.Next() {
 			e := currEdges.Record()
-			key := fmt.Sprintf("%s-%s->%s", valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)),
+			key := getEdgeUID(valueToString(e.GetByIndex(0)), valueToString(e.GetByIndex(1)),
 				valueToString(e.GetByIndex(2)))
 			if _, ok := existingEdges[key]; !ok {
 				existingEdges[key] = db.Edge{
@@ -193,9 +197,9 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 
 	//Loop through incoming new edges and decide if each edge needs to be added.
 	for _, e := range edges {
-		verifyEdges[fmt.Sprintf("%s-%s->%s", e.SourceUID, e.EdgeType, e.DestUID)] = true
-		if _, exists := existingEdges[fmt.Sprintf("%s-%s->%s", e.SourceUID, e.EdgeType, e.DestUID)]; exists {
-			delete(existingEdges, fmt.Sprintf("%s-%s->%s", e.SourceUID, e.EdgeType, e.DestUID))
+		verifyEdges[getEdgeUID(e.SourceUID, e.EdgeType, e.DestUID)] = true
+		if _, exists := existingEdges[getEdgeUID(e.SourceUID, e.EdgeType, e.DestUID)]; exists {
+			delete(existingEdges, getEdgeUID(e.SourceUID, e.EdgeType, e.DestUID))
 		} else {
 			edgesToAdd = append(edgesToAdd, e)
 		}
@@ -254,7 +258,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		currEdgesCount = computeIntraEdges(clusterName)
 		glog.V(4).Info("Number of intra edges for cluster ", clusterName, " after deleting edges: ", currEdgesCount)
 		glog.V(4).Info("currEdgesCount: ", currEdgesCount, " incoming edges: ", len(edges))
-		glog.V(4).Info("Deleted edge count %d didn't match expected number: %d",
+		glog.V(4).Infof("Deleted edge count %d didn't match expected number: %d",
 			deleteEdgeResponse.EdgesDeleted, len(edgesToDelete))
 	}
 
