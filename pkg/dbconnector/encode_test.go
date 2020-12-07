@@ -76,8 +76,10 @@ func Test_encodeProperty(t *testing.T) {
 	list := make([]interface{}, 2)
 	list[0] = "value1"
 	list[1] = "value2"
+	expectedList := make([]interface{}, 1)
+	expectedList[0] = "'value1', 'value2'"
 	result5, error5 := encodeProperty("list", list)
-	assert.Equal(t, "value1, value2", result5["list"], "Should encode array into a single string.")
+	assert.Equal(t, expectedList, result5["list"], "Should encode array into a single list.")
 	assert.Equal(t, nil, error5)
 
 	// case map[string]interfce{}
