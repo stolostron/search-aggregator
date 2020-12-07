@@ -83,96 +83,6 @@ func getUIDsForSubscriptions() (*rg2.QueryResult, error) {
 	return uidResults, err
 }
 
-/*func buildPolicyEdges() (rg.QueryResult, error) {
-	// Record start time
-	start := time.Now()
-	policiesWithParent := make(map[string]bool)
-	//Get all the Nodes connected to Kind :policy with interCluter true - store the UIDs
-	// These Policies may be Parent Policies  which We would like Policy and VA/MA from remotes to connected to
-	hub_query := "MATCH (n)-[:ownedBy {_interCluster: true}]->(k:Policy) RETURN n._uid"
-	connectedPolicies, herr := db.Store.Query(hub_query)
-	if herr != nil {
-		return rg.QueryResult{}, herr
-	}
-	if len(connectedPolicies.Results) > 1 { //  If there is any result
-		for _, hubPolicy := range connectedPolicies.Results[1:] {
-			policiesWithParent[hubPolicy[0]] = true
-		}
-
-	}
-	//Get all the VA/MA policies using (VAMA)-[:ownedBy]->polices from Remote clusters , will get vama policy uids , their parents uid and namespace/name of the Parent policy in HUB -- refer comment before hub_query
-	mc_query := "MATCH (child)-[:ownedBy]->(policy:Policy) where exists(policy._parentPolicy)=true AND policy.cluster!='local-cluster' AND policy.apigroup='policy.mcm.ibm.com' AND (child.kind='mutationpolicy' OR child.kind='vulnerabilitypolicy') return  policy._parentPolicy,policy._uid,child._uid"
-	mcPolicies, merr := db.Store.Query(mc_query)
-	if merr != nil {
-		return rg.QueryResult{}, merr
-	}
-	if len(mcPolicies.Results) > 1 { //  If there is any result
-		//create a map for having unique policyIds , VA/MA Uids
-		resultUids := make(map[string]string)
-		for _, mcPolicy := range mcPolicies.Results[1:] {
-			if mcPolicy[0] != "" && mcPolicy[1] != "" && mcPolicy[2] != "" {
-				resultUids[mcPolicy[1]] = mcPolicy[0] // Set the parent -> _parentPolicy
-				resultUids[mcPolicy[2]] = mcPolicy[0] // Set the VA/MA (child) -> _parentPolicy
-			}
-		}
-
-		//Now iterate the result and create the needed edges
-		for key, val := range resultUids {
-			_, ok := policiesWithParent[key]
-			if ok {
-				// If we have the Source UID - we expect that no one can manually edit the Parent and point to a different parent
-				// If they delete the edge to Policy will automatically gets deleted
-				continue //we already have the uid connected to a parent policy
-			} else { // We need to create an edge between the Key and Val
-				remoteUID := key
-				hubParentPolicy := strings.Split(val, "/") // index 0 namespace , index 1 policy name
-				//create Edge
-				createQuery := fmt.Sprintf("MATCH (parent {kind: 'policy', cluster: 'local-cluster', namespace: '%s', name: '%s'}), (policy {_uid: '%s'}) CREATE (policy)-[:ownedBy {_interCluster: true}]->(parent)", hubParentPolicy[0], hubParentPolicy[1], remoteUID)
-				glog.V(4).Infof("Policy InterCluster edge to be created %s : ", createQuery)
-				_, crerr := db.Store.Query(createQuery)
-				if crerr != nil {
-					glog.V(4).Infof("Policy InterCluster  edge creation failed  %s : ", createQuery)
-					continue // if there is an error continue with next Policy
-				}
-			}
-		}
-	}
-	// Typical Setup of Policies (1) A Parent Policy in HUB (2) A policy in HUB which is exaclty copied to REMOTE (3) The Replica of Policy in item -2- In REMOTE (4) A VA or MA policy connected to -Policy in 3-
-	// 2 hop query , get all subscriptions that violates either VA/MA policy -> connected to its remote  parent
-	// make a direct connection from subscription to parent policy - Also We are NOT making Node match like (s:Subscription) , as we noticed that (s: {kind:'subscription'}) was better
-	randomTrackId := rand.Intn(99999) // A track Id which we will use in Redisgraph to find out what edges were created in this call , rest all can be deleted . This is to avoid creating deplicate edges by redisgraph
-	querySubToPolicy := fmt.Sprintf("MATCH (subscription {kind:'subscription'})-[:violates]->(vama)-[:ownedBy {_interCluster:true}]->(parent{kind:'policy'}) where vama.kind='mutationpolicy' OR vama.kind='vulnerabilitypolicy' WITH subscription as SS , parent as PP MATCH (SSA {kind:'subscription'}),(PPA {kind:'policy'}) where SSA._uid=SS._uid AND PPA._uid=PP._uid  CREATE (SSA)-[t:violates {_interCluster: true,pol_instance: %d}]->(PPA)", randomTrackId)
-	glog.V(4).Infof("Policy InterCluster 2 Hop Query for Subsciption -> Policy edge to be created %s  ", querySubToPolicy)
-	_, subPolErr := db.Store.Query(querySubToPolicy)
-	if subPolErr != nil {
-		return rg.QueryResult{}, subPolErr
-	}
-
-	// The Above quey will add edges to Subscriptions to Policies - but it can also create duplicate edges, but we know what we created in this instance by using the randomTrackId
-	//We will delete all the duplicate edges - they will have old different randomTrackID - If we are unlucky to get same ramdom ID 2 consecutive times , then we will have , duplicates for some time , though the data is valid
-	deleteSubToPolicy := fmt.Sprintf("MATCH (subscription:Subscription)-[e:violates{_interCluster:true}]->(parent:Policy) where e.pol_instance!=%d delete e", randomTrackId)
-	glog.V(4).Infof("Policy InterCluster Delete Query for Subscription -> Policy edge to be deleted %s  ", deleteSubToPolicy)
-	_, delSubPolErr := db.Store.Query(deleteSubToPolicy)
-	if delSubPolErr != nil {
-		return rg.QueryResult{}, delSubPolErr
-	}
-	//We need to call build Subscriptions as we need to pull the edges to Application
-	_, errSubs := buildSubscriptions()
-	if delSubPolErr != nil {
-		return rg.QueryResult{}, errSubs
-	}
-	// Record elapsed time
-	elapsed := time.Since(start)
-	// Log a warning if it takes more than 100ms.
-	if elapsed.Nanoseconds() > 100*1000*1000 {
-		glog.Warningf("Intercluster policy edge creation took %s", elapsed)
-	} else {
-		glog.V(4).Infof("Intercluster policy edge creation took %s", elapsed)
-	}
-	return rg.QueryResult{}, nil
-
-}*/
-
 func buildSubscriptions() (rg2.QueryResult, error) {
 	// Record start time
 	start := time.Now()
@@ -228,41 +138,6 @@ func buildSubscriptions() (rg2.QueryResult, error) {
 					glog.V(4).Info("Number of edges created by query: ", query, " is : ", resp.RelationshipsCreated())
 				}
 			}
-			// remoteSub[1] has the hosting subscription information which is in the format hosting subscription's "namespace+'/'+name"
-			/* NOTE: This logic has been moved to the search-api.  Instead of pre-computing these edges 
-                            here, now we use more complex multi-hop queries to compute these only when needed. This
-                            is more efficient and reduces pressure on RedisGraph.
-                            Keeping this commented code until we validate the new implementation. 
-			if remoteSub[1] != "" {
-				//So, we look up if the hostingSubscription is in the hubSubMap. If it is there, get the UID
-				if hubSubUID, ok := hubSubMap[remoteSub[1]]; ok {
-
-					//TODO: For the subscription model, all intercluster edges are named as 'hostedSub {_interCluster: true}'. Change this to relevant names in future
-					//To add edges from hubSub to all resources connected to the remoteSub (bidirectional) - incoming edges and outgoing edges
-					// Add an edge between remoteSub and hubSub. Add edges from hubSub to all resources the remoteSub connects to
-					query1 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}) MATCH (remoteSub:Subscription {_uid: '%s'})-[]->(n) WHERE n.kind <> 'application' AND n.kind <> 'subscription' CREATE (remoteSub)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub), (n)-[:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance, currentAppInstance)
-					// Add edges from hubSub to all resources that flow into remoteSub eg: pods, deployments, services, replicasets etc.
-					query2 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'}) MATCH (remoteSub:Subscription {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(hubSub)", hubSubUID, remoteSub[0], currentAppInstance)
-					// Connect all resources that flow into remoteSub with the hubsub's channel
-					query3 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})-[]->(chan:Channel) MATCH  (remoteSub:Subscription {_uid: '%s'})<-[]-(n) CREATE (n)-[r:hostedSub {_interCluster: true,app_instance: %d}]->(chan)", hubSubUID, remoteSub[0], currentAppInstance)
-					// Connect the remoteSub with the hubsub's application
-					query4 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})  CREATE (remoteSub)-[:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
-					// Connect all resources that flow into remoteSub with the hubsub's application
-					query5 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})<-[]-(n)  CREATE (n)-[r:deployedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
-					// Connect resources that are connected to remoteSub with the hubsub's application - add check to avoid connecting application to itself
-					query6 := db.SanitizeQuery("MATCH (hubSub:Subscription {_uid: '%s'})<-[]-(app:Application) MATCH  (remoteSub:Subscription {_uid: '%s'})-[]->(n)  WHERE n.kind <> 'application' AND n.kind <> 'subscription' CREATE (n)-[r:usedBy {_interCluster: true,app_instance: %d}]->(app)", hubSubUID, remoteSub[0], currentAppInstance)
-
-					queries := [...]string{query1, query2, query3, query4, query5, query6}
-					for _, query := range queries {
-						resp, err := db.Store.Query(query)
-						if err != nil {
-							glog.Errorf("Error %s : %s", query, err) //Logging error so that loop will continue
-						} else {
-							glog.V(4).Info("Number of edges created by query: ", query, " is : ", resp.RelationshipsCreated())
-						}
-					}
-				}
-			}*/
 		}
 		//Delete interclusters with other instance ids after all hub subscriptions are processed
 		deleteOldInstance := db.SanitizeQuery("MATCH ()-[e {_interCluster:true}]->() WHERE (type(e)='hostedSub' OR type(e)='usedBy' OR type(e)='deployedBy') AND e.app_instance<>%d DELETE e", currentAppInstance)

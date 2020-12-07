@@ -4,8 +4,9 @@ OCO Source Materials
 (C) Copyright IBM Corporation 2019 All Rights Reserved
 The source code for this program is not published or otherwise divested of its trade secrets,
 irrespective of what has been deposited with the U.S. Copyright Office.
+
+Copyright (c) 2020 Red Hat, Inc.
 */
-// Copyright (c) 2020 Red Hat, Inc.
 
 package dbconnector
 
@@ -20,15 +21,17 @@ import (
 // Tells whether the given clusterName is valid, i.e. has no illegal characters and isn't empty
 func ValidateClusterName(clusterName string) error {
 	if len(clusterName) == 0 {
-		return errors.New("Order contains blank ClusterName")
+		return errors.New("clusterName must not be empty.")
 	}
-	if strings.Contains(clusterName, "/") || strings.Contains(clusterName, ".") || strings.Contains(clusterName, "=") || strings.Contains(clusterName, "'") {
-		return errors.New("Order contains ClusterName with illegal characters: /, ., =, or '")
+	if strings.Contains(clusterName, "/") || strings.Contains(clusterName, ".") ||
+		strings.Contains(clusterName, "=") || strings.Contains(clusterName, "'") {
+		return errors.New("clusterName contains illegal characters: /, ., =, or '")
 	}
 	return nil
 }
 
-// Given a resource, output all the redisgraph properties for it in map[string]interface{} (always string or int64, that's what redisgraph supports) pairs.
+// Given a resource, output all the properties for it in map[string]interface{}
+// (always string or int64, that's what Redisgraph supports) pairs.
 func (r Resource) EncodeProperties() (map[string]interface{}, error) {
 	res := make(map[string]interface{}, len(r.Properties))
 	for k, v := range r.Properties {
@@ -55,11 +58,6 @@ func (r Resource) EncodeProperties() (map[string]interface{}, error) {
 // Outputs exclusively in our supported types: string, []string, map[string]string, and int64 and []interface.
 func encodeProperty(key string, value interface{}) (map[string]interface{}, error) {
 
-	// Sanitize key
-	key = strings.Replace(key, ".", "_dot_", -1)
-	key = strings.Replace(key, "/", "_slash_", -1)
-	key = strings.Replace(key, "=", "_eq_", -1)
-
 	// Sanitize value
 	if value == nil || value == "" { // value == "" is false for anything not a string
 		return nil, errors.New("Empty Value")
@@ -67,7 +65,8 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 
 	res := make(map[string]interface{})
 
-	// Switch over all the default json.Unmarshal types. These are the only possible types that could be in the map. For each, we go through and convert to what we want them to be.
+	// Switch over all the default json.Unmarshal types. These are the only possible types that could be in the map.
+	// For each, we go through and convert to what we want them to be.
 	// Useful doc regarding default types: https://golang.org/pkg/encoding/json/#Unmarshal
 	switch typedVal := value.(type) {
 	case string:

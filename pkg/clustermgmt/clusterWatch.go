@@ -20,9 +20,7 @@ import (
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
-	kubeClientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
 	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
@@ -35,16 +33,8 @@ import (
 func WatchClusters() {
 	glog.Info("Begin ClusterWatch routine")
 
-	// Initialize the dynamic client, used for CRUD operations on arbitrary k8s resources.
-	hubClientConfig, err := config.InitClient()
-	if err != nil {
-		glog.Info("Unable to create ClusterWatch clientset ", err)
-	}
-	dynamicClientset, err := dynamic.NewForConfig(hubClientConfig)
-	if err != nil {
-		glog.Warning("cannot construct dynamic client for cluster watch from config: ", err)
-	}
-	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientset, 60*time.Second)
+	dynamicClient := config.GetDynamicClient()
+	dynamicFactory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClient, 60*time.Second)
 
 	// Create GVR for ManagedCluster and ManagedClusterInfo
 	managedClusterGvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
@@ -57,10 +47,10 @@ func WatchClusters() {
 	// Create handlers for events
 	handlers := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			processClusterUpsert(obj, config.KubeClient)
+			processClusterUpsert(obj)
 		},
 		UpdateFunc: func(prev interface{}, next interface{}) {
-			processClusterUpsert(next, config.KubeClient)
+			processClusterUpsert(next)
 		},
 		DeleteFunc: func(obj interface{}) {
 			processClusterDelete(obj)
@@ -82,7 +72,7 @@ func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInforme
 	informerRunning := false
 
 	for {
-		_, err := config.KubeClient.ServerResourcesForGroupVersion(groupVersion)
+		_, err := config.GetKubeClient().ServerResourcesForGroupVersion(groupVersion)
 		// we fail to fetch for some reason other than not found
 		if err != nil && !isClusterMissing(err) {
 			glog.Errorf("Cannot fetch resource list for %s, error message: %s ", groupVersion, err)
@@ -104,7 +94,7 @@ func stopAndStartInformer(groupVersion string, informer cache.SharedIndexInforme
 
 var mux sync.Mutex
 
-func processClusterUpsert(obj interface{}, kubeClient *kubeClientset.Clientset) {
+func processClusterUpsert(obj interface{}) {
 	// Lock so only one goroutine at a time can access add a cluster.
 	// Helps to eliminate duplicate entries.
 	mux.Lock()
@@ -205,6 +195,10 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 	props["memory"] = memCapacity.String()
 	props["kubernetesVersion"] = managedCluster.Status.Version.Kubernetes
 
+	for _, condition := range managedCluster.Status.Conditions {
+		props[condition.Type] = string(condition.Status)
+	}
+
 	resource := db.Resource{
 		Kind:           "Cluster",
 		UID:            string("cluster__" + managedCluster.GetName()),
@@ -217,7 +211,8 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 
 // Transform ManagedClusterInfo object into db.Resource suitable for insert into redis
 func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClusterInfo) db.Resource {
-	// https://github.com/open-cluster-management/multicloud-operators-foundation/blob/master/pkg/apis/cluster/v1beta1/clusterinfo_types.go#L24
+	// https://github.com/open-cluster-management/multicloud-operators-foundation/
+	//    blob/master/pkg/apis/internal.open-cluster-management.io/v1beta1/clusterinfo_types.go
 	props := make(map[string]interface{})
 
 	props["kind"] = "Cluster"
@@ -225,11 +220,8 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 	props["_clusterNamespace"] = managedClusterInfo.GetNamespace() // Needed for rbac mapping.
 	props["apigroup"] = "internal.open-cluster-management.io"      // Maps rbac to ManagedClusterInfo
 
-	props["nodes"] = int64(len(managedClusterInfo.Status.NodeList))
-	for _, condition := range managedClusterInfo.Status.Conditions {
-		props[condition.Type] = string(condition.Status)
-	}
 	props["consoleURL"] = managedClusterInfo.Status.ConsoleURL
+	props["nodes"] = int64(len(managedClusterInfo.Status.NodeList))
 
 	resource := db.Resource{
 		Kind:           "Cluster",
