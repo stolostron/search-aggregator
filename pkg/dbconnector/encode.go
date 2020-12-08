@@ -95,11 +95,15 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 		if key == "label" {
 			labelStrings := make([]string, 0, len(typedVal))
 			for key, value := range typedVal {
-				labelString := fmt.Sprintf("%s=%s", key, value)
+				labelString := fmt.Sprintf("'%v=%v'", sanitizeValue(key), sanitizeValue(fmt.Sprintf("%v", value)))
 				labelStrings = append(labelStrings, labelString)
 			}
-			sort.Strings(labelStrings)                                 // Sotring to make comparisons more predictable
-			res[key] = sanitizeValue(strings.Join(labelStrings, "; ")) // e.g. key1=val1; key2=val2; key3=val3
+			sort.Strings(labelStrings)
+			sanitizedStr := strings.Join(labelStrings, "; ") // e.g. key1=val1; key2=val2; key3=val3
+			// Sotring to make comparisons more predictable
+			tmpInterface := make([]interface{}, 1) //store the value as list to allow partial matching
+			tmpInterface[0] = sanitizedStr
+			res[key] = tmpInterface
 		}
 
 	case int64:
