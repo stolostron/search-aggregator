@@ -77,8 +77,8 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 		}
 
 	case []interface{}:
-		// RedisGraph 2 supports a list of properties.
-		// we are encoding a list of values as individually quoted strings
+		// RedisGraph 2.2 supports a list of properties.
+		// we are encoding as a list of values with individually quoted strings
 		elementStrings := make([]string, 0, len(typedVal))
 		for _, e := range typedVal {
 			elementString := fmt.Sprintf("'%v'", sanitizeValue(fmt.Sprintf("%v", e)))
@@ -91,8 +91,6 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 		res[key] = tmpInterface
 
 	case map[string]interface{}:
-		// RedisGraph 1.0.15 doesn't support a list of properties. As a workaround to this limitation
-		// we are encoding the labels in a single string.
 		if key == "label" {
 			labelStrings := make([]string, 0, len(typedVal))
 			for key, value := range typedVal {

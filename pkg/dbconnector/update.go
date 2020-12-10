@@ -104,7 +104,8 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 			continue
 		}
 		for k, v := range encodedProps {
-			switch typed := v.(type) { // At this point it's either string or int64 or []interface with base type string. Need to wrap in quotes if it's string
+			switch typed := v.(type) { // At this point it's either string or int64 with base type string or []interface
+			// Need to wrap in quotes if it's string
 			case int64:
 				setStrings = append(setStrings, fmt.Sprintf("n%d.%s=%d", i, k, typed)) // e.g. n0.<key>=<value>
 			case []interface{}, map[string]interface{}: // Values are individually quoted already in encodeProperty
