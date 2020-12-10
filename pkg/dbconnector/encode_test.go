@@ -76,8 +76,7 @@ func Test_encodeProperty(t *testing.T) {
 	list := make([]interface{}, 2)
 	list[0] = "value1"
 	list[1] = "value2"
-	expectedList := make([]interface{}, 1)
-	expectedList[0] = "'value1', 'value2'"
+	expectedList := []interface{}{"'value1', 'value2'"}
 	result5, error5 := encodeProperty("list", list)
 	assert.Equal(t, expectedList, result5["list"], "Should encode array into a single list.")
 	assert.Equal(t, nil, error5)
@@ -86,8 +85,9 @@ func Test_encodeProperty(t *testing.T) {
 	mapValue := make(map[string]interface{})
 	mapValue["key1"] = "value1"
 	mapValue["key2"] = "value2"
+	expectedList = []interface{}{"'key1=value1', 'key2=value2'"}
 	result6, error6 := encodeProperty("label", mapValue)
-	assert.Equal(t, "key1=value1; key2=value2", result6["label"], "Should encode labels map into a single string.")
+	assert.Equal(t, expectedList, result6["label"], "Should encode labels map into a single list.")
 	assert.Equal(t, nil, error6)
 
 	// case int64

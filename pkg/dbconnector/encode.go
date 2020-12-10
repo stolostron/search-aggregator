@@ -84,6 +84,7 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 			elementString := fmt.Sprintf("'%v'", sanitizeValue(fmt.Sprintf("%v", e)))
 			elementStrings = append(elementStrings, elementString)
 		}
+		sort.Strings(elementStrings)                       // Sorting to make comparisons more predictable
 		sanitizedStr := strings.Join(elementStrings, ", ") // e.g. 'val1', 'val2', 'val3'
 		tmpInterface := make([]interface{}, 1)             //store the value as list to allow partial matching
 		tmpInterface[0] = sanitizedStr
@@ -98,10 +99,9 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 				labelString := fmt.Sprintf("'%v=%v'", sanitizeValue(key), sanitizeValue(fmt.Sprintf("%v", value)))
 				labelStrings = append(labelStrings, labelString)
 			}
-			sort.Strings(labelStrings)
-			sanitizedStr := strings.Join(labelStrings, "; ") // e.g. key1=val1; key2=val2; key3=val3
-			// Sotring to make comparisons more predictable
-			tmpInterface := make([]interface{}, 1) //store the value as list to allow partial matching
+			sort.Strings(labelStrings)                       // Sorting to make comparisons more predictable
+			sanitizedStr := strings.Join(labelStrings, ", ") // e.g. 'key1=val1', 'key2=val2', 'key3=val3'
+			tmpInterface := make([]interface{}, 1)           //store the value as list to allow partial matching
 			tmpInterface[0] = sanitizedStr
 			res[key] = tmpInterface
 		}
