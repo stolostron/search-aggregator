@@ -146,9 +146,11 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error, bool) {
 	}
 	setStrings := []string{} // Build the SET portion.
 	for k, v := range encodedProps {
-		switch typed := v.(type) { // At this point it's either string or int64. Need to wrap in quotes if it's string
+		switch typed := v.(type) { // At this point it's either string or int64 or list. Need to wrap in quotes if it's string
 		case int64:
 			setStrings = append(setStrings, fmt.Sprintf("n.%s=%d", k, typed)) // e.g. n.<key>=<value>
+		case []interface{}, map[string]interface{}:
+			setStrings = append(setStrings, fmt.Sprintf("n.%s=%s", k, typed)) // e.g. n.<key>=<value>
 		default:
 			setStrings = append(setStrings, fmt.Sprintf("n.%s='%s'", k, typed)) // e.g. n.<key>=<value>
 		}
