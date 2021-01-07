@@ -126,9 +126,12 @@ func insertQuery(resources []*Resource, clusterName string) (string, map[string]
 		}
 		propStrings := []string{}
 		for k, v := range encodedProps {
-			switch typed := v.(type) { // At this point it's either string or int64. Need to wrap in quotes if it's string
+			switch typed := v.(type) { // At this point it's either string or int64 with base type string or []interface
+			//Need to wrap in quotes if it's string
 			case int64:
 				propStrings = append(propStrings, fmt.Sprintf("%s:%d", k, typed)) // e.g. key>:<value>
+			case []interface{}, map[string]interface{}: // Values are individually quoted already in encodeProperty
+				propStrings = append(propStrings, fmt.Sprintf("%s:%s", k, typed)) // e.g. <key>:<value>
 			default:
 				propStrings = append(propStrings, fmt.Sprintf("%s:'%s'", k, typed)) // e.g. <key>:'<value>'
 			}

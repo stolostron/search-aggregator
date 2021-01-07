@@ -55,7 +55,7 @@ func (r Resource) EncodeProperties() (map[string]interface{}, error) {
 }
 
 // Outputs all the redisgraph properties that come out of a given property on a resource.
-// Outputs exclusively in our supported types: string, []string, map[string]string, and int64.
+// Outputs exclusively in our supported types: string, []string, map[string]string, and int64 and []interface.
 func encodeProperty(key string, value interface{}) (map[string]interface{}, error) {
 
 	// Sanitize value
@@ -77,27 +77,31 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 		}
 
 	case []interface{}:
-		// RedisGraph 1.0.15 doesn't support a list of properties. As a workaround to this limitation
-		// we are encoding a list of values in a single string.
+		// RedisGraph 2.2 supports a list of properties.
+		// we are encoding as a list of values with individually quoted strings
 		elementStrings := make([]string, 0, len(typedVal))
 		for _, e := range typedVal {
-			elementString := fmt.Sprintf("%v", e)
+			elementString := fmt.Sprintf("'%v'", sanitizeValue(fmt.Sprintf("%v", e)))
 			elementStrings = append(elementStrings, elementString)
 		}
-		sort.Strings(elementStrings)                                 // Sotring to make comparisons more predictable
-		res[key] = sanitizeValue(strings.Join(elementStrings, ", ")) // e.g. val1, val2, val3
+		sort.Strings(elementStrings)                       // Sorting to make comparisons more predictable
+		sanitizedStr := strings.Join(elementStrings, ", ") // e.g. 'val1', 'val2', 'val3'
+		tmpInterface := make([]interface{}, 1)             //store the value as list to allow partial matching
+		tmpInterface[0] = sanitizedStr
+		res[key] = tmpInterface
 
 	case map[string]interface{}:
-		// RedisGraph 1.0.15 doesn't support a list of properties. As a workaround to this limitation
-		// we are encoding the labels in a single string.
 		if key == "label" {
 			labelStrings := make([]string, 0, len(typedVal))
 			for key, value := range typedVal {
-				labelString := fmt.Sprintf("%s=%s", key, value)
+				labelString := fmt.Sprintf("'%v=%v'", sanitizeValue(key), sanitizeValue(fmt.Sprintf("%v", value)))
 				labelStrings = append(labelStrings, labelString)
 			}
-			sort.Strings(labelStrings)                                 // Sotring to make comparisons more predictable
-			res[key] = sanitizeValue(strings.Join(labelStrings, "; ")) // e.g. key1=val1; key2=val2; key3=val3
+			sort.Strings(labelStrings)                       // Sorting to make comparisons more predictable
+			sanitizedStr := strings.Join(labelStrings, ", ") // e.g. 'key1=val1', 'key2=val2', 'key3=val3'
+			tmpInterface := make([]interface{}, 1)           //store the value as list to allow partial matching
+			tmpInterface[0] = sanitizedStr
+			res[key] = tmpInterface
 		}
 
 	case int64:
