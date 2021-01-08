@@ -28,7 +28,7 @@ const (
 	DEFAULT_REDIS_HOST              = "localhost"
 	DEFAULT_REDIS_PORT              = "6379"
 	DEFAULT_REDIS_WATCH_INTERVAL    = 15000 // 15 seconds
-	DEFAULT_REQUEST_LIMIT           = 5     // Max number of concurrent requests.
+	DEFAULT_REQUEST_LIMIT           = 10    // Max number of concurrent requests.
 	DEFAULT_SKIP_CLUSTER_VALIDATION = "false"
 )
 
