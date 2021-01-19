@@ -1,5 +1,5 @@
 # search-aggregator
-Works with [search-collector](https://github.com/open-cluster-management/search-collector) to synchronize kubernetes resources into [RedisGraph](https://oss.redislabs.com/redisgraph/), for use by the search UI. Runs on the hub cluster and receives from the collectors running on each remote cluster.
+The Search Aggregator is a component of the Open Cluster Management [search feature](https://github.com/open-cluster-management/search/blob/master/feature-spec/search.md#feature-summary). It runs on the hub cluster to index data from [search-collector](https://github.com/open-cluster-management/search-collector) on the managed clusters into [RedisGraph](https://oss.redislabs.com/redisgraph/).
 
   
 ## Development
@@ -16,6 +16,20 @@ Works with [search-collector](https://github.com/open-cluster-management/search-
     ```
     make build && ./output/search-aggregator
     ```
+
+### Environment Variables
+Control the behavior of this service with these environment variables.
+
+Name                | Required | Default Value | Description
+----                | -------- | ------------- | -----------
+EDGE_BUILD_RATE_MS  | no       | 15000         | How often inter-cluster edges are re-calculated
+HTTP_TIMEOUT        | no       | 300000        | Timeout to process a single requests
+REDISCOVER_RATE_MS  | no       | 300000        | How often we check for new crds
+REDIS_HOST          | yes      | localhost     | RedisGraph host
+REDIS_PORT          | yes      | 6379          | RedisGraph port
+REDIS_WATCH_INTERVAL| no       | 15000         | Check connection to RedisGraph
+REQUEST_LIMIT       | no       | 10            | Max number of concurrent requests
+
 
 ## API Usage
 
