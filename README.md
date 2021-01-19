@@ -27,8 +27,8 @@ HTTP_TIMEOUT        | no       | 300000        | Timeout to process a single req
 REDISCOVER_RATE_MS  | no       | 300000        | How often we check for new crds
 REDIS_HOST          | yes      | localhost     | RedisGraph host
 REDIS_PORT          | yes      | 6379          | RedisGraph port
-REDIS_WATCH_INTERVAL| no      | 15000          | Check connection to RedisGraph
-REQUEST_LIMIT       | no      | 10             | Max number of concurrent requests
+REDIS_WATCH_INTERVAL| no       | 15000         | Check connection to RedisGraph
+REQUEST_LIMIT       | no       | 10            | Max number of concurrent requests
 
 
 ## API Usage
