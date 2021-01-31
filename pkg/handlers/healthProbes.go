@@ -13,15 +13,20 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/golang/glog"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	me "github.com/open-cluster-management/search-aggregator/pkg/metrics"
 )
 
 // LivenessProbe is used to check if this service is alive.
 func LivenessProbe(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	glog.V(2).Info("livenessProbe")
 	fmt.Fprint(w, "OK")
+	me.OpsProcessed.WithLabelValues(r.Method, r.RequestURI).Inc()
+	me.HttpDuration.WithLabelValues(r.Method, r.RequestURI).Observe(time.Since(start).Seconds())
 }
 
 // ReadinessProbe checks if Redis is available.

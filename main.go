@@ -23,6 +23,8 @@ import (
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	"github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 	"github.com/open-cluster-management/search-aggregator/pkg/handlers"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -54,6 +56,10 @@ func main() {
 	router.HandleFunc("/liveness", handlers.LivenessProbe).Methods("GET")
 	router.HandleFunc("/readiness", handlers.ReadinessProbe).Methods("GET")
 	router.HandleFunc("/aggregator/clusters/{id}/sync", handlers.SyncResources).Methods("POST")
+	//metrics will be served at this endpoint.
+	//there will be a number metrics that we get by default because of the prom-go-client
+	//additionally we have added some more metrics in pkg/metrics
+	router.Path("/metrics").Handler(promhttp.Handler())
 
 	// Configure TLS
 	cfg := &tls.Config{
