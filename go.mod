@@ -19,6 +19,7 @@ require (
 )
 
 replace (
+	github.com/buger/jsonparser => github.com/buger/jsonparser v1.1.1
 	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.1.0
 	github.com/docker/docker => github.com/docker/docker v1.13.1
 	github.com/terraform-providers/terraform-provider-azurerm => github.com/terraform-providers/terraform-provider-azurerm v0.0.0-20200604143437-d38893bc4f78
