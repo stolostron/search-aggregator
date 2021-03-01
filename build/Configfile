@@ -1,4 +1,6 @@
-# Only use git commands if it exists
+ # Copyright Contributors to the Open Cluster Management project
+ 
+ # Only use git commands if it exists
 ifdef GIT
 VCS_URL ?=$(shell git config --get remote.origin.url)
 IMAGE_VERSION :=$(shell git rev-parse --short HEAD)
