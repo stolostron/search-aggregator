@@ -2,7 +2,7 @@
  * (C) Copyright IBM Corporation 2019 All Rights Reserved
  * Copyright (c) 2020 Red Hat, Inc.
  * Copyright Contributors to the Open Cluster Management project
-*/
+ */
 
 package dbconnector
 
@@ -15,14 +15,15 @@ import (
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
-// Recursive helper for ChunkedInsert. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
+// Recursive helper for ChunkedInsert. Takes a single chunk, and recursively attempts to insert that chunk,
+// then the first and second halves of that chunk independently, and so on.
 func chunkedInsertHelper(resources []*Resource, clusterName string) ChunkedOperationResult {
 
 	if len(resources) == 0 {
 		return ChunkedOperationResult{} // No errors, and no SuccessfulResources
 	}
 
-	_, _, err := Insert(resources, clusterName) // We currently ignore encoding errors as they are always recoverable, may change in the future.
+	_, _, err := Insert(resources, clusterName) // We ignore encoding errors as they are always recoverable.
 	if IsBadConnection(err) {                   // this is false if err is nil
 		return ChunkedOperationResult{
 			ConnectionError: err,
@@ -38,14 +39,16 @@ func chunkedInsertHelper(resources []*Resource, clusterName string) ChunkedOpera
 		} else { // If this is multiple resources, we make a recursive call to find which half had the error.
 			firstHalf := chunkedInsertHelper(resources[0:len(resources)/2], clusterName)
 			secondHalf := chunkedInsertHelper(resources[len(resources)/2:], clusterName)
-			if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil { // Again, if either one has a redis conn issue we just instantly bail
+			if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil {
+				// Again, if either one has a redis conn issue we just instantly bail
 				return ChunkedOperationResult{
 					ConnectionError: err,
 				}
 			}
 			return ChunkedOperationResult{
-				ResourceErrors:      mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
-				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources, // These will be 0 if there were errs in the halves
+				ResourceErrors: mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
+				// These will be 0 if there were errs in the halves
+				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources,
 			}
 		}
 	}
@@ -55,7 +58,7 @@ func chunkedInsertHelper(resources []*Resource, clusterName string) ChunkedOpera
 	}
 }
 
-// Inserts the given resources into the graph, does chunking for you and returns errors related to individual resources.
+// Insert the given resources into the graph, does chunking for you and returns errors related to individual resources.
 func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationResult {
 	var resourceErrors map[string]error
 	totalSuccessful := 0
@@ -72,7 +75,7 @@ func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationRe
 		if chunkResult.ConnectionError != nil {
 			return chunkResult
 		} else if chunkResult.ResourceErrors != nil {
-			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is still nil.
+			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is nil
 		}
 		totalSuccessful += chunkResult.SuccessfulResources
 	}
@@ -96,10 +99,11 @@ func ChunkedInsert(resources []*Resource, clusterName string) ChunkedOperationRe
 	return ret
 }
 
-// Inserts given resources into graph, transparently builds query for you and returns the response and errors given by redisgraph.
+// Inserts given resources into graph, transparently builds query for you and
+// returns the response and errors given by redisgraph.
 // Returns the result, any errors when encoding, and any error from the query itself.
 func Insert(resources []*Resource, clusterName string) (*rg2.QueryResult, map[string]error, error) {
-	query, encodingErrors := insertQuery(resources, clusterName) // Encoding errors are recoverable, but we still report them
+	query, encodingErrors := insertQuery(resources, clusterName) // Encoding errors are recoverable, but we report them
 	resp, err := Store.Query(query)
 	return resp, encodingErrors, err
 }
@@ -124,7 +128,7 @@ func insertQuery(resources []*Resource, clusterName string) (string, map[string]
 		}
 		propStrings := []string{}
 		for k, v := range encodedProps {
-			switch typed := v.(type) { // At this point it's either string or int64 with base type string or []interface
+			switch typed := v.(type) { // This is either string or int64 with base type string or []interface
 			//Need to wrap in quotes if it's string
 			case int64:
 				propStrings = append(propStrings, fmt.Sprintf("%s:%d", k, typed)) // e.g. key>:<value>
@@ -134,7 +138,9 @@ func insertQuery(resources []*Resource, clusterName string) (string, map[string]
 				propStrings = append(propStrings, fmt.Sprintf("%s:'%s'", k, typed)) // e.g. <key>:'<value>'
 			}
 		}
-		resource := fmt.Sprintf("(:%s {_uid:'%s', %s})", resource.Properties["kind"], resource.UID, strings.Join(propStrings, ", ")) // e.g. (:Pod {_uid: 'abc123', prop1:5, prop2:'cheese'})
+		// e.g. (:Pod {_uid: 'abc123', prop1:5, prop2:'cheese'})
+		resource := fmt.Sprintf("(:%s {_uid:'%s', %s})",
+			resource.Properties["kind"], resource.UID, strings.Join(propStrings, ", "))
 
 		// if a clusterName was passed in then we should connect the resource to the cluster node
 		if clusterName != "" {
@@ -144,7 +150,8 @@ func insertQuery(resources []*Resource, clusterName string) (string, map[string]
 		resourceStrings = append(resourceStrings, resource)
 	}
 
-	queryString := fmt.Sprintf("%s %s", "CREATE", strings.Join(resourceStrings, ", ")) // e.g. CREATE (:Pod {_uid: 'abc123', prop1:5, prop2:'cheese'}), (:Pod {_uid: 'def456', prop1:4, prop2:'water'})
+	// e.g. CREATE (:Pod {_uid: 'abc123', prop1:5, prop2:'cheese'}), (:Pod {_uid: 'def456', prop1:4, prop2:'water'})
+	queryString := fmt.Sprintf("%s %s", "CREATE", strings.Join(resourceStrings, ", "))
 
 	// need to match the cluster node so we can reference it
 	if clusterName != "" {

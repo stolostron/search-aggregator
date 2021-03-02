@@ -2,7 +2,7 @@
  * (C) Copyright IBM Corporation 2019 All Rights Reserved
  * Copyright (c) 2020 Red Hat, Inc.
  * Copyright Contributors to the Open Cluster Management project
-*/
+ */
 package dbconnector
 
 import (
@@ -15,7 +15,8 @@ import (
 
 var deletedEdgeCount int
 
-// Recursive helper for DeleteEdge. Takes a single chunk, and recursively attempts to delete that chunk, then the first // and second halves of that chunk independently, and so on.
+// Recursive helper for DeleteEdge. Takes a single chunk, and recursively attempts to delete that chunk, then the first
+// and second halves of that chunk independently, and so on.
 func chunkedDeleteEdgeHelper(resources []Edge) ChunkedOperationResult {
 	if len(resources) == 0 {
 		return ChunkedOperationResult{} // No errors, and no SuccessfulResources
@@ -105,7 +106,7 @@ func deleteEdgeQuery(edges []Edge) string {
 	}
 
 	matchStrings := []string{}  // Build the MATCH portion
-	deleteStrings := []string{} // Build the DELETE portion. Declare this at the same time so that we can do this in one pass.
+	deleteStrings := []string{} // Build the DELETE portion. Declared at the same time so that we do this in one pass.
 	for i, edge := range edges {
 		// e.g. MATCH (s {_uid: 'abc'})-[e:Type]->(d {_uid: 'def'})
 		if edge.SourceKind != "" && edge.DestKind != "" {
