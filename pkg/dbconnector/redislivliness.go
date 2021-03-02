@@ -2,7 +2,7 @@
  * (C) Copyright IBM Corporation 2019 All Rights Reserved
  * Copyright (c) 2020 Red Hat, Inc.
  * Copyright Contributors to the Open Cluster Management project
-*/
+ */
 package dbconnector
 
 import (
@@ -12,7 +12,7 @@ import (
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 )
 
-var existingClustersMap map[string]map[string]interface{} // a map to hold Current properties already pushed to RedisGraph using SET
+var existingClustersMap map[string]map[string]interface{} // holds current properties pushed to RedisGraph using SET
 
 func RedisWatcher() {
 	conn := Pool.Get()

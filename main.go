@@ -2,7 +2,7 @@
  * (C) Copyright IBM Corporation 2019 All Rights Reserved
  * Copyright (c) 2020 Red Hat, Inc.
  * Copyright Contributors to the Open Cluster Management project
-*/
+ */
 package main
 
 import (
@@ -25,7 +25,8 @@ import (
 func main() {
 	// parse flags
 	flag.Parse()
-	err := flag.Lookup("logtostderr").Value.Set("true") // Glog is weird in that by default it logs to a file. Change it so that by default it all goes to stderr. (no option for stdout).
+	// Glog by default logs to a file. Change it so that by default it all goes to stderr. (no option for stdout).
+	err := flag.Lookup("logtostderr").Value.Set("true")
 	if err != nil {
 		fmt.Println("Error setting default flag:", err) // Uses fmt.Println in case something is wrong with glog args
 		os.Exit(1)

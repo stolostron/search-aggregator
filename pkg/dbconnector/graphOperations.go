@@ -2,7 +2,7 @@
  * (C) Copyright IBM Corporation 2019 All Rights Reserved
  * Copyright (c) 2020 Red Hat, Inc.
  * Copyright Contributors to the Open Cluster Management project
-*/
+ */
 package dbconnector
 
 import (
@@ -31,7 +31,7 @@ type Edge struct {
 // Represents the results of a chunked db operation
 type ChunkedOperationResult struct {
 	ResourceErrors      map[string]error // errors keyed by UID
-	ConnectionError     error            // For when redis conn is down. If this is set, then ResourceErrors and SuccessfulResources are irrelevant.
+	ConnectionError     error            // For when db conn is down. Supersedes ResourceErrors and SuccessfulResources
 	SuccessfulResources int              // Number that were successfully completed
 	EdgesAdded          int
 	EdgesDeleted        int
@@ -80,7 +80,9 @@ func MergeDummyCluster(name string) (*rg2.QueryResult, error) {
 		}
 	}
 
-	query := SanitizeQuery("MERGE (c:Cluster {name: '%s', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'", name, kubeVersion)
+	query := SanitizeQuery(
+		"MERGE (c:Cluster {name: '%s', kind: 'cluster'}) SET c.status = 'OK', c.kubernetesVersion = '%s'",
+		name, kubeVersion)
 	return Store.Query(query)
 }
 
