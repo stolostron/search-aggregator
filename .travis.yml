@@ -59,7 +59,6 @@ jobs:
       name: "Run unit tests"
       script:
         # Bootstrap the build harness, pull test image, and run unit tests.  
-        - make copyright-check
         # - make component/pull 
         - make component/test/unit
         - make security/scans
