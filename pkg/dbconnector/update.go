@@ -1,7 +1,9 @@
 /*
- * (C) Copyright IBM Corporation 2019 All Rights Reserved
- * Copyright (c) 2020 Red Hat, Inc.
- * Copyright Contributors to the Open Cluster Management project
+IBM Confidential
+OCO Source Materials
+(C) Copyright IBM Corporation 2019 All Rights Reserved
+The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Copyright (c) 2020 Red Hat, Inc.
 */
 
 package dbconnector
@@ -15,12 +17,13 @@ import (
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
-// Recursive helper for ChunkedUpdate. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
+// Recursive helper for ChunkedUpdate. Takes a single chunk, and recursively attempts to insert that chunk,
+// then the first and second halves of that chunk independently, and so on.
 func chunkedUpdateHelper(resources []*Resource) ChunkedOperationResult {
 	if len(resources) == 0 {
 		return ChunkedOperationResult{} // No errors, and no SuccessfulResources
 	}
-	_, _, err := Update(resources) // We currently ignore encoding errors as they are always recoverable, may change in the future.
+	_, _, err := Update(resources) // We ignore encoding errors as they are always recoverable.
 	if IsBadConnection(err) {      // this is false if err is nil
 		return ChunkedOperationResult{
 			ConnectionError: err,
@@ -34,14 +37,16 @@ func chunkedUpdateHelper(resources []*Resource) ChunkedOperationResult {
 		} else { // If this is multiple resources, we make a recursive call to find which half had the error.
 			firstHalf := chunkedUpdateHelper(resources[0 : len(resources)/2])
 			secondHalf := chunkedUpdateHelper(resources[len(resources)/2:])
-			if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil { // Again, if either one has a redis conn issue we just instantly bail
+			if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil {
+				// Again, if either one has a redis conn issue we just instantly bail
 				return ChunkedOperationResult{
 					ConnectionError: err,
 				}
 			}
 			return ChunkedOperationResult{
-				ResourceErrors:      mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
-				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources, // These will be 0 if there were errs in the halves
+				ResourceErrors: mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
+				// These will be 0 if there were errs in the halves
+				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources,
 			}
 		}
 	}
@@ -61,7 +66,7 @@ func ChunkedUpdate(resources []*Resource) ChunkedOperationResult {
 		if chunkResult.ConnectionError != nil {
 			return chunkResult
 		} else if chunkResult.ResourceErrors != nil {
-			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is still nil.
+			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is nil
 		}
 		totalSuccessful += chunkResult.SuccessfulResources
 	}
@@ -71,7 +76,8 @@ func ChunkedUpdate(resources []*Resource) ChunkedOperationResult {
 	}
 }
 
-// Updates given resources into graph, transparently builds query for you and returns the reponse and errors given by redisgraph.
+// Updates given resources into graph, transparently builds query for you and
+// returns the reponse and errors given by redisgraph.
 // Returns the result, any errors when encoding, and any error from the query itself.
 func Update(resources []*Resource) (*rg2.QueryResult, map[string]error, error) {
 	query, encodingErrors := updateQuery(resources) // Encoding errors are recoverable, but we still report them
@@ -79,7 +85,8 @@ func Update(resources []*Resource) (*rg2.QueryResult, map[string]error, error) {
 	return resp, encodingErrors, err
 }
 
-// Given a set of resources, returns Query string for replacing the existing versions of them in redisgraph with the given ones.
+// Given a set of resources, returns Query string for replacing the existing versions of them
+// in redisgraph with the given ones.
 // Will not delete old properties.
 func updateQuery(resources []*Resource) (string, map[string]error) {
 
@@ -91,10 +98,12 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 	// Form query string with MATCH and SET to update all the resources at once.
 	// Useful doc: https://oss.redislabs.com/redisgraph/commands/#set
 	matchStrings := []string{} // Build the MATCH portion
-	setStrings := []string{}   // Build the SET portion. Declare this at the same time so that we can do this in one pass.
+	setStrings := []string{}   // Build the SET portion. Declare this here so that we can do this in one pass.
 	for i, resource := range resources {
 		resource.addRbacProperty()
-		matchStrings = append(matchStrings, fmt.Sprintf("(n%d:%s {_uid: '%s'})", i, resource.Properties["kind"], resource.UID)) // e.g. (n0:Pod {_uid: 'abc123'})
+		// e.g. (n0:Pod {_uid: 'abc123'})
+		matchStrings = append(matchStrings, fmt.Sprintf("(n%d:%s {_uid: '%s'})",
+			i, resource.Properties["kind"], resource.UID))
 		encodedProps, err := resource.EncodeProperties()
 		if err != nil {
 			glog.Error("Cannot encode resource ", resource.UID, ", excluding it from update: ", err)
@@ -102,7 +111,7 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 			continue
 		}
 		for k, v := range encodedProps {
-			switch typed := v.(type) { // At this point it's either string or int64 with base type string or []interface
+			switch typed := v.(type) { // This is either string or int64 with base type string or []interface
 			// Need to wrap in quotes if it's string
 			case int64:
 				setStrings = append(setStrings, fmt.Sprintf("n%d.%s=%d", i, k, typed)) // e.g. n0.<key>=<value>
@@ -114,7 +123,8 @@ func updateQuery(resources []*Resource) (string, map[string]error) {
 		}
 	}
 
-	queryString := fmt.Sprintf("%s%s", "MATCH "+strings.Join(matchStrings, ", "), " SET "+strings.Join(setStrings, ", "))
+	queryString := fmt.Sprintf(
+		"%s%s", "MATCH "+strings.Join(matchStrings, ", "), " SET "+strings.Join(setStrings, ", "))
 
 	return queryString, encodingErrors
 }
@@ -132,8 +142,8 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error, bool) {
 
 	// Decide if we want to SET again in REDIS -> if we keep setting values Redis is going OOM .
 	// We check if REDIS is responding , if not we will clean our memory cache so that we write to redis
-	// Check if this is from Update Intent and Map is not nil , we can check if the same values are already there in redis and return
-	// with out performing a SET . This will help alleviate the OOM situation
+	// Check if this is from Update Intent and Map is not nil , we can check if the same values are already
+	// there in redis and return with out performing a SET . This will help alleviate the OOM situation
 	if isKeyClustersCache(resource.UID) {
 		mapInRG := getClustersCache(resource.UID)
 		if reflect.DeepEqual(mapInRG, encodedProps) {
@@ -144,7 +154,7 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error, bool) {
 	}
 	setStrings := []string{} // Build the SET portion.
 	for k, v := range encodedProps {
-		switch typed := v.(type) { // At this point it's either string or int64 or list. Need to wrap in quotes if it's string
+		switch typed := v.(type) { // Here it's either string or int64 or list. Need to wrap in quotes if it's string
 		case int64:
 			setStrings = append(setStrings, fmt.Sprintf("n.%s=%d", k, typed)) // e.g. n.<key>=<value>
 		case []interface{}, map[string]interface{}:
@@ -156,7 +166,8 @@ func UpdateByName(resource Resource) (*rg2.QueryResult, error, bool) {
 
 	glog.V(2).Infof("Updating properties for cluster %s on db.", resource.Properties["name"])
 	// e.g. "MATCH (n:Cluster {name: 'abc123'}) SET n.foo=4"
-	queryString := fmt.Sprintf("MATCH (n:%s {name: '%s'}) SET %s", resource.Properties["kind"], resource.Properties["name"], strings.Join(setStrings, ", "))
+	queryString := fmt.Sprintf("MATCH (n:%s {name: '%s'}) SET %s",
+		resource.Properties["kind"], resource.Properties["name"], strings.Join(setStrings, ", "))
 	resp, err := Store.Query(queryString)
 	//if there is no error store the Map in Global encodedPropsMap
 	if err == nil {

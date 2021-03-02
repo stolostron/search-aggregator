@@ -1,8 +1,12 @@
 /*
- * (C) Copyright IBM Corporation 2019 All Rights Reserved
- * Copyright (c) 2020 Red Hat, Inc.
- * Copyright Contributors to the Open Cluster Management project
+IBM Confidential
+OCO Source Materials
+(C) Copyright IBM Corporation 2019 All Rights Reserved
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
 */
+// Copyright (c) 2020 Red Hat, Inc.
+
 package dbconnector
 
 import (
@@ -12,7 +16,8 @@ import (
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
-// Recursive helper for ChunkedDelete. Takes a single chunk, and recursively attempts to insert that chunk, then the first and second halves of that chunk independently, and so on.
+// Recursive helper for ChunkedDelete. Takes a single chunk, and recursively attempts to insert that chunk,
+// then the first and second halves of that chunk independently, and so on.
 func chunkedDeleteHelper(uids []string) ChunkedOperationResult {
 	if len(uids) == 0 {
 		return ChunkedOperationResult{} // No errors, and no SuccessfulResources
@@ -31,14 +36,16 @@ func chunkedDeleteHelper(uids []string) ChunkedOperationResult {
 		} else { // If this is multiple resources, we make a recursive call to find which half had the error.
 			firstHalf := chunkedDeleteHelper(uids[0 : len(uids)/2])
 			secondHalf := chunkedDeleteHelper(uids[len(uids)/2:])
-			if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil { // Again, if either one has a redis conn issue we just instantly bail
+			if firstHalf.ConnectionError != nil || secondHalf.ConnectionError != nil {
+				// Again, if either one has a redis conn issue we just instantly bail
 				return ChunkedOperationResult{
 					ConnectionError: err,
 				}
 			}
 			return ChunkedOperationResult{
-				ResourceErrors:      mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
-				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources, // These will be 0 if there were errs in the halves
+				ResourceErrors: mergeErrorMaps(firstHalf.ResourceErrors, secondHalf.ResourceErrors),
+				// These will be 0 if there were errs in the halves
+				SuccessfulResources: firstHalf.SuccessfulResources + secondHalf.SuccessfulResources,
 			}
 		}
 	}
@@ -48,7 +55,7 @@ func chunkedDeleteHelper(uids []string) ChunkedOperationResult {
 	}
 }
 
-// Deletes the given resources from the graph, does chunking for you and returns errors related to individual resources.
+// Delete the given resources from the graph, does chunking for you and returns errors related to individual resources.
 func ChunkedDelete(resources []string) ChunkedOperationResult {
 	var resourceErrors map[string]error
 	totalSuccessful := 0
@@ -58,7 +65,7 @@ func ChunkedDelete(resources []string) ChunkedOperationResult {
 		if chunkResult.ConnectionError != nil {
 			return chunkResult
 		} else if chunkResult.ResourceErrors != nil {
-			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is still nil.
+			resourceErrors = mergeErrorMaps(resourceErrors, chunkResult.ResourceErrors) // if both are nil, this is nil
 		}
 		totalSuccessful += chunkResult.SuccessfulResources
 	}
@@ -68,7 +75,8 @@ func ChunkedDelete(resources []string) ChunkedOperationResult {
 	}
 }
 
-// Deletes resources with the given UIDs, transparently builds query for you and returns the reponse and errors given by redisgraph.
+// Deletes resources with the given UIDs, transparently builds query for you and returns the reponse
+// and errors given by redisgraph.
 // No encoding errors possible with this operation.
 func Delete(uids []string) (*rg2.QueryResult, error) {
 	query := deleteQuery(uids)
@@ -76,7 +84,8 @@ func Delete(uids []string) (*rg2.QueryResult, error) {
 	return resp, err
 }
 
-// This has the error in the returns so that it matches the interface, it isn't used. Thought that was nicer than having 2 interfaces.
+// This has the error in the returns so that it matches the interface, it isn't used.
+// Thought that was nicer than having 2 interfaces.
 func deleteQuery(uids []string) string {
 	if len(uids) == 0 {
 		return ""
@@ -88,7 +97,8 @@ func deleteQuery(uids []string) string {
 	}
 
 	/* #nosec G201 - Input is sanitized above. */
-	queryString := fmt.Sprintf("MATCH (n) WHERE (%s) DELETE n", strings.Join(clauseStrings, " OR ")) // e.g. MATCH (n) WHERE (n._uid='uid1' OR n._uid='uid2') DELETE n
+	queryString := fmt.Sprintf("MATCH (n) WHERE (%s) DELETE n", strings.Join(clauseStrings, " OR "))
+	// e.g. MATCH (n) WHERE (n._uid='uid1' OR n._uid='uid2') DELETE n
 
 	return queryString
 }

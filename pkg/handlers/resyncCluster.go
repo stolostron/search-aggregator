@@ -1,7 +1,11 @@
 /*
- * (C) Copyright IBM Corporation 2019 All Rights Reserved
- * Copyright (c) 2020 Red Hat, Inc.
- * Copyright Contributors to the Open Cluster Management project
+IBM Confidential
+OCO Source Materials
+(C) Copyright IBM Corporation 2019 All Rights Reserved
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
+
+Copyright (c) 2020 Red Hat, Inc.
 */
 
 package handlers
@@ -92,11 +96,13 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 					if interfaceTypeTrue && existingInterfaceTypeTrue {
 						isInterface = true
 					} else {
-						// Need to compare everything other than interfaces as strings because that's what we get from RedisGraph.
+						// Need to compare everything other than interfaces as strings
+						// because that's what we get from RedisGraph.
 						stringValue = valueToString(value)
 						existingProperty = valueToString(existingResource.Properties[key])
 					}
-					if (isInterface && !reflect.DeepEqual(newResource.Properties[key], existingInterface)) || existingProperty != stringValue {
+					if (isInterface && !reflect.DeepEqual(newResource.Properties[key], existingInterface)) ||
+						existingProperty != stringValue {
 						resourcesToUpdate = append(resourcesToUpdate, newResource)
 						break
 					}
@@ -152,7 +158,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	currEdgesCount := computeIntraEdges(clusterName)
 	glog.V(4).Info("Number of intra edges for cluster ", clusterName, " before removing duplicates: ", currEdgesCount)
 
-	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) WHERE (r._interCluster <> true) OR (r._interCluster IS NULL) RETURN s._uid, type(r), d._uid", clusterName, clusterName))
+	currEdges, edgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) WHERE (r._interCluster <> true) OR (r._interCluster IS NULL) RETURN s._uid, type(r), d._uid",
+		clusterName, clusterName))
 	if edgesError != nil {
 		glog.Warning("Error getting all existing edges for cluster ", clusterName, edgesError)
 		err = edgesError
@@ -183,7 +190,7 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 	glog.V(4).Info("Duplicate edge count: ", dupCount)
 
 	//Redisgraph 2.0 supports addition of duplicate edges. Delete duplicate edges, if any, in the cluster
-	dupEdgedeleted, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'})  WHERE (r._interCluster <> true) OR (r._interCluster IS NULL) WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
+	dupEdgedeleted, delEdgesError := db.Store.Query(fmt.Sprintf("MATCH (s {cluster:'%s'})-[r]->(d {cluster:'%s'}) WHERE (r._interCluster <> true) OR (r._interCluster IS NULL) WITH s as source, d as dest, TYPE(r) as edge, COLLECT (r) AS edges WHERE size(edges) >1 UNWIND edges[1..] AS dupedges DELETE dupedges", clusterName, clusterName))
 	if delEdgesError != nil {
 		glog.Warning("Error deleting duplicate edges for cluster ", clusterName, delEdgesError)
 		err = delEdgesError
@@ -212,7 +219,8 @@ func resyncCluster(clusterName string, resources []*db.Resource, edges []db.Edge
 		glog.Error("There are duplicate edges in the payload from cluster: ", clusterName)
 	}
 
-	// Compute edges to delete. These are the remaining objects in existingEdges after processing all the incoming new edges.
+	// Compute edges to delete.
+	// These are the remaining objects in existingEdges after processing all the incoming new edges.
 	var edgesToDelete = make([]db.Edge, 0)
 	for _, e := range existingEdges {
 		edgesToDelete = append(edgesToDelete, e)

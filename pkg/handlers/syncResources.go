@@ -1,7 +1,11 @@
 /*
- * (C) Copyright IBM Corporation 2019 All Rights Reserved
- * Copyright (c) 2020 Red Hat, Inc.
- * Copyright Contributors to the Open Cluster Management project
+IBM Confidential
+OCO Source Materials
+(C) Copyright IBM Corporation 2019 All Rights Reserved
+The source code for this program is not published or otherwise divested of its trade secrets,
+irrespective of what has been deposited with the U.S. Copyright Office.
+
+Copyright (c) 2020 Red Hat, Inc.
 */
 
 package handlers
@@ -122,9 +126,10 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.RequestId = syncEvent.RequestId
-	glog.V(3).Infof("Processing Request { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }",
-		syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources), len(syncEvent.DeleteResources),
-		len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
+	glog.V(3).Infof(
+		"Processing Request { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }",
+		syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources),
+		len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
 
 	err = db.ValidateClusterName(clusterName)
 	if err != nil {
@@ -135,7 +140,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	// Validate that we have a Cluster CRD so we can build edges on create
 	if !assertClusterNode(clusterName) {
-		glog.Warningf("Warning, couldn't find a Cluster node with name: %s. This means that the sync request came from a managed cluster that hasn’t joined. Rejecting the incoming sync request.", clusterName)
+		glog.Warningf(
+			"Warning, couldn't find a Cluster node with name: %s. This means that the sync request came from a managed cluster that hasn’t joined. Rejecting the incoming sync request.", clusterName)
 		respond(http.StatusBadRequest)
 		return
 	}
