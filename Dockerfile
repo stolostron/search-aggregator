@@ -1,3 +1,5 @@
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.3
 
 ARG VCS_REF
