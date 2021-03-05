@@ -38,7 +38,7 @@ func init() {
 		MaxIdle:      10, // Idle connections are connections that have been returned to the pool.
 		MaxActive:    20, // Active connections = connections in-use + idle connections
 		Dial:         getRedisConnection,
-		TestOnBorrow: testRedisConnection,
+		TestOnBorrow: validateRedisConnection,
 		Wait:         true,
 	}
 	Store = RedisGraphStoreV2{}
@@ -46,45 +46,54 @@ func init() {
 }
 
 func getRedisConnection() (redis.Conn, error) {
-	var redisConn redis.Conn
+	var port string
+	var sslEnabled bool
+
+	host := config.Cfg.RedisHost
 	if config.Cfg.RedisSSHPort != "" {
-		glog.V(2).Infof("Initializing new Redis SSH client with redisHost: %s redisSSHPort: %s",
-			config.Cfg.RedisHost, config.Cfg.RedisSSHPort)
-		caCert, err := ioutil.ReadFile("./rediscert/redis.crt")
-		if err != nil {
-			glog.Error("Error loading TLS certificate. Redis cert must be mounted at ./sslcert/redis.crt: ", err)
-			return nil, err
+		port = config.Cfg.RedisSSHPort
+		sslEnabled = true
+	} else {
+		port = config.Cfg.RedisPort
+		sslEnabled = false
+	}
+
+	glog.V(2).Infof("Initializing Redis client with Host: %s, Port: %s, using SSL: %t", host, port, sslEnabled)
+
+	tlsconf := &tls.Config{
+		MinVersion:               tls.VersionTLS12,
+		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		PreferServerCipherSuites: true,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		},
+		// RootCAs: caCertPool,
+	}
+
+	// Attempt to add RootCAs to tlsconf.
+	caCert, certErr := ioutil.ReadFile("./rediscert/redis.crt")
+	if certErr != nil {
+		if sslEnabled {
+			// If REDIS_SSL_PORT was provided we assume that SSL is required.
+			glog.Error("REDIS_SSH_PORT is configured, but can't load cert. ", certErr)
+			return nil, certErr
+		} else {
+			glog.Warning("Using insecure Redis connection.")
+			glog.Warning("To enable SSL provide REDIS_SSL_PORT and ./rediscert/redis.crt")
 		}
+	} else {
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
+		tlsconf.RootCAs = caCertPool
+	}
 
-		tlsconf := &tls.Config{
-			MinVersion:               tls.VersionTLS12,
-			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
-			PreferServerCipherSuites: true,
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			},
-			RootCAs: caCertPool,
-		}
-		redisConn, err = redis.Dial("tcp", net.JoinHostPort(config.Cfg.RedisHost, config.Cfg.RedisSSHPort),
-			redis.DialTLSConfig(tlsconf),
-			redis.DialUseTLS(true)) // Set this to false when you want to connect to redis via SSH from local laptop
-		if err != nil {
-			glog.Error("Error connecting redis using SSH.  Original error: ", err)
-			return nil, err
-		}
-
-	} else {
-		var err error
-		glog.V(2).Infof("Initializing new Redis client with redisHost: %s redisPort: %s",
-			config.Cfg.RedisHost, config.Cfg.RedisPort)
-
-		redisConn, err = redis.Dial("tcp", net.JoinHostPort(config.Cfg.RedisHost, config.Cfg.RedisPort))
-		if err != nil {
-			glog.Error("Error connecting redis host.")
-			return nil, err
-		}
+	redisConn, err := redis.Dial("tcp",
+		net.JoinHostPort(host, port),
+		redis.DialTLSConfig(tlsconf),
+		redis.DialUseTLS(sslEnabled))
+	if err != nil {
+		glog.Error("Error connecting redis. Original error: ", err)
+		return nil, err
 	}
 
 	// If a password is provided, then use it to authenticate the Redis connection.
@@ -107,7 +116,7 @@ func getRedisConnection() (redis.Conn, error) {
 
 // Used by the pool to test if redis connections are still okay. If they have been idle for less than a minute,
 // just assumes they are okay. If not, calls PING.
-func testRedisConnection(c redis.Conn, t time.Time) error {
+func validateRedisConnection(c redis.Conn, t time.Time) error {
 	if time.Since(t) < IDLE_TIMEOUT*time.Second {
 		return nil
 	}
