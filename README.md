@@ -8,11 +8,15 @@ The Search Aggregator is a component of the Open Cluster Management [search feat
     ```
     docker run -p 6379:6379 -it --rm redislabs/redisgraph
     ```
-2. Install dependencies
+2. Generate self-signed certificate for development
+   ```
+   sh setup.sh
+   ```
+3. Install dependencies
     ```
     make deps
     ```
-3. Build and run
+4. Build and run
     ```
     make run
     ```
