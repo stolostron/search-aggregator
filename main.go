@@ -77,5 +77,6 @@ func main() {
 	}
 
 	glog.Info("Listening on: ", config.Cfg.AggregatorAddress)
-	log.Fatal(srv.ListenAndServeTLS("./sslcert/tls.crt", "./sslcert/tls.key"))
+	log.Fatal(srv.ListenAndServeTLS("./sslcert/tls.crt", "./sslcert/tls.key"),
+		" Use ./setup.sh to generate certificates for local development.")
 }
