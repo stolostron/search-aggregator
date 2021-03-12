@@ -45,8 +45,7 @@ RUN microdnf update &&\
     mkdir /licenses &&\
     microdnf clean all
 
-WORKDIR /opt/app/
-COPY --from=builder /go/src/github.com/open-cluster-management/search-aggregator/main ./main
+COPY --from=builder /go/src/github.com/open-cluster-management/search-aggregator/main /bin/main
 
 ENV VCS_REF="$VCS_REF" \
     USER_UID=1001 \
@@ -54,4 +53,4 @@ ENV VCS_REF="$VCS_REF" \
 
 EXPOSE 3010
 USER ${USER_UID}
-ENTRYPOINT ["/opt/app/main"]
+ENTRYPOINT ["/bin/main"]
