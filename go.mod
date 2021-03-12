@@ -7,14 +7,22 @@ go 1.15
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/gomodule/redigo v2.0.0+incompatible
+	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/kennygrant/sanitize v1.2.4
+	github.com/kr/text v0.2.0 // indirect
+	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
+	github.com/onsi/ginkgo v1.14.2 // indirect
+	github.com/onsi/gomega v1.10.4 // indirect
 	github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200629084830-3965fdd47134
 	github.com/redislabs/redisgraph-go v2.0.2+incompatible
-	github.com/stretchr/testify v1.4.0
-	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
+	github.com/stretchr/testify v1.7.0
+	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v13.0.0+incompatible
 	sigs.k8s.io/yaml v1.2.0 // indirect
