@@ -18,22 +18,19 @@ default::
 
 .PHONY: deps
 deps:
-	go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.24.0
 	go mod tidy
 
-.PHONY: search-aggregator
-search-aggregator:
-	CGO_ENABLED=0 go build -a -v -i -installsuffix cgo -ldflags '-s -w' -o $(BINDIR)/search-aggregator ./
-
 .PHONY: build
-build: search-aggregator
+build:
+	CGO_ENABLED=0 go build -o $(BINDIR)/search-aggregator ./
 
 .PHONY: build-linux
 build-linux:
-	make search-aggregator GOOS=linux
+	make build GOOS=linux
 
 .PHONY: lint
 lint:
+	go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.38.0
 	# Flag GOGC=25 needed to run garbage collection more often and avoid out of memory issue.
 	GOGC=25 golangci-lint run --timeout=3m
 
@@ -53,3 +50,7 @@ clean::
 	go clean
 	rm -f cover*
 	rm -rf ./$(BINDIR)
+
+# Build the docker image
+docker-build: 
+	docker build -f Dockerfile . -t search-aggregator

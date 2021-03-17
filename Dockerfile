@@ -1,5 +1,12 @@
 # Copyright (c) 2021 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
+
+FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux-amd64 AS builder
+
+WORKDIR /go/src/github.com/open-cluster-management/search-aggregator
+COPY . .
+RUN CGO_ENABLED=0 GOGC=25 go build -trimpath -o main main.go
+
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.3
 
 ARG VCS_REF
@@ -33,15 +40,17 @@ LABEL org.label-schema.vendor="Red Hat" \
       io.k8s.description="$IMAGE_DESCRIPTION" \
       io.openshift.tags="$IMAGE_OPENSHIFT_TAGS"
 
-RUN microdnf install ca-certificates vi --nodocs &&\
+RUN microdnf update &&\
+    microdnf install ca-certificates vi --nodocs &&\
     mkdir /licenses &&\
     microdnf clean all
 
-ENV VCS_REF="$VCS_REF" \
-    USER_UID=1001
+COPY --from=builder /go/src/github.com/open-cluster-management/search-aggregator/main /bin/main
 
-ADD output/search-aggregator /bin
+ENV VCS_REF="$VCS_REF" \
+    USER_UID=1001 \
+    GOGC=25
 
 EXPOSE 3010
 USER ${USER_UID}
-ENTRYPOINT ["/bin/search-aggregator"]
+ENTRYPOINT ["/bin/main"]
