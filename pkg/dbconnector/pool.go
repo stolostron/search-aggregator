@@ -84,7 +84,6 @@ func getRedisConnection() (redis.Conn, error) {
 	} else {
 		caCertPool := x509.NewCertPool()
 		ok := caCertPool.AppendCertsFromPEM(caCert)
-		glog.Info("AppendCertsFromPEM ok? ", ok)
 		tlsconf.RootCAs = caCertPool
 	}
 
