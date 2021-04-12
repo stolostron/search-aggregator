@@ -88,7 +88,7 @@ func getRedisConnection() (redis.Conn, error) {
 	}
 
 	redisConn, err := redis.Dial("tcp",
-		redis.DialConnectTimeout(30*time.Seconds),
+		redis.DialConnectTimeout(30*time.Second),
 		net.JoinHostPort(host, port),
 		redis.DialTLSConfig(tlsconf),
 		redis.DialUseTLS(sslEnabled))
