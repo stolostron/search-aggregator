@@ -90,7 +90,8 @@ func getRedisConnection() (redis.Conn, error) {
 	redisConn, err := redis.Dial("tcp",
 		net.JoinHostPort(host, port),
 		redis.DialTLSConfig(tlsconf),
-		redis.DialUseTLS(sslEnabled))
+		redis.DialUseTLS(sslEnabled),
+		redis.DialConnectTimeout(30*time.Second))
 	if err != nil {
 		glog.Error("Error connecting redis. Original error: ", err)
 		return nil, err
