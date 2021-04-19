@@ -3,22 +3,12 @@ approvers:
   - xrajesh
   - SherinV
   - mqhackett
-  - arewm
-  - gurnben
-  - Kyl-Bempah
-  - ray-harris
-  - schmidtd
-  - smithbw88
-  - tpouyer
 reviewers:
+  - dislbenn
   - jlpadilla
-  - xrajesh
-  - SherinV
+  - mark-nc
   - mqhackett
-  - arewm
-  - gurnben
-  - Kyl-Bempah
-  - ray-harris
-  - schmidtd
-  - smithbw88
-  - tpouyer
+  - RobDolares
+  - SherinV
+  - xrajesh
+  - zlayne
