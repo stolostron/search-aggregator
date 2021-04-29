@@ -40,7 +40,7 @@ func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
 	}
 	client := config.GetKubeClient()
 	operatorPath := "/apis/search.open-cluster-management.io/v1alpha1/namespaces/" + ns + "/searchoperators/searchoperator"
-	srchoBytes, err := client.DiscoveryClient.RESTClient().Get().
+	srchoBytes, err := client.RESTClient().Get().
 		AbsPath(operatorPath).DoRaw()
 	instance := &searchv1alpha1.SearchOperator{}
 	err = json.Unmarshal(srchoBytes, instance)
