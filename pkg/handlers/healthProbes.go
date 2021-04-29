@@ -39,9 +39,14 @@ func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
 	}
 	options := metav1.GetOptions{}
 	_, err := config.GetKubeClient().CoreV1().Pods(ns).Get("search-redisgraph-0", options)
-	if err != nil && errors.IsNotFound(err) {
-		glog.V(2).Info("Redisgraph pod is not present - will re-check once it is enabled.")
-		return
+	if err != nil {
+		if errors.IsNotFound(err) {
+			glog.Info("Redisgraph pod is not present - will re-check once it is enabled. Err:", err)
+			return
+		}
+		glog.Infof("Error getting pod in namespace %s: %v", ns, err)
+	} else {
+		glog.Info("Redisgraph pod is present")
 	}
 	// Go straight to the pool's Dial because we don't actually want to play by the pool's
 	// rules here - just want a connection unrelated to all the other ones,
