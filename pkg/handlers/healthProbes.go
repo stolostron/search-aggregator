@@ -34,6 +34,25 @@ func LivenessProbe(w http.ResponseWriter, r *http.Request) {
 func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
 
 	glog.V(2).Info("readinessProbe - Checking Redis connection.")
+
+	if isRedisDeployed() {
+		// Go straight to the pool's Dial because we don't actually want to play by the pool's
+		// rules here - just want a connection unrelated to all the other ones,
+		conn, err := db.Pool.Dial()
+		if err != nil {
+			// Respond with error.
+			glog.Warning("Unable to reach Redis.")
+			http.Error(w, "Unable to reach Redis.", 503)
+			return
+		}
+
+		defer conn.Close()
+	}
+	// Respond with success
+	fmt.Fprint(w, "OK")
+}
+
+func isRedisDeployed() bool {
 	ns := os.Getenv("POD_NAMESPACE")
 	if ns == "" {
 		ns = "open-cluster-management"
@@ -49,19 +68,5 @@ func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
 		glog.Infof("Error unmarshaling searchoperator %v: ", err)
 	}
 	glog.Info("Is Redisgraph deployed? ", *instance.Status.DeployRedisgraph)
-	if *instance.Status.DeployRedisgraph {
-		// Go straight to the pool's Dial because we don't actually want to play by the pool's
-		// rules here - just want a connection unrelated to all the other ones,
-		conn, err := db.Pool.Dial()
-		if err != nil {
-			// Respond with error.
-			glog.Warning("Unable to reach Redis.")
-			http.Error(w, "Unable to reach Redis.", 503)
-			return
-		}
-
-		defer conn.Close()
-	}
-	// Respond with success
-	fmt.Fprint(w, "OK")
+	return *instance.Status.DeployRedisgraph
 }
