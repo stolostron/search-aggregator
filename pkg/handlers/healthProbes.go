@@ -12,15 +12,16 @@ Copyright (c) 2020 Red Hat, Inc.
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 
+	searchv1alpha1 "github.com/open-cluster-management/search-operator/api/v1alpha1"
+
 	"github.com/golang/glog"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // LivenessProbe is used to check if this service is alive.
@@ -37,26 +38,30 @@ func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
 	if ns == "" {
 		ns = "open-cluster-management"
 	}
-	options := metav1.GetOptions{}
-	_, err := config.GetKubeClient().CoreV1().Pods(ns).Get("search-redisgraph-0", options)
+	client := config.GetKubeClient()
+	operatorPath := "/apis/search.open-cluster-management.io/v1alpha1/namespaces/" + ns + "/searchoperators/searchoperator"
+	srchoBytes, err := client.DiscoveryClient.RESTClient().Get().
+		AbsPath(operatorPath).DoRaw()
+	instance := &searchv1alpha1.SearchOperator{}
+	err = json.Unmarshal(srchoBytes, instance)
+
 	if err != nil {
-		if errors.IsNotFound(err) {
-			glog.Info("Redisgraph pod is not present - will re-check once it is enabled. Err:", err)
+		glog.Infof("Error unmarshaling searchoperator %v: ", err)
+	}
+	glog.Info("Is Redisgraph deployed? ", *instance.Status.DeployRedisgraph)
+	if *instance.Status.DeployRedisgraph {
+		// Go straight to the pool's Dial because we don't actually want to play by the pool's
+		// rules here - just want a connection unrelated to all the other ones,
+		conn, err := db.Pool.Dial()
+		if err != nil {
+			// Respond with error.
+			glog.Warning("Unable to reach Redis.")
+			http.Error(w, "Unable to reach Redis.", 503)
 			return
 		}
-		glog.Infof("Error getting pod in namespace %s: %v", ns, err)
-	}
-	// Go straight to the pool's Dial because we don't actually want to play by the pool's
-	// rules here - just want a connection unrelated to all the other ones,
-	conn, err := db.Pool.Dial()
-	if err != nil {
-		// Respond with error.
-		glog.Warning("Unable to reach Redis.")
-		http.Error(w, "Unable to reach Redis.", 503)
-		return
-	}
 
-	defer conn.Close()
+		defer conn.Close()
+	}
 	// Respond with success
 	fmt.Fprint(w, "OK")
 }

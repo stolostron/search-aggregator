@@ -17,15 +17,15 @@ require (
 	github.com/onsi/gomega v1.10.4 // indirect
 	github.com/open-cluster-management/api v0.0.0-20200623215229-19a96fed707a
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200629084830-3965fdd47134
+	github.com/open-cluster-management/search-operator v1.0.1-2020-06-08-14-28-27.0.20210429140414-8c4949b7a368
 	github.com/redislabs/redisgraph-go v2.0.2+incompatible
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apimachinery v0.18.3
+	k8s.io/apimachinery v0.18.6
 	k8s.io/client-go v13.0.0+incompatible
-	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
 replace (
