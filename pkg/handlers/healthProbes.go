@@ -45,8 +45,6 @@ func ReadinessProbe(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		glog.Infof("Error getting pod in namespace %s: %v", ns, err)
-	} else {
-		glog.Info("Redisgraph pod is present")
 	}
 	// Go straight to the pool's Dial because we don't actually want to play by the pool's
 	// rules here - just want a connection unrelated to all the other ones,
