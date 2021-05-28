@@ -1,0 +1,40 @@
+{
+    "apiVersion": "agent.open-cluster-management.io/v1",
+    "kind": "KlusterletAddonConfig",
+    "metadata": {
+        "creationTimestamp": "2021-05-27T18:57:26Z",
+        "finalizers": [
+            "agent.open-cluster-management.io/klusterletaddonconfig-cleanup"
+        ],
+        "generation": 1,
+        "name": "managed1",
+        "namespace": "managed1",
+        "resourceVersion": "181633",
+        "uid": "test1-uid-klusterletaddon-config"
+    },
+    "spec": {
+        "applicationManager": {
+            "argocdCluster": false,
+            "enabled": true
+        },
+        "certPolicyController": {
+            "enabled": true
+        },
+        "clusterLabels": {
+            "cloud": "auto-detect",
+            "name": "managed1",
+            "vendor": "auto-detect"
+        },
+        "clusterName": "managed1",
+        "clusterNamespace": "managed1",
+        "iamPolicyController": {
+            "enabled": true
+        },
+        "policyController": {
+            "enabled": true
+        },
+        "searchCollector": {
+            "enabled": true
+        }
+    }
+}

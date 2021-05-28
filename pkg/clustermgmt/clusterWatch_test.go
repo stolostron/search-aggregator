@@ -10,6 +10,7 @@ import (
 
 	sanitize "github.com/kennygrant/sanitize"
 	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
+	agentv1 "github.com/open-cluster-management/klusterlet-addon-controller/pkg/apis/agent/v1"
 	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
 	"github.com/stretchr/testify/assert"
 )
@@ -65,4 +66,20 @@ func Test_transformManagedClusterInfo(t *testing.T) {
 
 	assert.Equal(t, "managedclusterinfos", result.ResourceString, "Test property: ResourceString")
 	assert.Equal(t, "cluster__managed-cluster-01", result.UID, "Test property: UID")
+}
+
+func Test_transformKlusterletAddonConfig(t *testing.T) {
+	klusterletAddonConfig := agentv1.KlusterletAddonConfig{}
+	unmarshalFile("klusterletaddonconfig.json", &klusterletAddonConfig, t)
+
+	result := transformKlusterletAddonConfig(&klusterletAddonConfig)
+
+	assert.Equal(t, result.Kind, "Cluster", "Test Kind")
+	assert.Equal(t, "managed1", result.Properties["name"], "Test property: name")
+
+	assert.Equal(t, "klusterletaddonconfigs", result.ResourceString, "Test property: ResourceString")
+	assert.Equal(t, "cluster__managed1", result.UID, "Test property: UID")
+	testAddons := map[string]interface{}{"applicationmanager": true, "certpolicycontroller": true,
+		"iampolicycontroller": true, "policycontroller": true, "searchcollector": true}
+	assert.Equal(t, testAddons, result.Properties["addons"], "Test property: addons")
 }
