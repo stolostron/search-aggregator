@@ -79,7 +79,7 @@ func Test_transformKlusterletAddonConfig(t *testing.T) {
 
 	assert.Equal(t, "klusterletaddonconfigs", result.ResourceString, "Test property: ResourceString")
 	assert.Equal(t, "cluster__managed1", result.UID, "Test property: UID")
-	testAddons := map[string]interface{}{"applicationmanager": true, "certpolicycontroller": true,
-		"iampolicycontroller": true, "policycontroller": true, "searchcollector": true}
-	assert.Equal(t, testAddons, result.Properties["addons"], "Test property: addons")
+	testAddons := map[string]interface{}{"applicationmanagerAddonEnabled": true, "certpolicycontrollerAddonEnabled": true,
+		"iampolicycontrollerAddonEnabled": true, "policycontrollerAddonEnabled": true, "searchcollectorAddonEnabled": true}
+	assert.Equal(t, testAddons, result.Properties["addonStatus"], "Test property: addonStatus")
 }

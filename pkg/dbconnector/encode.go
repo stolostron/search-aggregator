@@ -92,7 +92,7 @@ func encodeProperty(key string, value interface{}) (map[string]interface{}, erro
 		res[key] = tmpInterface
 
 	case map[string]interface{}:
-		if key == "label" || key == "addons" {
+		if key == "label" || key == "addonStatus" {
 			labelStrings := make([]string, 0, len(typedVal))
 			for key, value := range typedVal {
 				labelString := fmt.Sprintf("'%v=%v'", sanitizeValue(key), sanitizeValue(fmt.Sprintf("%v", value)))
