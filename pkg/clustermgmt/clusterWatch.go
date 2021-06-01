@@ -183,12 +183,12 @@ func transformKlusterletAddonConfig(klusterletAddonConfig *agentv1.KlusterletAdd
 	props["name"] = klusterletAddonConfig.Spec.ClusterName
 	props["_clusterNamespace"] = klusterletAddonConfig.Spec.ClusterNamespace
 	enabledAddons := map[string]interface{}{}
-	enabledAddons["searchcollectorAddonEnabled"] = klusterletAddonConfig.Spec.SearchCollectorConfig.Enabled
-	enabledAddons["policycontrollerAddonEnabled"] = klusterletAddonConfig.Spec.PolicyController.Enabled
-	enabledAddons["certpolicycontrollerAddonEnabled"] = klusterletAddonConfig.Spec.CertPolicyControllerConfig.Enabled
-	enabledAddons["applicationmanagerAddonEnabled"] = klusterletAddonConfig.Spec.ApplicationManagerConfig.Enabled
-	enabledAddons["iampolicycontrollerAddonEnabled"] = klusterletAddonConfig.Spec.IAMPolicyControllerConfig.Enabled
-	props["addonStatus"] = enabledAddons // maps to the enabled addons on the cluster
+	enabledAddons["search-collector"] = klusterletAddonConfig.Spec.SearchCollectorConfig.Enabled
+	enabledAddons["policy-controller"] = klusterletAddonConfig.Spec.PolicyController.Enabled
+	enabledAddons["cert-policy-controller"] = klusterletAddonConfig.Spec.CertPolicyControllerConfig.Enabled
+	enabledAddons["application-manager"] = klusterletAddonConfig.Spec.ApplicationManagerConfig.Enabled
+	enabledAddons["iam-policy-controller"] = klusterletAddonConfig.Spec.IAMPolicyControllerConfig.Enabled
+	props["addon"] = enabledAddons // maps to the enabled addons on the cluster
 
 	resource := db.Resource{
 		Kind:           "Cluster",
