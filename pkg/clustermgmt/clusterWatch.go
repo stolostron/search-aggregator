@@ -18,15 +18,15 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
+	agentv1 "github.com/open-cluster-management/klusterlet-addon-controller/pkg/apis/agent/v1"
+	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/tools/cache"
-
-	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
-	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
-	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 )
 
 // Watches ManagedCluster and ManagedClusterInfo objects and updates
@@ -40,10 +40,12 @@ func WatchClusters() {
 	// Create GVR for ManagedCluster and ManagedClusterInfo
 	managedClusterGvr, _ := schema.ParseResourceArg("managedclusters.v1.cluster.open-cluster-management.io")
 	managedClusterInfoGvr, _ := schema.ParseResourceArg("managedclusterinfos.v1beta1.internal.open-cluster-management.io")
+	klusterletAddonConfigGvr, _ := schema.ParseResourceArg("klusterletaddonconfigs.v1.agent.open-cluster-management.io")
 
 	//Create Informers for ManagedCluster and ManagedClusterInfo
 	managedClusterInformer := dynamicFactory.ForResource(*managedClusterGvr).Informer()
 	managedClusterInfoInformer := dynamicFactory.ForResource(*managedClusterInfoGvr).Informer()
+	klusterletAddonConfigInformer := dynamicFactory.ForResource(*klusterletAddonConfigGvr).Informer()
 
 	// Create handlers for events
 	handlers := cache.ResourceEventHandlerFuncs{
@@ -61,10 +63,12 @@ func WatchClusters() {
 	// Add Handlers to both Informers
 	managedClusterInformer.AddEventHandler(handlers)
 	managedClusterInfoInformer.AddEventHandler(handlers)
+	klusterletAddonConfigInformer.AddEventHandler(handlers)
 
 	// Periodically check if the ManagedCluster/ManagedClusterInfo resource exists
 	go stopAndStartInformer("cluster.open-cluster-management.io/v1", managedClusterInformer)
 	go stopAndStartInformer("internal.open-cluster-management.io/v1beta1", managedClusterInfoInformer)
+	go stopAndStartInformer("agent.open-cluster-management.io/v1", klusterletAddonConfigInformer)
 }
 
 // Stop and Start informer according to Rediscover Rate
@@ -126,6 +130,13 @@ func processClusterUpsert(obj interface{}) {
 			glog.Warning("Failed to Unmarshal ManagedclusterInfo", err)
 		}
 		resource = transformManagedClusterInfo(&managedClusterInfo)
+	case "KlusterletAddonConfig":
+		klusterletAddonConfig := agentv1.KlusterletAddonConfig{}
+		err = json.Unmarshal(j, &klusterletAddonConfig)
+		if err != nil {
+			glog.Warning("Failed to Unmarshal KlusterletAddonConfig", err)
+		}
+		resource = transformKlusterletAddonConfig(&klusterletAddonConfig)
 	default:
 		glog.Warning("ClusterWatch received unknown kind.", obj.(*unstructured.Unstructured).GetKind())
 	}
@@ -164,6 +175,28 @@ func isClusterMissing(err error) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), "could not find the requested resource")
+}
+
+func transformKlusterletAddonConfig(klusterletAddonConfig *agentv1.KlusterletAddonConfig) db.Resource {
+	props := make(map[string]interface{})
+	props["kind"] = "Cluster"
+	props["name"] = klusterletAddonConfig.Spec.ClusterName
+	props["_clusterNamespace"] = klusterletAddonConfig.Spec.ClusterNamespace
+	enabledAddons := map[string]interface{}{}
+	enabledAddons["search-collector"] = klusterletAddonConfig.Spec.SearchCollectorConfig.Enabled
+	enabledAddons["policy-controller"] = klusterletAddonConfig.Spec.PolicyController.Enabled
+	enabledAddons["cert-policy-controller"] = klusterletAddonConfig.Spec.CertPolicyControllerConfig.Enabled
+	enabledAddons["application-manager"] = klusterletAddonConfig.Spec.ApplicationManagerConfig.Enabled
+	enabledAddons["iam-policy-controller"] = klusterletAddonConfig.Spec.IAMPolicyControllerConfig.Enabled
+	props["addon"] = enabledAddons // maps to the enabled addons on the cluster
+
+	resource := db.Resource{
+		Kind:           "Cluster",
+		UID:            string("cluster__" + klusterletAddonConfig.Spec.ClusterName),
+		Properties:     props,
+		ResourceString: "klusterletaddonconfigs", // Maps rbac to KlusterletAddonConfig
+	}
+	return resource
 }
 
 // Transform ManagedCluster object into db.Resource suitable for insert into redis
