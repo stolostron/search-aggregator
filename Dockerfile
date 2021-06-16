@@ -7,7 +7,7 @@ WORKDIR /go/src/github.com/open-cluster-management/search-aggregator
 COPY . .
 RUN CGO_ENABLED=0 GOGC=25 go build -trimpath -o main main.go
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.3
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
 ARG VCS_REF
 ARG VCS_URL
@@ -42,7 +42,6 @@ LABEL org.label-schema.vendor="Red Hat" \
 
 RUN microdnf update &&\
     microdnf install ca-certificates vi --nodocs &&\
-    mkdir /licenses &&\
     microdnf clean all
 
 COPY --from=builder /go/src/github.com/open-cluster-management/search-aggregator/main /bin/main
