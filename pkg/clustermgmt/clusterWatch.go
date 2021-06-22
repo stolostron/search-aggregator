@@ -194,7 +194,7 @@ func transformKlusterletAddonConfig(klusterletAddonConfig *agentv1.KlusterletAdd
 		Kind:           "Cluster",
 		UID:            string("cluster__" + klusterletAddonConfig.Spec.ClusterName),
 		Properties:     props,
-		ResourceString: "klusterletaddonconfigs", // Maps rbac to KlusterletAddonConfig
+		ResourceString: "managedclusterinfos", // Maps rbac to ManagedClusterInfo
 	}
 	return resource
 }
