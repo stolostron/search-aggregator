@@ -29,6 +29,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+const apigroup = "internal.open-cluster-management.io"
+
 // Watches ManagedCluster and ManagedClusterInfo objects and updates
 // the search graph with a Cluster pseudo node.
 func WatchClusters() {
@@ -182,6 +184,8 @@ func transformKlusterletAddonConfig(klusterletAddonConfig *agentv1.KlusterletAdd
 	props["kind"] = "Cluster"
 	props["name"] = klusterletAddonConfig.Spec.ClusterName
 	props["_clusterNamespace"] = klusterletAddonConfig.Spec.ClusterNamespace
+	props["apigroup"] = apigroup // maps rbac to ManagedClusterInfo
+
 	enabledAddons := map[string]interface{}{}
 	enabledAddons["search-collector"] = klusterletAddonConfig.Spec.SearchCollectorConfig.Enabled
 	enabledAddons["policy-controller"] = klusterletAddonConfig.Spec.PolicyController.Enabled
@@ -218,9 +222,9 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 	}
 
 	props["kind"] = "Cluster"
-	props["name"] = managedCluster.GetName()                  // must match ManagedClusterInfo
-	props["_clusterNamespace"] = managedCluster.GetName()     // maps to the namespace of ManagedClusterInfo
-	props["apigroup"] = "internal.open-cluster-management.io" // maps rbac to ManagedClusterInfo
+	props["name"] = managedCluster.GetName()              // must match ManagedClusterInfo
+	props["_clusterNamespace"] = managedCluster.GetName() // maps to the namespace of ManagedClusterInfo
+	props["apigroup"] = apigroup                          // maps rbac to ManagedClusterInfo
 	props["created"] = managedCluster.GetCreationTimestamp().UTC().Format(time.RFC3339)
 
 	cpuCapacity := managedCluster.Status.Capacity["cpu"]
@@ -252,7 +256,7 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 	props["kind"] = "Cluster"
 	props["name"] = managedClusterInfo.GetName()
 	props["_clusterNamespace"] = managedClusterInfo.GetNamespace() // Needed for rbac mapping.
-	props["apigroup"] = "internal.open-cluster-management.io"      // Maps rbac to ManagedClusterInfo
+	props["apigroup"] = apigroup                                   // Maps rbac to ManagedClusterInfo
 
 	props["consoleURL"] = managedClusterInfo.Status.ConsoleURL
 	props["nodes"] = int64(len(managedClusterInfo.Status.NodeList))
