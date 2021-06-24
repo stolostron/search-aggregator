@@ -182,6 +182,8 @@ func transformKlusterletAddonConfig(klusterletAddonConfig *agentv1.KlusterletAdd
 	props["kind"] = "Cluster"
 	props["name"] = klusterletAddonConfig.Spec.ClusterName
 	props["_clusterNamespace"] = klusterletAddonConfig.Spec.ClusterNamespace
+	props["apigroup"] = "internal.open-cluster-management.io"
+
 	enabledAddons := map[string]interface{}{}
 	enabledAddons["search-collector"] = klusterletAddonConfig.Spec.SearchCollectorConfig.Enabled
 	enabledAddons["policy-controller"] = klusterletAddonConfig.Spec.PolicyController.Enabled
