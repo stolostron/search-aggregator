@@ -1,7 +1,7 @@
 # search-aggregator
 The Search Aggregator is a component of the Open Cluster Management [search feature](https://github.com/open-cluster-management/search/blob/master/feature-spec/search.md#feature-summary). It runs on the hub cluster to index data from [search-collector](https://github.com/open-cluster-management/search-collector) on the managed clusters into [RedisGraph](https://oss.redislabs.com/redisgraph/).
 
-  
+
 ## Local Development
 
 1. Start [RedisGraph](https://oss.redislabs.com/redisgraph/)
