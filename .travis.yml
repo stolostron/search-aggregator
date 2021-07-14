@@ -10,12 +10,6 @@ go:
 services:
   - docker
 
-addons:
-  sonarcloud:
-    organization: "open-cluster-management"
-    token:
-      secure: "BOZ4XdBH77Y91VRnBBvLxkYB1q6HgfRE/eg/SM8w3htKYHRKvX2ontXMJOxu34x9yxTL7D3NE5oZIqQqcM7IORqh6D9sZ5GunQRfaoWKEdVo3XDXikvoXnlb5ozFi9bQ0OWQbOJYT6btHHHL0Ok40wkw+xtSE4+qtSsG/vfy+nAuQzlOc21fFEDVvekPYyymfzJ3NHIwlB5cMh7rVOfMr03nw/lRHqPdYTmSNGfNawGcAZ1UqTok65Hb9FY+mpLk+WtH9Q/d/KDpOowEJSU1QHPjs2YMx5BubdEfSE0lMksUV4aLS4U+7UjYyUpOZzbWO81Dvx50q+WACTC3Xyt6rl4VdAwVC1pzPzSNK+HZTj3H58FH2b9fTPbjE6N0XR/yNHoM6hC/VY/hhRqWgu9Y20NgRsjKYWZi/caZ+QNHkm2xA9ZYGjAiCKXTb+8/LS/wa7VqvCqbw6VvGPIREAgraHk837eY9x/h2Ac6Las5bNEbIxfc0iHgfDisRWM4sp7q2z2bSWXlNJU1W+t+a3xlWyI3fJsbGl0oUMLRXN8acN+Lxn4PdXhRNx/zIfFJExrCKaDhn8d4MeUqSdkcf0O/Kv6rjTHiNToofxW7mTAVYbSskRKxwGNW+FoC/O2TVpMA6ehCSV9jYQOm31KLZFQO4pUlbFqMjnn6jyXFLaD83V4="
-
 branches:
   only:
     - main
@@ -62,8 +56,7 @@ jobs:
         # - make component/pull 
         - make component/test/unit
         - make security/scans
-        - make sonar/go  
-
+        
     # - stage: test-e2e
     #   name: "Deploy the image to a cluster and run e2e tests"
     #   if: type = pull_request
@@ -72,12 +65,6 @@ jobs:
     #     - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi;
     #     - make component/pull 
     #     - make component/test/e2e
-
-    - stage: release-ff
-      name: "Push commits to current release branch"
-      if: type = push AND branch =~ /^main$/
-      script:
-        - make release-ff
 
     - stage: publish
       name: "Publish the image to quay with an official version/sha tag and publish entry to integration pipeline stage"
