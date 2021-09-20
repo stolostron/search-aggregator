@@ -18,7 +18,9 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
+	clusterv1 "open-cluster-management.io/api/cluster/v1"
+
+	// clusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	agentv1 "github.com/open-cluster-management/klusterlet-addon-controller/pkg/apis/agent/v1"
 	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
 	"github.com/open-cluster-management/search-aggregator/pkg/config"
