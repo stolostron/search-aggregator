@@ -205,7 +205,7 @@ func transformKlusterletAddonConfig(klusterletAddonConfig *agentv1.KlusterletAdd
 
 // Transform ManagedCluster object into db.Resource suitable for insert into redis
 func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resource {
-	// https://github.com/open-cluster-management/api/blob/master/cluster/v1/types.go#L78
+	// https://github.com/open-cluster-management/api/blob/main/cluster/v1/types.go#L78
 	// We use ManagedCluster as the primary source of information
 	// Properties duplicated between this and ManagedClusterInfo are taken from ManagedCluster
 	props := make(map[string]interface{})
@@ -250,7 +250,7 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 // Transform ManagedClusterInfo object into db.Resource suitable for insert into redis
 func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClusterInfo) db.Resource {
 	// https://github.com/open-cluster-management/multicloud-operators-foundation/
-	//    blob/master/pkg/apis/internal.open-cluster-management.io/v1beta1/clusterinfo_types.go
+	//    blob/main/pkg/apis/internal.open-cluster-management.io/v1beta1/clusterinfo_types.go
 	props := make(map[string]interface{})
 
 	props["kind"] = "Cluster"
