@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	db "github.com/stolostron/search-aggregator/pkg/dbconnector"
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
