@@ -60,7 +60,6 @@ require (
 )
 
 replace (
-	// github.com/metal3-io/cluster-api-provider-baremetal => github.com/metal3-io/cluster-api-provider-baremetal v0.2.2
 	github.com/buger/jsonparser => github.com/buger/jsonparser v1.1.1
 	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.1.0
 	github.com/docker/docker => github.com/docker/docker v1.13.1
@@ -77,6 +76,7 @@ replace (
 	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20220121012553-a0671aa97ef3
 	github.com/terraform-providers/terraform-provider-azurerm => github.com/terraform-providers/terraform-provider-azurerm v0.0.0-20200604143437-d38893bc4f78
 	github.com/terraform-providers/terraform-provider-ignition/v2 => github.com/community-terraform-providers/terraform-provider-ignition/v2 v2.1.0
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e
 	k8s.io/api => k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.17.4
 	k8s.io/apimachinery => k8s.io/apimachinery v0.21.1
