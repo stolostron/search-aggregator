@@ -9,7 +9,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/redislabs/redisgraph-go v2.0.2+incompatible
-	github.com/stolostron/multicloud-operators-foundation v1.0.0-2021-10-26-20-16-14.0.20220110023249-172fb944faa9
+	github.com/stolostron/multicloud-operators-foundation v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	k8s.io/apimachinery v0.22.1
@@ -32,6 +32,7 @@ replace (
 	github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20220104154407-0716ee4cb33b
 	github.com/openshift/client-go => github.com/openshift/client-go v3.9.0+incompatible
 	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20220121012553-a0671aa97ef3
+	github.com/stolostron/multicloud-operators-foundation => github.com/stolostron/multicloud-operators-foundation v1.0.0-2021-10-26-20-16-14.0.20220110023249-172fb944faa9
 	github.com/terraform-providers/terraform-provider-azurerm => github.com/terraform-providers/terraform-provider-azurerm v0.0.0-20200604143437-d38893bc4f78
 	github.com/terraform-providers/terraform-provider-ignition/v2 => github.com/community-terraform-providers/terraform-provider-ignition/v2 v2.1.0
 	golang.org/x/text => golang.org/x/text v0.3.5
