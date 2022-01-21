@@ -25,7 +25,7 @@ if [[ -z "${TRAVIS_TAG}"  &&  -z "${TRAVIS_PULL_REQUEST_BRANCH}"  &&  -z "${TRAV
   DOCKER_TAGS+=("latest")
 fi
 
-if [[ -z "${TRAVIS_PULL_REQUEST_BRANCH}" ]]  && [[ "${TRAVIS_BRANCH}" == "master" ]]; then
+if [[ -z "${TRAVIS_PULL_REQUEST_BRANCH}" ]]  && [[ "${TRAVIS_BRANCH}" == "main" ]]; then
   DOCKER_TAGS+=("latest")
 fi
 
