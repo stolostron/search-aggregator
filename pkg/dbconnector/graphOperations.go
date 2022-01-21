@@ -12,7 +12,7 @@ package dbconnector
 
 import (
 	"github.com/golang/glog"
-	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	"github.com/stolostron/search-aggregator/pkg/config"
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
