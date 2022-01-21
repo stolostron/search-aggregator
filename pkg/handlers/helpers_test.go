@@ -11,7 +11,7 @@ package handlers
 import (
 	"testing"
 
-	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	db "github.com/stolostron/search-aggregator/pkg/dbconnector"
 	rg2 "github.com/redislabs/redisgraph-go"
 	"github.com/stretchr/testify/assert"
 )
