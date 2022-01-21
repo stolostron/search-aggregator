@@ -19,10 +19,10 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
-	"github.com/open-cluster-management/search-aggregator/pkg/clustermgmt"
-	"github.com/open-cluster-management/search-aggregator/pkg/config"
-	"github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
-	"github.com/open-cluster-management/search-aggregator/pkg/handlers"
+	"github.com/stolostron/search-aggregator/pkg/clustermgmt"
+	"github.com/stolostron/search-aggregator/pkg/config"
+	"github.com/stolostron/search-aggregator/pkg/dbconnector"
+	"github.com/stolostron/search-aggregator/pkg/handlers"
 )
 
 func main() {

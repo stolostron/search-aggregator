@@ -18,9 +18,9 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
-	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	"github.com/stolostron/search-aggregator/pkg/config"
 
-	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	db "github.com/stolostron/search-aggregator/pkg/dbconnector"
 )
 
 // SyncEvent - Object sent by the collector with the resources to change.
