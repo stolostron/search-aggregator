@@ -35,12 +35,12 @@ replace (
 	github.com/terraform-providers/terraform-provider-azurerm => github.com/terraform-providers/terraform-provider-azurerm v0.0.0-20200604143437-d38893bc4f78
 	github.com/terraform-providers/terraform-provider-ignition/v2 => github.com/community-terraform-providers/terraform-provider-ignition/v2 v2.1.0
 	golang.org/x/text => golang.org/x/text v0.3.5
-	k8s.io/api => k8s.io/api v0.17.4
+	k8s.io/api => k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.17.4
-	k8s.io/apimachinery => k8s.io/apimachinery v0.17.7
+	k8s.io/apimachinery => k8s.io/apimachinery v0.21.1
 	k8s.io/apiserver => k8s.io/apiserver v0.17.4
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.17.4
-	k8s.io/client-go => k8s.io/client-go v0.17.4
+	k8s.io/client-go => k8s.io/client-go v0.21.1
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.17.4
 	k8s.io/cloud-provides => k8s.io/cloud-provides v0.17.4
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.17.4
@@ -61,4 +61,5 @@ replace (
 	sigs.k8s.io/cluster-api-provider-aws => sigs.k8s.io/cluster-api-provider-aws v0.4.0
 	sigs.k8s.io/cluster-api-provider-azure => sigs.k8s.io/cluster-api-provider-azure v0.4.0
 	sigs.k8s.io/cluster-api-provider-openstack => sigs.k8s.io/cluster-api-provider-openstack v0.3.0
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.10.0
 )
