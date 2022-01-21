@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	"github.com/stolostron/search-aggregator/pkg/config"
 )
 
 var existingClustersMap map[string]map[string]interface{} // holds current properties pushed to RedisGraph using SET
