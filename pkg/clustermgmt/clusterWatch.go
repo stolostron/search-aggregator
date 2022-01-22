@@ -17,15 +17,15 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	"github.com/stolostron/search-aggregator/pkg/config"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/tools/cache"
 
-	clusterv1 "github.com/open-cluster-management/api/cluster/v1"
-	clusterv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/cluster/v1beta1"
-	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	db "github.com/stolostron/search-aggregator/pkg/dbconnector"
+	clusterv1beta1 "github.com/stolostron/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
+	clusterv1 "open-cluster-management.io/api/cluster/v1"
 )
 
 // Watches ManagedCluster and ManagedClusterInfo objects and updates
@@ -167,7 +167,7 @@ func isClusterMissing(err error) bool {
 
 // Transform ManagedCluster object into db.Resource suitable for insert into redis
 func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resource {
-	// https://github.com/open-cluster-management/api/blob/master/cluster/v1/types.go#L78
+	// https://github.com/stolostron/api/blob/main/cluster/v1/types.go#L78
 	// We use ManagedCluster as the primary source of information
 	// Properties duplicated between this and ManagedClusterInfo are taken from ManagedCluster
 	props := make(map[string]interface{})
@@ -211,8 +211,8 @@ func transformManagedCluster(managedCluster *clusterv1.ManagedCluster) db.Resour
 
 // Transform ManagedClusterInfo object into db.Resource suitable for insert into redis
 func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClusterInfo) db.Resource {
-	// https://github.com/open-cluster-management/multicloud-operators-foundation/
-	//    blob/master/pkg/apis/internal.open-cluster-management.io/v1beta1/clusterinfo_types.go
+	// https://github.com/stolostron/multicloud-operators-foundation/
+	//    blob/main/pkg/apis/internal.open-cluster-management.io/v1beta1/clusterinfo_types.go
 	props := make(map[string]interface{})
 
 	props["kind"] = "Cluster"

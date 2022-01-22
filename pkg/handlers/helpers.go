@@ -9,8 +9,8 @@ package handlers
 
 import (
 	"github.com/golang/glog"
-	"github.com/open-cluster-management/search-aggregator/pkg/config"
-	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+	"github.com/stolostron/search-aggregator/pkg/config"
+	db "github.com/stolostron/search-aggregator/pkg/dbconnector"
 )
 
 // returns the total number of nodes on cluster
