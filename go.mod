@@ -74,7 +74,7 @@ replace (
 	github.com/buger/jsonparser => github.com/buger/jsonparser v1.1.1
 	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.1.0
 	github.com/docker/docker => github.com/docker/docker v1.13.1
-	github.com/go-logr/logr => github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr => github.com/go-logr/logr v1.2.3
 	github.com/hashicorp/go-getter => github.com/hashicorp/go-getter v1.5.11
 	github.com/hashicorp/terraform => github.com/openshift/terraform v0.12.20-openshift-4
 	github.com/hashicorp/terraform-plugin-sdk => github.com/openshift/hashicorp-terraform-plugin-sdk v1.14.0-openshift
@@ -110,8 +110,8 @@ replace (
 	k8s.io/kubelet => k8s.io/kubelet v0.24.3
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.24.3
 	k8s.io/metrics => k8s.io/metrics v0.24.3
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.1
-	kubevirt.io/client-go => kubevirt.io/client-go v0.49.0
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.24.3
+	kubevirt.io/client-go => kubevirt.io/client-go v0.55.0
 	sigs.k8s.io/cluster-api-provider-aws => sigs.k8s.io/cluster-api-provider-aws v0.4.0
 	sigs.k8s.io/cluster-api-provider-azure => sigs.k8s.io/cluster-api-provider-azure v0.4.0
 	sigs.k8s.io/cluster-api-provider-openstack => sigs.k8s.io/cluster-api-provider-openstack v0.3.0
