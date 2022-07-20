@@ -33,9 +33,6 @@ const (
 	DEFAULT_SKIP_CLUSTER_VALIDATION = "false"
 )
 
-//unused var
-var unuse string
-
 // Define a config type to hold our config properties.
 type Config struct {
 	AggregatorAddress     string // address for collector <-> aggregator
