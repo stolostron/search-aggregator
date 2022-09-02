@@ -83,8 +83,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, exist := PendingRequests[clusterName]; exist == true {
-		glog.Warningf("Rejecting request from %s because a previous request from this cluster is still processing.", clusterName)
-		http.Error(w, "A previous request from this cluster is still processing, retry later.", http.StatusTooManyRequests)
+		glog.Warningf("Rejecting request from %s. A previous request from this cluster is processing.", clusterName)
+		http.Error(w, "A previous request from this cluster is processing, retry later.", http.StatusTooManyRequests)
 		return
 	}
 
