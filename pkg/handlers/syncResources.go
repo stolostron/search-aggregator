@@ -82,7 +82,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
 		return
 	}
-	if _, exist := PendingRequests[clusterName]; exist == true {
+	if _, exist := PendingRequests[clusterName]; exist {
 		glog.Warningf("Rejecting request from %s. A previous request from this cluster is processing.", clusterName)
 		http.Error(w, "A previous request from this cluster is processing, retry later.", http.StatusTooManyRequests)
 		return
@@ -95,10 +95,6 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	subscriptionUpdated := false                // flag to decide the time when last suscription was changed
 	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
 	response := SyncResponse{Version: config.AGGREGATOR_API_VERSION}
-
-	// !!! DO NOT APPROVE OR MERGE WITH THIS !!!
-	// Adding delay to test.
-	time.Sleep(6 * time.Minute)
 
 	// Function that sends the current response and the given status code.
 	// If you want to bail out early, make sure to call return right after.
