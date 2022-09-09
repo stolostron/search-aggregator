@@ -77,14 +77,14 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// TODO: The next step is to degrade performance instead of rejecting the request.
 	//       We will give priority to nodes over edges after reaching certain load.
 	//       Will also prioritize small updates over a large resync.
-	if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" {
-		glog.Warningf("Too many pending requests (%d). Rejecting sync from %s", len(PendingRequests), clusterName)
-		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
-		return
-	}
 	if _, exist := PendingRequests[clusterName]; exist {
 		glog.Warningf("Rejecting request from %s. A previous request from this cluster is processing.", clusterName)
 		http.Error(w, "A previous request from this cluster is processing, retry later.", http.StatusTooManyRequests)
+		return
+	}
+	if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" {
+		glog.Warningf("Too many pending requests (%d). Rejecting sync from %s", len(PendingRequests), clusterName)
+		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
 		return
 	}
 
