@@ -30,9 +30,9 @@ build-linux:
 
 .PHONY: lint
 lint:
-	go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.38.0
-	# Flag GOGC=25 needed to run garbage collection more often and avoid out of memory issue.
-	GOGC=25 golangci-lint run --timeout=3m
+	GOPATH=$(go env GOPATH)
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "${GOPATH}/bin" v1.47.1
+	CGO_ENABLED=0 GOGC=25 golangci-lint run --timeout=3m
 
 run:
 	go run main.go
