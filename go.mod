@@ -73,9 +73,7 @@ require (
 replace (
 	github.com/buger/jsonparser => github.com/buger/jsonparser v1.1.1
 	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.1.0
-	github.com/docker/docker => github.com/docker/docker v1.13.1
 	github.com/go-logr/logr => github.com/go-logr/logr v1.2.3
-	github.com/hashicorp/go-getter => github.com/hashicorp/go-getter v1.5.11
 	github.com/hashicorp/terraform => github.com/openshift/terraform v0.12.20-openshift-4
 	github.com/hashicorp/terraform-plugin-sdk => github.com/openshift/hashicorp-terraform-plugin-sdk v1.14.0-openshift
 	github.com/hashicorp/terraform@v0.13.4 => github.com/openshift/terraform v0.12.20-openshift-4
@@ -103,7 +101,6 @@ replace (
 	k8s.io/cri-api => k8s.io/cri-api v0.24.3
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.24.3
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.24.3
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.24.3
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.24.3
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.24.3
 	k8s.io/kubectl => k8s.io/kubectl v0.24.3
