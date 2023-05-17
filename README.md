@@ -1,7 +1,7 @@
 # This project is deprecated.
 - The functionality has been reimplemented in the new project https://github.com/stolostron/search-indexer
 - The last RHACM release using this project is RHACM 2.6
-- This project will be archived once RHACM 2.6 reaches EOL.
+- This project will be archived once RHACM 2.6 reaches end of life (EOL).
 
 # search-aggregator
 
