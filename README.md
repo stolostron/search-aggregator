@@ -1,3 +1,8 @@
+# This project is deprecated.
+- The functionality has been reimplemented in the new project https://github.com/stolostron/search-indexer
+- The last RHACM release using this project is RHACM 2.6
+- This project will be archived once RHACM 2.6 reaches end of life (EOL).
+
 # search-aggregator
 
 The Search Aggregator is a component of the Open Cluster Management [search feature](https://github.com/stolostron/search/blob/main/feature-spec/search.md#feature-summary). It runs on the hub cluster to index data from [search-collector](https://github.com/stolostron/search-collector) on the managed clusters into [RedisGraph](https://oss.redislabs.com/redisgraph/).
