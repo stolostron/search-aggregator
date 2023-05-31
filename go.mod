@@ -2,7 +2,7 @@
 // Copyright Contributors to the Open Cluster Management project
 module github.com/stolostron/search-aggregator
 
-go 1.18
+go 1.20
 
 require (
 	github.com/golang/glog v1.0.0
@@ -71,6 +71,6 @@ require (
 )
 
 replace (
-	k8s.io/client-go => k8s.io/client-go v0.24.3
 	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20220121012553-a0671aa97ef3
+	k8s.io/client-go => k8s.io/client-go v0.24.3
 )
